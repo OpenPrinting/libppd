@@ -17,7 +17,7 @@
 #include <cupsfilters/filter.h>
 #include <cupsfilters/image.h>
 #include <cupsfilters/raster.h>
-#include <cupsfilters/image-private.h>
+#include <cupsfilters/image.h>
 #include <ppd/ppd.h>
 #include <ppd/ppd-filter.h>
 #include <cups/file.h>
@@ -1004,7 +1004,8 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
       pw = ph;
       ph = tmp;
     }
-    if (w * 72.0 / img->xppi > pw || h * 72.0 / img->yppi > ph)
+    if (w * 72.0 / cfImageGetXPPI(img) > pw ||
+	h * 72.0 / cfImageGetYPPI(img) > ph)
       document_large = 1;
 
     if ((val = cupsGetOption("print-scaling", num_options, options)) != NULL)
@@ -1131,10 +1132,10 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
       else
       {
 	float final_w = w, final_h = h;
-        if (w > pw * img->xppi / 72.0)
-          final_w = pw * img->xppi / 72.0;
-        if (h > ph * img->yppi / 72.0)
-          final_h = ph * img->yppi / 72.0;
+        if (w > pw * cfImageGetXPPI(img) / 72.0)
+          final_w = pw * cfImageGetXPPI(img) / 72.0;
+        if (h > ph * cfImageGetYPPI(img) / 72.0)
+          final_h = ph * cfImageGetYPPI(img) / 72.0;
 	float posw = (w - final_w) / 2, posh = (h - final_h) / 2;
 	posw = (1 + XPosition) * posw;
 	posh = (1 - YPosition) * posh;
@@ -1143,17 +1144,21 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
 	img = img2;
 	if (flag == 4)
 	{
-	  doc.PageBottom += (doc.PageLength - final_w * 72.0 / img->xppi) / 2;
-	  doc.PageTop = doc.PageBottom + final_w * 72.0 / img->xppi;
-	  doc.PageLeft += (doc.PageWidth - final_h * 72.0 / img->yppi) / 2;
-	  doc.PageRight = doc.PageLeft + final_h * 72.0 / img->yppi;
+	  doc.PageBottom += (doc.PageLength - final_w * 72.0 /
+			     cfImageGetXPPI(img)) / 2;
+	  doc.PageTop = doc.PageBottom + final_w * 72.0 / cfImageGetXPPI(img);
+	  doc.PageLeft += (doc.PageWidth - final_h * 72.0 /
+			   cfImageGetYPPI(img)) / 2;
+	  doc.PageRight = doc.PageLeft + final_h * 72.0 / cfImageGetYPPI(img);
 	}
 	else
 	{
-	  doc.PageBottom += (doc.PageLength - final_h * 72.0 / img->yppi) / 2;
-	  doc.PageTop = doc.PageBottom + final_h * 72.0 / img->yppi;
-	  doc.PageLeft += (doc.PageWidth - final_w * 72.0 / img->xppi) / 2;
-	  doc.PageRight = doc.PageLeft + final_w * 72.0 / img->xppi;
+	  doc.PageBottom += (doc.PageLength - final_h * 72.0 /
+			     cfImageGetYPPI(img)) / 2;
+	  doc.PageTop = doc.PageBottom + final_h * 72.0 / cfImageGetYPPI(img);
+	  doc.PageLeft += (doc.PageWidth - final_w * 72.0 /
+			   cfImageGetXPPI(img)) / 2;
+	  doc.PageRight = doc.PageLeft + final_w * 72.0 / cfImageGetXPPI(img);
 	}
 	if (doc.PageBottom < 0) doc.PageBottom = 0;
 	if (doc.PageLeft < 0) doc.PageLeft = 0;

@@ -33,7 +33,7 @@
 #include <cupsfilters/raster.h>
 #include <cupsfilters/ipp.h>
 #include <cupsfilters/pdf.h>
-#include <cupsfilters/image-private.h>
+#include <cupsfilters/image.h>
 #include "ppd.h"
 #include "ppd-filter.h"
 

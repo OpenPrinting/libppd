@@ -1393,7 +1393,7 @@ ppdLoadAttributes(
   if (is_texttotext)
   {
     if ((ppd_choice = ppdFindMarkedChoice(ppd, "OverLongLines")) != NULL &&
-	ppd_choice->choice && ppd_choice->choice[0])
+	ppd_choice->choice[0])
     {
       ppdPwgUnppdizeName(ppd_choice->choice, buf, sizeof(buf), NULL);
       ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
@@ -1406,7 +1406,7 @@ ppdLoadAttributes(
 		    "tab-width-default", i);
 
     if ((ppd_choice = ppdFindMarkedChoice(ppd, "Pagination")) != NULL &&
-	ppd_choice->choice && ppd_choice->choice[0])
+	ppd_choice->choice[0])
     {
       ppdPwgUnppdizeName(ppd_choice->choice, buf, sizeof(buf), NULL);
       ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
@@ -1434,12 +1434,12 @@ ppdLoadAttributes(
 		    "page-bottom-default", i);
 
     if ((ppd_choice = ppdFindMarkedChoice(ppd, "PrinterEncoding")) != NULL &&
-	ppd_choice->choice && ppd_choice->choice[0])
+	ppd_choice->choice[0])
       ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		   "printer-encoding-default", NULL, ppd_choice->choice);
 
     if ((ppd_choice = ppdFindMarkedChoice(ppd, "NewlineCharacters")) != NULL &&
-	ppd_choice->choice && ppd_choice->choice[0])
+	ppd_choice->choice[0])
     {
       ppdPwgUnppdizeName(ppd_choice->choice, buf, sizeof(buf), NULL);
       ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
@@ -1447,7 +1447,7 @@ ppdLoadAttributes(
     }
 
     if ((ppd_choice = ppdFindMarkedChoice(ppd, "SendFF")) != NULL &&
-	ppd_choice->choice && ppd_choice->choice[0])
+	ppd_choice->choice[0])
     {
       ppdPwgUnppdizeName(ppd_choice->choice, buf, sizeof(buf), NULL);
       ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,

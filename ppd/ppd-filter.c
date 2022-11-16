@@ -470,7 +470,7 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
     choice = ppdFindMarkedChoice(ppd, ppd_attr->value);
   else if ((choice = ppdFindMarkedChoice(ppd, "ColorModel")) == NULL)
     choice = ppdFindMarkedChoice(ppd, "ColorSpace");
-  if (choice && choice->choice && choice->choice[0])
+  if (choice && choice->choice[0])
     q1_choice = choice->choice;
   else
     q1_choice = "";
@@ -481,7 +481,7 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
     choice = ppdFindMarkedChoice(ppd, ppd_attr->value);
   else
     choice = ppdFindMarkedChoice(ppd, "MediaType");
-  if (choice && choice->choice && choice->choice[0])
+  if (choice && choice->choice[0])
     q2_choice = choice->choice;
   else
     q2_choice = "";
@@ -492,7 +492,7 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
     choice = ppdFindMarkedChoice(ppd, ppd_attr->value);
   else
     choice = ppdFindMarkedChoice(ppd, "Resolution");
-  if (choice && choice->choice && choice->choice[0])
+  if (choice && choice->choice[0])
     q3_choice = choice->choice;
   else
   {
@@ -536,7 +536,7 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
 	 ppd_attr = ppdFindNextAttr(ppd, cm_profile_key, NULL))
     {
       // Invalid entry
-      if (ppd_attr->spec == NULL || ppd_attr->value == NULL)
+      if (ppd_attr->value == NULL)
 	continue;
 
       // Matches the qualifier

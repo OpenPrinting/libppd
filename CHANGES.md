@@ -1,14 +1,14 @@
-# CHANGES - libppd v2.0b1 - 2022-11-14
+# CHANGES - libppd v2.0b1 - 2022-11-17
 
-## CHANGES IN V2.0b1 (TBA)
+## CHANGES IN V2.0b1 (17th November 2022)
 
 - Added the new libppd library overtaking all the PPD handling
   functions from libcups, CUPS' ppdc utility (PPD compiler using *.drv
   files), and the PPD file collection handling functionality from
-  cups-driverd, as they are deprecated there and will probably get
-  removed with the next CUPS version. This form of conservation is
-  mainly intended for converting classic printer drivers which use
-  PPDs into Printer Applications without completely rewriting them.
+  cups-driverd, as they are deprecated there and will get removed in
+  CUPS 3.x. This form of conservation is mainly intended for
+  converting classic printer drivers which use PPDs into Printer
+  Applications without completely rewriting them.
 
 - Added functions ppdLoadAttributes(), ppdFilterLoadPPD(),
   ppdFilterLoadPPDFile(), ppdFilterFreePPD(), and

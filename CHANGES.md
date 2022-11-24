@@ -1,5 +1,10 @@
 # CHANGES - libppd v2.0b1 - 2022-11-17
 
+## CHANGES IN V2.0b2 (TBA)
+
+- configure.ac: Added "foreign" to to AM_INIT_AUTOMAKE() call. Makes
+  automake not require a file named README.
+
 ## CHANGES IN V2.0b1 (17th November 2022)
 
 - Introduced the new libppd library overtaking all the PPD handling

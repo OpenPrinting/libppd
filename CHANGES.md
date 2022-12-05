@@ -2,6 +2,12 @@
 
 ## CHANGES IN V2.0b2 (TBA)
 
+- ppdFilterEmitJCL(): Added NULL check for PPD not being supplied.
+  Classic CUPS filters created based on filter functions using
+  ppdFilterCUPSWrapper() and also filter functions of libppd
+  (ppdFilter...()) should also work without PPD file and not crash if
+  no PPD file is supplied.
+
 - configure.ac: Added "foreign" to to AM_INIT_AUTOMAKE() call. Makes
   automake not require a file named README.
 

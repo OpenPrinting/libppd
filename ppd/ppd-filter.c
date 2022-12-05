@@ -1222,13 +1222,14 @@ ppdFilterEmitJCL(int inputfd,         // I - File descriptor input stream
 
   //
   // Call the original filter function without forking if we suppress
-  // JCL output via option...
+  // JCL output via option or do not have a PPD file...
   //
 
-  if ((val = cupsGetOption("emit-jcl",
-			   data->num_options, data->options)) != NULL &&
-      (strcasecmp(val, "false") == 0 || strcasecmp(val, "off") == 0 ||
-       strcasecmp(val, "no") == 0))
+  if (!filter_data_ext || !filter_data_ext->ppd ||
+      ((val = cupsGetOption("emit-jcl",
+			    data->num_options, data->options)) != NULL &&
+       (strcasecmp(val, "false") == 0 || strcasecmp(val, "off") == 0 ||
+	strcasecmp(val, "no") == 0)))
   {
     if (!streaming)
       // Call actual filter function from libcupsfilters
@@ -1475,7 +1476,7 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 
     if (ppd)
     {
-      cache = ppd ? ppd->cache : NULL;
+      cache = ppd->cache;
 
       // Check whether our output format (under CUPS it is taken from
       // the FINAL_CONTENT_TYPE env variable) is the destination format

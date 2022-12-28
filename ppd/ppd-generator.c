@@ -608,7 +608,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   {
     int resStore = 0; // Variable for storing the no. of resolutions in the resolution array 
     int resArray[__INT16_MAX__]; // Creating a resolution array supporting a maximum of 32767 resolutions.
-    int lowdpi = 0, middpi = 0, hidpi = 0; //Lower , middle and higher resolution
+    int lowdpi = 0, middpi = 0, hidpi = 0; // Lower , middle and higher resolution
     if ((attr = ippFindAttribute(response, "urf-supported",
 			IPP_TAG_KEYWORD)) != NULL)
     {
@@ -618,8 +618,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         const char *rsCopy = ippGetString(attr, i, NULL); // RS values(copy) 
  	if (strncasecmp(rs, "RS", 2)) // Comparing attributes to have RS in the beginning to indicate the resolution feature
 	  continue;
-        int resCount = 0;// Using a count variable which can be reset 
-        while (*rsCopy != '\0')// Parsing through the copy pointer to determine the no. of resolutions
+        int resCount = 0; // Using a count variable which can be reset 
+        while (*rsCopy != '\0') // Parsing through the copy pointer to determine the no. of resolutions
         {
           if (*rsCopy == '-')
           {
@@ -651,29 +651,29 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
       }
       if (lowdpi == 0)
       {
-	    // Invalid "urf-supported" value...
-	    goto bad_ppd;
+        // Invalid "urf-supported" value...
+        goto bad_ppd;
       }
       else
       {
         if ((current_res = cfNewResolutionArray()) != NULL)
         {
-          //Adding to the resolution list
+          // Adding to the resolution list
           if ((current_def = cfNewResolution(lowdpi, lowdpi)) != NULL)
           {
-	        cupsArrayAdd(current_res, current_def);
+	    cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
           if (hidpi != lowdpi &&
 	        (current_def = cfNewResolution(hidpi, hidpi)) != NULL)
           {
-	        cupsArrayAdd(current_res, current_def);
+	    cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
           if (middpi != hidpi && middpi != lowdpi &&
 	        (current_def = cfNewResolution(middpi, middpi)) != NULL)
           {
-	        cupsArrayAdd(current_res, current_def);
+	    cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
           current_def = NULL;

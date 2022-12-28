@@ -613,11 +613,11 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 			IPP_TAG_KEYWORD)) != NULL)
     {
       for (int i = 0, count = ippGetCount(attr); i < count; i ++)
-      {
-	    const char *rs = ippGetString(attr, i, NULL); // RS values
+      {  
+       	const char *rs = ippGetString(attr, i, NULL); // RS values
         const char *rsCopy = ippGetString(attr, i, NULL); // RS values(copy) 
- 	    if (strncasecmp(rs, "RS", 2)) // Comparing attributes to have RS in the beginning to indicate the resolution feature
-	      continue;
+ 	if (strncasecmp(rs, "RS", 2)) // Comparing attributes to have RS in the beginning to indicate the resolution feature
+	  continue;
         int resCount = 0;// Using a count variable which can be reset 
         while (*rsCopy != '\0')// Parsing through the copy pointer to determine the no. of resolutions
         {
@@ -704,11 +704,11 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	      cfJoinResolutionArrays(&common_res, &current_res, &common_def,
 				 &current_def)) 
           {
-	        cupsFilePuts(fp, "*cupsFilter2: \"image/urf image/urf 0 -\"\n");
-	        manual_copies = 1;
-	        formatfound = 1;
-	        is_apple = 1;
-	      }
+	    cupsFilePuts(fp, "*cupsFilter2: \"image/urf image/urf 0 -\"\n");
+	    manual_copies = 1;
+	    formatfound = 1;
+	    is_apple = 1;
+	  }
         } 
       }
     }

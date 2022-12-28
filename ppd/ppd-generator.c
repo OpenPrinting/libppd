@@ -404,12 +404,12 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 
   // Message catalogs for UI strings
   opt_strings_catalog = cfCatalogOptionArrayNew();
-  cfCatalogLoad(NULL, opt_strings_catalog);
+  cfCatalogLoad(NULL, NULL, opt_strings_catalog);
   if ((attr = ippFindAttribute(response, "printer-strings-uri",
 			       IPP_TAG_URI)) != NULL)
   {
     printer_opt_strings_catalog = cfCatalogOptionArrayNew();
-    cfCatalogLoad(ippGetString(attr, 0, NULL),
+    cfCatalogLoad(ippGetString(attr, 0, NULL), NULL,
 		  printer_opt_strings_catalog);
     if (cupsArrayCount(printer_opt_strings_catalog) > 0)
       cupsFilePrintf(fp, "*cupsStringsURI: \"%s\"\n", ippGetString(attr, 0,

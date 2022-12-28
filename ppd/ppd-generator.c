@@ -613,24 +613,24 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 			IPP_TAG_KEYWORD)) != NULL)
     {
       for (int i = 0, count = ippGetCount(attr); i < count; i ++)
-    {
-	      const char *rs = ippGetString(attr, i, NULL); // RS values
+      {
+	    const char *rs = ippGetString(attr, i, NULL); // RS values
         const char *rsCopy = ippGetString(attr, i, NULL); // RS values(copy) 
- 	      if (strncasecmp(rs, "RS", 2)) // Comparing attributes to have RS in the beginning to indicate the resolution feature
-	        continue;
+ 	    if (strncasecmp(rs, "RS", 2)) // Comparing attributes to have RS in the beginning to indicate the resolution feature
+	      continue;
         int resCount = 0;// Using a count variable which can be reset 
         while (*rsCopy != '\0')// Parsing through the copy pointer to determine the no. of resolutions
-         {
+        {
           if (*rsCopy == '-')
           {
             resCount ++;
           }
           rsCopy ++;
-         }
+        }
         resCount ++;
         resStore = resCount;
         resCount = 0;
-        resArray[resCount] = atoi(rs+2);
+        resArray[resCount] = atoi(rs + 2);
         resCount ++;
         while (*rs != '\0') // Parsing through the entire pointer and appending each resolution to an array
         {
@@ -645,43 +645,41 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         // Lowdpi the lowest resolution, hidpi the highest resolution and middpi finding the middle resolution 
         // The middpi takes the rounded down middle value
         lowdpi = resArray[0];
-        middpi = resArray[(resStore-1) / 2];
+        middpi = resArray[(resStore - 1) / 2];
         hidpi = resArray[resStore - 1];
         break;
       }
-
-    if (lowdpi == 0)
+      if (lowdpi == 0)
       {
-	      // Invalid "urf-supported" value...
-	      goto bad_ppd;
+	    // Invalid "urf-supported" value...
+	    goto bad_ppd;
       }
-    else
-    {
-      if ((current_res = cfNewResolutionArray()) != NULL)
+      else
       {
-        //Adding to the resolution list
-        if ((current_def = cfNewResolution(lowdpi, lowdpi)) != NULL)
+        if ((current_res = cfNewResolutionArray()) != NULL)
+        {
+          //Adding to the resolution list
+          if ((current_def = cfNewResolution(lowdpi, lowdpi)) != NULL)
           {
-	          cupsArrayAdd(current_res, current_def);
+	        cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
-        if (hidpi != lowdpi &&
+          if (hidpi != lowdpi &&
 	        (current_def = cfNewResolution(hidpi, hidpi)) != NULL)
           {
-	          cupsArrayAdd(current_res, current_def);
+	        cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
-        if (middpi != hidpi && middpi != lowdpi &&
+          if (middpi != hidpi && middpi != lowdpi &&
 	        (current_def = cfNewResolution(middpi, middpi)) != NULL)
           {
-	          cupsArrayAdd(current_res, current_def);
+	        cupsArrayAdd(current_res, current_def);
             cfFreeResolution(current_def, NULL);
           }
-        current_def = NULL;
-
-        // Checking if there is printer-default-resolution and this resolution is in the list, use it. If not,
-        // use the middpi, rounding down if the number of available resolutions is even.
-        if ((attr = ippFindAttribute(response, "printer-resolution-supported",
+          current_def = NULL;
+          // Checking if there is printer-default-resolution and this resolution is in the list, use it. If not,
+          // use the middpi, rounding down if the number of available resolutions is even.
+          if ((attr = ippFindAttribute(response, "printer-resolution-supported",
 				 IPP_TAG_RESOLUTION)) != NULL)
           {
             if ((defattr = ippFindAttribute(response, "printer-resolution-default",
@@ -692,8 +690,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
               {
                 if (current_def == cfNewResolution(resArray[i], resArray[i]))
                 {
-                    current_def = cfIPPResToResolution(defattr, 0);
-                    break;
+                  current_def = cfIPPResToResolution(defattr, 0);
+                  break;
                 }
                 else
                 {
@@ -702,19 +700,19 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
               }
             }
           }
-        if (cupsArrayCount(current_res) > 0 &&
+          if (cupsArrayCount(current_res) > 0 &&
 	      cfJoinResolutionArrays(&common_res, &current_res, &common_def,
-				     &current_def)) 
-        {
+				 &current_def)) 
+          {
 	        cupsFilePuts(fp, "*cupsFilter2: \"image/urf image/urf 0 -\"\n");
 	        manual_copies = 1;
 	        formatfound = 1;
 	        is_apple = 1;
 	      }
+        } 
       }
     }
   }
-}
 #endif
   else if (cupsArrayFind(pdl_list, "application/pdf"))
   {

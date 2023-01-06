@@ -1,4 +1,4 @@
-# OpenPrinting libppd v2.0b1 - 2020-11-17
+# OpenPrinting libppd v2.0b1 - 2022-11-17
 
 Looking for compile instructions? Read the file "INSTALL"
 instead...
@@ -118,3 +118,5 @@ compatibility.
 * [cups-filters 2019 (PDF, pages 16-17)](https://ftp.pwg.org/pub/pwg/liaison/openprinting/presentations/cups-filters-ippusbxd-2019.pdf)
 * [cups-filters 2020 (PDF)](https://ftp.pwg.org/pub/pwg/liaison/openprinting/presentations/cups-filters-ippusbxd-2020.pdf)
 * [cups-filters 2021 (PDF)](https://ftp.pwg.org/pub/pwg/liaison/openprinting/presentations/cups-filters-cups-snap-ipp-usb-and-more-2021.pdf)
+* [cups-filters 2022 (PDF)](https://ftp.pwg.org/pub/pwg/liaison/openprinting/presentations/cups-filters-cups-snap-ipp-usb-and-more-2022.pdf)
+

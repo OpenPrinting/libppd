@@ -415,7 +415,7 @@ ppdcDriver::write_ppd_file(
   cupsFilePrintf(fp, "*%%%%%%%% PPD file for %s with CUPS.%s",
                  model_name->value, lf);
   cupsFilePrintf(fp,
-                 "*%%%%%%%% Created by the PPD Compiler of cups-filters "
+                 "*%%%%%%%% Created by the PPD Compiler of libppd "
 		 PACKAGE_VERSION ".%s", lf);
   for (s = (ppdcString *)copyright->first();
        s;

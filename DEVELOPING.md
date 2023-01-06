@@ -1,8 +1,16 @@
-Developing for CUPS FILTERS
-===========================
+Developing for libppd
+=====================
 
-Please see the [Contributing to CUPS](CONTRIBUTING.md) file for information on
-contributing to the CUPS project.
+
+NOTE: There is no intention to add any new features to libppd any more, as this
+library is only to support already existing PPD files (and also *.drv files for
+generating PPDs) to make existing classic CUPS drivers working. This coding
+style documentation is more intended for maintaining the code, like fixing bugs
+or adapting to new system environments.
+
+
+Please see the [Contributing to libppd](CONTRIBUTING.md) file for information
+on contributing to the libppd project.
 
 
 How To Contact The Developers
@@ -17,39 +25,40 @@ to <https://lists.linuxfoundation.org/mailman/listinfo/printing-architecture>.
 Interfaces
 ----------
 
-CUPS Filters interfaces, including the C APIs and command-line arguments,
+libppd interfaces, including the C APIs and command-line arguments,
 environment variables, configuration files, and output format, are stable
 across patch versions and are generally backwards-compatible with interfaces
 used in prior major and minor versions.
 
-CUPS Filters C APIs starting with an underscore (`_`) are considered to be
+libppd C APIs starting with an underscore (`_`) are considered to be
 private to the library and are not subject to the normal guarantees of
-stability between CUPS releases and must never be used in source code outside
-this library. Similarly, configuration and state files written by CUPS Filters
-are considered private if a corresponding man page is not provided with the
-CUPS Filters release.  Never rely on undocumented files or formats when
-developing software for CUPS Filters.  Always use a published C API to access
-data stored in a file to avoid compatibility problems in the future.
+stability between libppd releases and must never be used in source code
+outside this library. Similarly, configuration and state files written by
+libppd are considered private if a corresponding man page is not
+provided with the libppd release.  Never rely on undocumented files or
+formats when developing software for libppd.  Always use a published C
+API to access data stored in a file to avoid compatibility problems in the
+future.
 
 
 Build System
 ------------
 
-The CUPS Filters build system uses GNU autoconf, automake, and libtool to
+The libppd build system uses GNU autoconf, automake, and libtool to
 tailor the software to the local operating system.
 
 
 Version Numbering
 -----------------
 
-CUPS Filters uses a three-part version number separated by periods to represent
-the major, minor, and patch release numbers.  Major release numbers indicate
-large design changes or backwards-incompatible changes to the CUPS Filters API.
-Minor release numbers indicate new features and other smaller changes which are
-backwards-compatible with previous CUPS Filters releases.  Patch numbers
-indicate bug fixes to the previous feature or patch release.  This version
-numbering scheme is consistent with the
-[Semantic Versioning](http://semver.org) specification.
+libppd uses a three-part version number separated by periods to
+represent the major, minor, and patch release numbers. Major release numbers
+indicate large design changes or backwards-incompatible changes to the
+libppd API. Minor release numbers indicate new features and other
+smaller changes which are backwards-compatible with previous libppd
+releases.  Patch numbers indicate bug fixes to the previous feature or patch
+release. This version numbering scheme is consistent with the [Semantic
+Versioning](http://semver.org) specification.
 
 > Note:
 >
@@ -107,7 +116,7 @@ of developer documentation, which will be generated using the
 
 ### Source Files
 
-All source files names must consist of lowercase ASCII letters, numbers, dash
+All source file names must consist of lowercase ASCII letters, numbers, dash
 ("-"), underscore ("_"), and period (".") to ensure compatibility across
 different filesystems.  Source files containing functions have an extension of
 ".c" for C and ".cxx" for C++ source files.  All other "include" files have an
@@ -149,17 +158,17 @@ comment format being preferred for multi-line comments:
 
     /*
      * Clear the state array before we begin.  Make sure that every
-     * element is set to `CUPS_STATE_IDLE`.
+     * element is set to `PPD_STATE_IDLE`.
      */
 
      for (i = 0; i < (sizeof(array) / sizeof(sizeof(array[0])); i ++)
-       array[i] = CUPS_STATE_IDLE;
+       array[i] = PPD_STATE_IDLE;
 
      // Wait for state changes on another thread...
      do
      {
        for (i = 0; i < (sizeof(array) / sizeof(sizeof(array[0])); i ++)
-         if (array[i] != CUPS_STATE_IDLE)
+         if (array[i] != PPD_STATE_IDLE)
            break;
 
        if (i == (sizeof(array) / sizeof(array[0])))
@@ -191,7 +200,7 @@ spaces after each "case" and "default" case:
 
     switch (array[i])
     {
-      case CUPS_STATE_IDLE :
+      case PPD_STATE_IDLE :
           do_this(i);
           do_that(i);
           break;
@@ -212,15 +221,18 @@ inserted between a function name and the arguments in parenthesis.
 
 Parenthesis surround values returned from a function:
 
-    return (CUPS_STATE_IDLE);
+    return (PPD_STATE_IDLE);
 
 
 ### Functions
 
 Functions with a global scope have a lowercase prefix followed by capitalized
-words, e.g., `cupsDoThis`, `cupsDoThat`, `cupsDoSomethingElse`, etc.  Private
-global functions begin with a leading underscore, e.g., `_cupsDoThis`,
-`_cupsDoThat`, etc.
+words, e.g., `ppdDoThis`, `ppdDoThat`, `ppdDoSomethingElse`, etc.  Private
+global functions begin with a leading underscore, e.g., `_ppdDoThis`,
+`_ppdDoThat`, etc.
+
+NOTE: In the examples here we only show the `ppd` prefixes for general PPD
+API functions, for PPD-compiler-related functions we use `ppdc`.
 
 Functions with a local scope are declared static with lowercase names and
 underscores between words, e.g., `do_this`, `do_that`, `do_something_else`, etc.
@@ -257,8 +269,7 @@ function description comment:
                            for new development and scheduled for removal.
     @link name@          - Provides a hyperlink to the corresponding function
                            or type definition.
-    @since CUPS version@ - Marks the function as new in the specified version
-                           of CUPS.
+    @since version@      - Marks the function as new in the specified version.
     @private@            - Marks the function as private so it will not be
                            included in the documentation.
 
@@ -266,9 +277,7 @@ function description comment:
 ### Variables
 
 Variables with a global scope are capitalized, e.g., `ThisVariable`,
-`ThatVariable`, `ThisStateVariable`, etc.  Globals in CUPS libraries are either
-part of the per-thread global values managed by the `_cupsGlobals` function
-or are suitably protected for concurrent access.  Global variables should be
+`ThatVariable`, `ThisStateVariable`, etc. Global variables should be
 replaced by function arguments whenever possible.
 
 Variables with a local scope are lowercase with underscores between words,
@@ -286,28 +295,28 @@ comment describing the variable:
 ### Types
 
 All type names are lowercase with underscores between words and `_t` appended
-to the end of the name, e.g., `cups_this_type_t`, `cups_that_type_t`, etc.
-Type names start with a prefix, typically `cups` or the name of the program,
+to the end of the name, e.g., `ppd_this_type_t`, `ppd_that_type_t`, etc.
+Type names start with a prefix, typically `ppd` or the name of the program,
 to avoid conflicts with system types.  Private type names start with an
-underscore, e.g., `_cups_this_t`, `_cups_that_t`, etc.
+underscore, e.g., `_ppd_this_t`, `_ppd_that_t`, etc.
 
 Each type has a comment immediately after the typedef:
 
-    typedef int cups_this_type_t;  // This type is for CUPS foobar options.
+    typedef int ppd_this_type_t;  // This type is for foobar options.
 
 
 ### Structures
 
 All structure names are lowercase with underscores between words and `_s`
-appended to the end of the name, e.g., `cups_this_s`, `cups_that_s`, etc.
-Structure names start with a prefix, typically `cups` or the name of the
+appended to the end of the name, e.g., `ppd_this_s`, `ppd_that_s`, etc.
+Structure names start with a prefix, typically `ppd` or the name of the
 program, to avoid conflicts with system types.  Private structure names start
-with an underscore, e.g., `_cups_this_s`, `_cups_that_s`, etc.
+with an underscore, e.g., `_ppd_this_s`, `_ppd_that_s`, etc.
 
 Each structure has a comment immediately after the struct and each member is
 documented similar to the variable naming policy above:
 
-    struct cups_this_struct_s  // This structure is for CUPS foobar options.
+    struct ppd_this_struct_s    // This structure is for foobar options.
     {
       int this_member;         // Current state for this
       int that_member;         // Current state for that
@@ -317,20 +326,20 @@ documented similar to the variable naming policy above:
 ### Constants
 
 All constant names are uppercase with underscores between words, e.g.,
-`CUPS_THIS_CONSTANT`, `CUPS_THAT_CONSTANT`, etc.  Constants begin with an
-uppercase prefix, typically `CUPS_` or the program or type name.  Private
-constants start with an underscore, e.g., `_CUPS_THIS_CONSTANT`,
-`_CUPS_THAT_CONSTANT`, etc.
+`PPD_THIS_CONSTANT`, `PPD_THAT_CONSTANT`, etc.  Constants begin with an
+uppercase prefix, typically `PPD_` or the program or type name.  Private
+constants start with an underscore, e.g., `_PPD_THIS_CONSTANT`,
+`_PPD_THAT_CONSTANT`, etc.
 
 Typed enumerations should be used whenever possible to allow for type checking
 by the compiler.
 
 Comments immediately follow each constant:
 
-    typedef enum cups_tray_e  // Tray enumerations
+    typedef enum ppd_tray_e  // Tray enumerations
     {
-      CUPS_TRAY_THIS,         // This tray
-      CUPS_TRAY_THAT          // That tray
-    } cups_tray_t;
+      PPD_TRAY_THIS,         // This tray
+      PPD_TRAY_THAT          // That tray
+    } ppd_tray_t;
 
 

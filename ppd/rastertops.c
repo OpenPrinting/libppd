@@ -58,7 +58,7 @@ write_prolog(int 	   width,  // I - width of the image in points
   // Document header...
   fprintf(doc->outputfp, "%%!PS-Adobe-3.0\n");
   fprintf(doc->outputfp, "%%%%BoundingBox: %d %d %d %d\n", 0, 0, width, height);
-  fprintf(doc->outputfp, "%%%%Creator: cups-filters\n");
+  fprintf(doc->outputfp, "%%%%Creator: libppd\n");
   fprintf(doc->outputfp, "%%%%LanguageLevel: 2\n");
   fprintf(doc->outputfp, "%%%%DocumentData: Clean7Bit\n");
   fprintf(doc->outputfp, "%%%%Pages: (atend)\n");

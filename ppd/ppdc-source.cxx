@@ -3469,7 +3469,7 @@ ppdcSource::write_file(const char *f)	// I - File to write
     return (-1);
   }
 
-  cupsFilePuts(fp, "// PPD Compiler of cups-filters " PACKAGE_VERSION "\n\n");
+  cupsFilePuts(fp, "// PPD Compiler of libppd " PACKAGE_VERSION "\n\n");
 
   // Include standard files...
   cupsFilePuts(fp, "// Include necessary files...\n");

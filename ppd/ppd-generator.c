@@ -324,7 +324,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   cupsFilePrintf(fp, "*Manufacturer: \"%s\"\n", make);
   cupsFilePrintf(fp, "*ModelName: \"%s %s\"\n", make, model);
   cupsFilePrintf(fp, "*Product: \"(%s %s)\"\n", make, model);
-  cupsFilePrintf(fp, "*NickName: \"%s %s, %sdriverless, cups-filters %s\"\n",
+  cupsFilePrintf(fp, "*NickName: \"%s %s, %sdriverless, %s\"\n",
 		 make, model, (is_fax ? "Fax, " : ""), VERSION);
   cupsFilePrintf(fp, "*ShortNickName: \"%s %s\"\n", make, model);
 

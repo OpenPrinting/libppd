@@ -59,7 +59,7 @@ extern "C" {
 #  define PPD_MAX_LINE	256		// Maximum size of line + 1 for nul
 
 
-// **** New in cups-filters 2.0.0: Ovetaken from cups-driverd ****
+// **** New in libppd 2.0.0: Overtaken from cups-driverd ****
 
 //
 // PPD collection entry data
@@ -539,7 +539,7 @@ typedef struct ppd_file_s		// **** PPD File ****
 					// CUPS 1.5/macOS 10.7@ @private@
 } ppd_file_t;
 
-// **** New in cups-filters 2.0.0: Ovetaken from cups-driverd ****
+// **** New in libppd 2.0.0: Overtaken from cups-driverd ****
 typedef struct				// **** PPD record ****
 {
   time_t	mtime;			// Modification time
@@ -687,7 +687,7 @@ extern int		ppdPageSizeLimits(ppd_file_t *ppd,
 			                  ppd_size_t *minimum,
 					  ppd_size_t *maximum);
 
-// **** New in cups-filters 2.0.0: Renamed functions from original CUPS API ****
+// **** New in libppd 2.0.0: Renamed functions from original CUPS API ****
 extern int		ppdMarkOptions(ppd_file_t *ppd,
 				       int num_options,
 				       cups_option_t *options);
@@ -705,7 +705,7 @@ extern int		ppdResolveConflicts(ppd_file_t *ppd,
 					    int *num_options,
 					    cups_option_t **options);
 
-// **** New in cups-filters 2.0.0: Formerly CUPS-private functions ****
+// **** New in libppd 2.0.0: Formerly CUPS-private functions ****
 extern int		ppdConvertOptions(ipp_t *request,
 					  ppd_file_t *ppd,
 					  ppd_cache_t *pc,
@@ -790,16 +790,16 @@ extern void		ppdPwgUnppdizeName(const char *ppd, char *name,
 					   size_t namesize,
 					   const char *dashchars);
 
-// **** New in cups-filters 2.0.0: Overtaken from ippeveprinter ****
+// **** New in libppd 2.0.0: Overtaken from ippeveprinter ****
 extern ipp_t		*ppdLoadAttributes(ppd_file_t   *ppd);
 
-// **** New in cups-filters 2.0.0: Overtaken from ippeveps ****
+// **** New in libppd 2.0.0: Overtaken from ippeveps ****
 extern int		ppdGetOptions(cups_option_t **options,
 				      ipp_t *printer_attrs,
 				      ipp_t *job_attrs,
 				      ppd_file_t *ppd);
 
-// **** New in cups-filters 2.0.0: Added for pclmtoraster filter ****
+// **** New in libppd 2.0.0: Added for pclmtoraster filter ****
 extern int		ppdRasterMatchPPDSize(cups_page_header2_t *header,
 					      ppd_file_t *ppd,
 					      double margins[4],
@@ -807,7 +807,7 @@ extern int		ppdRasterMatchPPDSize(cups_page_header2_t *header,
 					      int *image_fit,
 					      int *landscape);
 
-// **** New in cups-filters 2.0.0: Ovetaken from cups-driverd ****
+// **** New in libppd 2.0.0: Overtaken from cups-driverd ****
 extern cups_array_t	*ppdCollectionListPPDs(cups_array_t *ppd_collections,
 					       int limit,
 					       int num_options,
@@ -822,17 +822,17 @@ extern int		ppdCollectionDumpCache(const char *filename,
 					       cf_logfunc_t log,
 					       void *ld);
 
-// **** New in cups-filters 2.0.0: For PPD retro-fit Printer Applications ****
+// **** New in libppd 2.0.0: For PPD retro-fit Printer Applications ****
 extern void             ppdCacheAssignPresets(ppd_file_t *ppd, ppd_cache_t *pc);
 
-// **** New in cups-filters 2.0.0: JCL for PDF printers, for
+// **** New in libppd 2.0.0: JCL for PDF printers, for
 //      ppdFilterPDFToPDF() and ppdFilterImageToPDF() ****
 extern int              ppdEmitJCLPDF(ppd_file_t *ppd, FILE *fp,
 				      int job_id, const char *user,
 				      const char *title,
 				      int hw_copies, bool hw_collate);
 
-// **** New in cups-filters 2.0.0: PPD file generator for CUPS queues for
+// **** New in libppd 2.0.0: PPD file generator for CUPS queues for
 //      driverless printers, compared to the one of CUPS this one supports
 //      also clusters composed of different printers as composed by
 //      cups-browsed, was ppdCreateFromIPP(2)() in libcupsfilters 1.x ****
@@ -849,7 +849,7 @@ char            *ppdCreatePPDFromIPP2(char *buffer, size_t bufsize,
 				      const char *default_cluster_color,
 				      char *status_msg, size_t status_msg_size);
 
-// **** New in cups-filters 2.0.0: Functions to load color profile data from
+// **** New in libppd 2.0.0: Functions to load color profile data from
 //      PPD files, from driver.h ****
 extern ppd_attr_t	*ppdFindColorAttr(ppd_file_t *ppd, const char *name,
 					  const char *colormodel,

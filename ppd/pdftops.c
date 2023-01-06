@@ -1035,7 +1035,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
       // Recommended solution is to not use Poppler as PDF renderer for
       // printing, especially if one uses a color PostScript printer and
       // wants to have the possibility to print jobs also in grayscale.
-      // See the use of the "pdftops-renderer" option in the README file.
+      // See the use of the "pdftops-renderer" option in the README.md file.
       // Example code for PostScript level1 workaround:
       // pdf_argv[1] = (char *)"-level1";
       // pdf_argv[pdf_argc++] = (char *)"-optimizecolorspace";
@@ -1048,7 +1048,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
 		   "grayscale/monochrome PostScript.");
       if (log) log(ld, CF_LOGLEVEL_WARN,
 		   "ppdFilterPDFToPS: Use \"pdftops-renderer\" option (see "
-		   "cups-filters README file) to use Ghostscript or MuPDF for "
+		   "cups-filters README.md file) to use Ghostscript or MuPDF for "
 		   "the PDF -> PostScript conversion.");
     }
     pdf_argv[pdf_argc++] = filename;

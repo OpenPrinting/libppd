@@ -137,6 +137,15 @@ PPDC_DATADIR="$datadir/ppdc"
 AC_DEFINE_UNQUOTED(PPDC_DATADIR, "$PPDC_DATADIR", [ppdc include dir])
 AC_SUBST(PPDC_DATADIR)
 
+# ===============================================
+# Check for whether we want to install genstrings
+# ===============================================
+AC_ARG_ENABLE([genstrings], [AS_HELP_STRING([--enable-genstrings], [enable genstrings, GNU gettext message generator for the libppd PPD Compiler.])],
+        [enable_genstrings="$enableval"],
+        [enable_genstrings="no"])
+AM_CONDITIONAL([ENABLE_GENSTRINGS],
+[test "x$enable_genstrings" != "xno"])
+
 # ======================
 # Check system functions
 # ======================
@@ -499,6 +508,7 @@ Build configuration:
 	Poppler's pdftops: ${enable_pdftops}
 	pdftops-path:    ${with_pdftops_path}
 	ppdc utilities:  ${enable_ppdc_utils}
+	genstrings:      ${enable_genstrings}
 	werror:          ${enable_werror}
 ==============================================================================
 ])

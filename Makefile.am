@@ -143,12 +143,15 @@ EXTRA_DIST += \
 
 if ENABLE_PPDC_UTILS
 pkgutils_PROGRAMS += \
-	genstrings \
 	ppdc \
 	ppdhtml \
 	ppdi \
 	ppdmerge \
 	ppdpo
+endif
+if ENABLE_GENSTRINGS
+pkgutils_PROGRAMS += \
+	genstrings
 endif
 
 genstrings_SOURCES = \

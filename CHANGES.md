@@ -2,14 +2,45 @@
 
 ## CHANGES IN V2.0b2 (TBA)
 
+- PPD file generator for driverless printing with CUPS: Support more
+  than 2 resolutions in Apple Raster/AirPrint. The `urf-supported` IPP
+  attribute was only parsed correctly when its `RS` part had only 1 or
+  2 and not more resolutions specified. This commit corrects now for
+  an arbitrary amount of resolutions, taking the lowest for "draft",
+  the highest for "high" and one in the middle for "normal" print
+  quality (PR #3).
+
+- Update cfCatalogLoad() calls for API change in libcupsfilters. In
+  libcupsfilters we have added language/translation support to the
+  `cfCatalog...()` API functions via
+  OpenPrinting/libcupsfilters#2. This changes the `cfCatalogLoad()`
+  calls in libppd (both in the PPD generator for driverless
+  printing). This commit updates them. For a quick solution we supply
+  NULL as language for now, resembling the old behavior. We look into
+  language support in the PPD generator later.
+
 - ppdFilterEmitJCL(): Added NULL check for PPD not being supplied.
   Classic CUPS filters created based on filter functions using
   ppdFilterCUPSWrapper() and also filter functions of libppd
   (ppdFilter...()) should also work without PPD file and not crash if
   no PPD file is supplied.
 
+- Make build of "genstrings" optional "genstrings" is only a
+  development tool for the PPD compiler, not a user tool, therefore we
+  make its build optional. It can be built via "make genstrings" or the
+  "./configure" option "--enable-genstrings".
+
+- Makefile.am: Include NOTICE in distribution tarball
+
 - configure.ac: Added "foreign" to to AM_INIT_AUTOMAKE() call. Makes
   automake not require a file named README.
+
+- Cleaned up .gitignore
+
+- Tons of fixes in the source code documentation: README.md, INSTALL,
+  DEVELOPING.md, CONTRIBUTING.md, COPYING, NOTICE, ... Adapted to the
+  libppd component, added links.
+
 
 ## CHANGES IN V2.0b1 (17th November 2022)
 

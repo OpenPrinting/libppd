@@ -1,6 +1,6 @@
-# CHANGES - libppd v2.0b1 - 2022-11-17
+# CHANGES - libppd v2.0b2 - 2023-01-08
 
-## CHANGES IN V2.0b2 (TBA)
+## CHANGES IN V2.0b2 (8th January 2023)
 
 - PPD file generator for driverless printing with CUPS: Support more
   than 2 resolutions in Apple Raster/AirPrint. The `urf-supported` IPP

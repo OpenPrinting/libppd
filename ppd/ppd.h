@@ -878,6 +878,10 @@ extern cf_cmyk_t	*ppdCMYKLoad(ppd_file_t *ppd,
 				    cf_logfunc_t log,
 				    void *ld);
 
+// **** New in libppd 2.0.0: Function to check the correctness
+//      of PPD files, originally cupstestppd ****
+extern int  ppdTest(int  argc, char *argv[]);
+
 
 //
 // C++ magic...

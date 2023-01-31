@@ -5,7 +5,7 @@
 - COPYING, NOTICE: Simplification for autotools-generated files
   autotools-generated files can be included under the license of the
   upstream code, and FSF copyright added to upstream copyright
-  list. Simplified debian/copyright appropriately.
+  list. Simplified COPYING appropriately.
 
 - Makefile.am: Include LICENSE in distribution tarball
 

@@ -880,8 +880,13 @@ extern cf_cmyk_t	*ppdCMYKLoad(ppd_file_t *ppd,
 
 // **** New in libppd 2.0.0: Function to check the correctness
 //      of PPD files, originally cupstestppd ****
-extern int  ppdTest(int  argc, char *argv[]);
-
+extern int              ppdTest(int ignore_pc_filenames, int ignore_filters,
+                  int ignore_profiles, int ignore_none, int ignore_all, char *rootdir,
+                  int warn_none, int warn_constraints, int warn_defaults,
+                  int warn_duplex, int warn_filters, int warn_profiles, int warn_sizes,
+                  int warn_translations, int warn_all, int help, int verbose, int relaxed,
+                  int q_with_v, int v_with_q, int root_present, int files,
+                  cups_array_t *file_array, cups_array_t *stdin_array);
 
 //
 // C++ magic...

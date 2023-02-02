@@ -306,15 +306,6 @@ int ppdTest(int ignore_pc_filenames, int ignore_filters,
 				cupsArrayNext(stdin_array)
 			}
 			else
-
-
-
-
-			// for i in file_array where argv[i] can be replaced by i
-
-
-
-
 			{
 				file = cupsArrayCurrent(file_array)
 				/*
@@ -1704,25 +1695,7 @@ int ppdTest(int ignore_pc_filenames, int ignore_filters,
 		usage();
 	_ppdArrayAddStrings(status)
 
-
-
-
-
-
-
-
 	return (output);
-
-
-
-
-
-
-
-
-
-
-
 }
 
 

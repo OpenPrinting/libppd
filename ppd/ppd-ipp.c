@@ -858,7 +858,7 @@ ppdLoadAttributes(
   // media-ready
   attr = ippAddCollections(attrs, IPP_TAG_PRINTER, "media-col-database",
 			   pc->num_sizes, NULL);
-  if (strncasecmp(ppd_size->name, "Custom", 6) == 0)
+  if (ppd_size && strncasecmp(ppd_size->name, "Custom", 6) == 0)
   {
     // media-col-default - Custom size
     int w = (int)(ppd_size->width / 72.0 * 2540.0);

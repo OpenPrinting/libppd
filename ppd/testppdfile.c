@@ -1,6 +1,7 @@
 #include <ppd/ppd.h>
 #include <cups/array.h>
 #include <ppd/array-private.h>
+#include <stdio.h>
 
 /*
  * 'main()' - Wrapper function for ppdTest().
@@ -10,7 +11,7 @@ int main(int argc,	   /* I - Number of command-line args */
 		 char *argv[]) /* I - Command-line arguments */
 {
 
-	int i, j, k, m, n; /* Looping vars */
+	int i; /* Looping vars */
 	int verbose;	   /* Want verbose output? */
 	int ignore_pc_filenames;  /* Whether to ignore filename */  
 	int ignore_filters;  /* Whether to ignore filters */
@@ -36,6 +37,9 @@ int main(int argc,	   /* I - Number of command-line args */
 	cups_array_t *file_array;  /* Array consisting of filenames of the ppd files to be checked */
 	cups_array_t *stdin_array;  /* Array consisting of when "-" is used in the command line without supplying further argument */
 	int files;			   /* Number of files */
+	cups_array_t	*output;
+	int len_output;  /* Length of the output array */
+	char[256] txt;
 
 	verbose = 0;
 	ignore_pc_filenames = 0;
@@ -167,9 +171,23 @@ int main(int argc,	   /* I - Number of command-line args */
 			}
 		}
 
-	ppdTest(ignore_pc_filenames, ignore_filters,
+	output = ppdTest(ignore_pc_filenames, ignore_filters,
 			ignore_profiles, ignore_none, ignore_all, rootdir, warn_none, warn_constra, warn_defaults,
 			warn_duplex, warn_filters, warn_profiles, warn_sizes, warn_translations,
 			warn_all, help, verbose, relaxed, q_with_v, v_with_q, root_present,
 			files, file_array, stdin_array);
+
+	len_output = cupsArrayCount(output);
+	
+	for (int j = 1, j<= len_output, j++){
+		txt = cupsArrayCurrent(output);
+		puts(txt);
+		cupsArrayNext(output);
+
+	}
+	txt = cupsArrayCurrent(output);
+	puts(txt);
+
+	return(0);
+	
 } 

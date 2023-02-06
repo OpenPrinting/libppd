@@ -1,3 +1,16 @@
+/*
+ * Wrapper function to check correctness of PPD files.
+ *
+ * Copyright © 2021-2022 by OpenPrinting
+ *
+ * Licensed under Apache License v2.0.  See the file "LICENSE" for more
+ * information.
+ */
+
+/*
+ * Include necessary headers...
+ */
+
 #include <ppd/ppd.h>
 #include <cups/array.h>
 #include <ppd/array-private.h>
@@ -7,187 +20,159 @@
  * 'main()' - Wrapper function for ppdTest().
  */
 
+
 int main(int argc,	   /* I - Number of command-line args */
 		 char *argv[]) /* I - Command-line arguments */
 {
 
-	int i; /* Looping vars */
-	int verbose;	   /* Want verbose output? */
-	int ignore_pc_filenames;  /* Whether to ignore filename */  
-	int ignore_filters;  /* Whether to ignore filters */
-	int ignore_profiles;  /* Whether to ignore profiles */
-	int ignore_none;  /* Whether to ignore nothing */
-	int ignore_all;  /* Whether to ignore everything */
-	int root_present;  /* Whether root directory is specified */
-	char *rootdir;  /* What is the root directory if mentioned */
-	int warn_none;  /* Whether to warn about nothing */
-	int warn_constraints;  /* Whether to warn about constraints */
-	int warn_defaults;  /* Whether to warn about defaults */
-	int warn_duplex;  /* Whether to warn about duplex */
-	int warn_filters;  /* Whether to warn about filters */
-	int warn_profiles;  /* Whether to warn about profiles */
-	int warn_sizes;  /* Whether to warn about sizes */
-	int warn_translations;  /* Whether to warn about translations */
-	int warn_all;  /* Whether to warn about everything */
-	int help;  /* Whether to run help dialog */
-	char *opt; /* Option character */
-	int q_with_v;  /* If q is used together with v in the command line */
-	int v_with_q;  /* If v is used together with q in the command line */
-	int relaxed;  /* If relaxed mode is to be used */
-	cups_array_t *file_array;  /* Array consisting of filenames of the ppd files to be checked */
-	cups_array_t *stdin_array;  /* Array consisting of when "-" is used in the command line without supplying further argument */
-	int files;			   /* Number of files */
-	cups_array_t	*output;
-	int len_output;  /* Length of the output array */
-	char[256] txt;
+  int i; /* Looping vars */
+  int verbose;	   /* Want verbose output? */
+  int root_present;  /* Whether root directory is specified */
+  char *rootdir;  /* What is the root directory if mentioned */
+  int help;  /* Whether to run help dialog */
+  char *opt; /* Option character */
+  int q_with_v;  /* If q is used together with v in the command line */
+  int v_with_q;  /* If v is used together with q in the command line */
+  int relaxed;  /* If relaxed mode is to be used */
+  cups_array_t *file_array;  /* Array consisting of filenames of the ppd files to be checked */
+  int files;			   /* Number of files */
+  cups_array_t	*output;
+  int len_output;  /* Length of the output array */
+  char[256] txt;
+  ignore_parameters_t ignore_params;
+  warn_parameters_t warn_params;
 
-	verbose = 0;
-	ignore_pc_filenames = 0;
-	ignore_filters = 0;
-	ignore_profiles = 0;
-	ignore_none = 0;
-	ignore_all = 0;
-	root_present = 0;
-	warn_none = 0;
-	warn_constraints = 0;
-	warn_defaults = 0;
-	warn_duplex = 0;
-	warn_filters = 0;
-	warn_profiles = 0;
-	warn_sizes = 0;
-	warn_translations = 0;
-	warn_all = 0;
-	help = 0;
-	relaxed = 0;
-	q_with_v = 0;
-	v_with_q = 0;
-	files=0;
 
-	for (i = 1; i < argc; i++)
-		if (!strcmp(argv[i], "--help"))
-			help = 1;
-		else if (argv[i][0] == '-' && argv[i][1])
-		{
-			for (opt = argv[i] + 1; *opt; opt++)
-				switch (*opt)
-				{
-				case 'I': /* Ignore errors */
-					i++;
+  verbose = 0;
+  root_present = 0;
+  help = 0;
+  relaxed = 0;
+  q_with_v = 0;
+  v_with_q = 0;
+  files=0;
+  ignore_params = {0,0,0,0,0};
+  warn_params = {0,0,0,0,0,0,0,0,0};
 
-					if (i >= argc)
-						help = 1;
+  for (i = 1; i < argc; i++)
+    if (!strcmp(argv[i], "--help"))
+    help = 1;
+  else if (argv[i][0] == '-' && argv[i][1])
+  {
+    for (opt = argv[i] + 1; *opt; opt++)
+      switch (*opt)
+      {
+        case 'I': /* ignore_params errors */
+            i++;
 
-					if (!strcmp(argv[i], "none"))
-						ignore_none = 1;
-					else if (!strcmp(argv[i], "filename"))
-						ignore_pc_filenames = 1;
-					else if (!strcmp(argv[i], "filters"))
-						ignore_filters = 1;
-					else if (!strcmp(argv[i], "profiles"))
-						ignore_profiles = 1;
-					else if (!strcmp(argv[i], "all"))
-						ignore_all = 1;
-					else
-						help = 1;
-					break;
+            if (i >= argc)
+              help = 1;
 
-				case 'R': /* Alternate root directory */
-					i++;
+            if (!strcmp(argv[i], "none"))
+              ignore_params.none = 1;
+            else if (!strcmp(argv[i], "filename"))
+              ignore_params.pc_filenames = 1;
+            else if (!strcmp(argv[i], "filters"))
+              ignore_params.filters = 1;
+            else if (!strcmp(argv[i], "profiles"))
+              ignore_params.profiles = 1;
+            else if (!strcmp(argv[i], "all"))
+              ignore_params.all = 1;
+            else
+              help = 1;
+            break;
 
-					if (i >= argc)
-						help = 1;
+        case 'R': /* Alternate root directory */
+            i++;
 
-					rootdir = argv[i];
-					root_present = 1;
-					break;
+            if (i >= argc)
+              help = 1;
 
-				case 'W': /* Turn errors into warnings */
-					i++;
+              rootdir = argv[i];
+              root_present = 1;
+              break;
 
-					if (i >= argc)
-						help = 1;
+        case 'W': /* Turn errors into warn_paramsings */
+            i++;
 
-					if (!strcmp(argv[i], "none"))
-						warn_none = 1;
-					else if (!strcmp(argv[i], "constraints"))
-						warn_constraints = 1;
-					else if (!strcmp(argv[i], "defaults"))
-						warn_defaults = 1;
-					else if (!strcmp(argv[i], "duplex"))
-						warn_duplex = 1;
-					else if (!strcmp(argv[i], "filters"))
-						warn_filters = 1;
-					else if (!strcmp(argv[i], "profiles"))
-						warn_profiles = 1;
-					else if (!strcmp(argv[i], "sizes"))
-						warn_sizes = 1;
-					else if (!strcmp(argv[i], "translations"))
-						warn_translations = 1;
-					else if (!strcmp(argv[i], "all"))
-						warn_all = 1;
-					else
-						help = 1;
-					break;
+            if (i >= argc)
+              help = 1;
 
-				case 'q': /* Quiet mode */
+            if (!strcmp(argv[i], "none"))
+              warn_params.none = 1;
+            else if (!strcmp(argv[i], "constraints"))
+              warn_params.constraints = 1;
+            else if (!strcmp(argv[i], "defaults"))
+              warn_params.defaults = 1;
+            else if (!strcmp(argv[i], "duplex"))
+              warn_params.duplex = 1;
+            else if (!strcmp(argv[i], "filters"))
+              warn_params.filters = 1;
+            else if (!strcmp(argv[i], "profiles"))
+              warn_params.profiles = 1;
+            else if (!strcmp(argv[i], "sizes"))
+              warn_params.sizes = 1;
+            else if (!strcmp(argv[i], "translations"))
+              warn_params.translations = 1;
+            else if (!strcmp(argv[i], "all"))
+              warn_params.all = 1;
+            else
+              help = 1;
+            break;
 
-					if (verbose > 0)
-					{
-						q_with_v = 1;
-					}
+        case 'q': /* Quiet mode */
 
-					verbose--;
-					break;
+            if (verbose > 0)
+            {
+              q_with_v = 1;
+            }
+            verbose--;
+            break;
 
-				case 'r': /* Relaxed mode */
-					relaxed = 1
+        case 'r': /* Relaxed mode */
+            relaxed = 1
 
-				case 'v': /* Verbose mode */
-					if (verbose < 0)
-					{
-						v_with_q = 1
-					}
+        case 'v': /* Verbose mode */
+            if (verbose < 0)
+            {
+              v_with_q = 1
+            }
 
-					verbose++;
-					break;
+            verbose++;
+            break;
 
-				default:
-					help = 1;
-				}
-		}
-		else
-		{			
-			files++;
+        default:
+            help = 1;
+      }
+  }
+  else
+  {			
+    files++;
 
-			if (argv[i][0] == '-')
-			{
-				_ppdArrayAddStrings(file_array,"");
-				_ppdArrayAddStrings(stdin_array,argv[i]);
-			}
-			else
-			{
-				_ppdArrayAddStrings(file_array,argv[i]);
-				_ppdArrayAddStrings(stdin_array,"");
-			}
-		}
+    if (argv[i][0] == '-')
+    {
+      _ppdArrayAddStrings(file_array,"");
+    }
+    else
+    {
+      _ppdArrayAddStrings(file_array,argv[i]);
+    }
+  }
 
-	output = ppdTest(ignore_pc_filenames, ignore_filters,
-			ignore_profiles, ignore_none, ignore_all, rootdir, warn_none, warn_constra, warn_defaults,
-			warn_duplex, warn_filters, warn_profiles, warn_sizes, warn_translations,
-			warn_all, help, verbose, relaxed, q_with_v, v_with_q, root_present,
-			files, file_array, stdin_array);
+  output = ppdTest(ignore_params, warn_params, rootdir, help, verbose,
+                   relaxed, q_with_v, v_with_q, root_present, files, file_array);
 
-	len_output = cupsArrayCount(output);
+  len_output = cupsArrayCount(output);
 	
-	for (int j = 1, j<= len_output, j++){
-		txt = cupsArrayCurrent(output);
-		puts(txt);
-		cupsArrayNext(output);
+  for (int j = 1, j<= len_output, j++)
+  {
+    txt = cupsArrayCurrent(output);
+    puts(txt);
+    cupsArrayNext(output);
 
-	}
-	txt = cupsArrayCurrent(output);
-	puts(txt);
+  }
+  txt = cupsArrayCurrent(output);
+  puts(txt);
 
-	return(0);
+  return(0);
 	
-} 
+}

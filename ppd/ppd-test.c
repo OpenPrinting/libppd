@@ -1,13 +1,10 @@
 /*
- * PPD test program for CUPS.
+ * PPD tset program to check correctness of PPD Files.
  *
- * Copyright © 2007-2018 by Apple Inc.
- * Copyright © 1997-2007 by Easy Software Products, all rights reserved.
+ * Copyright © 2021-2022 by OpenPrinting
  *
  * Licensed under Apache License v2.0.  See the file "LICENSE" for more
  * information.
- *
- * PostScript is a trademark of Adobe Systems, Inc.
  */
 
 /*
@@ -111,552 +108,561 @@ static int valid_utf8(const char *s);
  * 'ppdTest()' - Test the correctness of PPD files.
  */
 
-cups_array_t *ppdTest(int ignore_pc_filenames, int ignore_filters,
-			int ignore_profiles, int ignore_none, int ignore_all, char *rootdir, int warn_none, int warn_constraints, int warn_defaults,
-			int warn_duplex, int warn_filters, int warn_profiles, int warn_sizes, int warn_translations,
-			int warn_all, int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
-			int files, cups_array_t *file_array, cups_array_t *stdin_array)
+cups_array_t *ppdTest(ignore_parameters_t ignore_params, warn_parameters_t warn_params , char *rootdir,
+			int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
+			int files, cups_array_t *file_array)
 {
-	int i, j, k, m, n;	   /* Looping vars */
-	size_t len;			   /* Length of option name */
-	const char *ptr;	   /* Pointer into string */
-	cups_file_t *fp;	   /* PPD file */
-	int warn;			   /* Which errors to just warn about */
-	int ignore;			   /* Which errors to ignore */
-	int status;			   /* Exit status */
-	int errors;			   /* Number of conformance errors */
-	int ppdversion;		   /* PPD spec version in PPD file */
-	ppd_status_t error;	   /* Status of ppdOpen*() */
-	int line;			   /* Line number for error */
-	char *file;
-	char *root;			   /* Root directory */
-	char str_format[256];
-	int xdpi,			   /* X resolution */
-		ydpi;			   /* Y resolution */
-	ppd_file_t *ppd;	   /* PPD file record */
-	ppd_attr_t *attr;	   /* PPD attribute */
-	ppd_size_t *size;	   /* Size record */
-	ppd_group_t *group;	   /* UI group */
-	ppd_option_t *option;  /* Standard UI option */
-	ppd_group_t *group2;   /* UI group */
-	ppd_option_t *option2; /* Standard UI option */
-	ppd_choice_t *choice;  /* Standard UI option choice */
-	struct lconv *loc;	   /* Locale data */
-	static char *uis[] = {"BOOLEAN", "PICKONE", "PICKMANY"};
-	static char *sections[] = {"ANY", "DOCUMENT", "EXIT",
+  int i, j, k, m, n;	   /* Looping vars */
+  size_t len;			   /* Length of option name */
+  const char *ptr;	   /* Pointer into string */
+  cups_file_t *fp;	   /* PPD file */
+  int warn;			   /* Which errors to just warn about */
+  int ignore;			   /* Which errors to ignore */
+  int status;			   /* Exit status */
+  int errors;			   /* Number of conformance errors */
+  int ppdversion;		   /* PPD spec version in PPD file */
+  ppd_status_t error;	   /* Status of ppdOpen*() */
+  int line;			   /* Line number for error */
+  char *file;
+  char *root;			   /* Root directory */
+  char str_format[256];
+  int xdpi,			   /* X resolution */
+	  ydpi;			   /* Y resolution */
+  ppd_file_t *ppd;	   /* PPD file record */
+  ppd_attr_t *attr;	   /* PPD attribute */
+  ppd_size_t *size;	   /* Size record */
+  ppd_group_t *group;	   /* UI group */
+  ppd_option_t *option;  /* Standard UI option */
+  ppd_group_t *group2;   /* UI group */
+  ppd_option_t *option2; /* Standard UI option */
+  ppd_choice_t *choice;  /* Standard UI option choice */
+  struct lconv *loc;	   /* Locale data */
+  static char *uis[] = {"BOOLEAN", "PICKONE", "PICKMANY"};
+  static char *sections[] = {"ANY", "DOCUMENT", "EXIT",
 							   "JCL", "PAGE", "PROLOG"};
-	cups_array_t *output; /* Output cups array */
-	 cf_logfunc_t log,		// I - Log function
-	 void         *ld		// I - Log function data
+  cups_array_t *output; /* Output cups array */
+  cf_logfunc_t log,		// I - Log function
+  void         *ld		// I - Log function data
+  loc = localeconv();
 
-	loc = localeconv();
+  /*
+   * Display PPD files for each file listed on the command-line...
+   */
 
-	/*
-	 * Display PPD files for each file listed on the command-line...
-	 */
+  ppdSetConformance(PPD_CONFORM_STRICT);
 
-	ppdSetConformance(PPD_CONFORM_STRICT);
+  ppd = NULL;
+  files = 0;
+  status = ERROR_NONE;
+  root = "";
+  warn = WARN_NONE;
+  ignore = WARN_NONE;
 
-	ppd = NULL;
-	files = 0;
-	status = ERROR_NONE;
-	root = "";
-	warn = WARN_NONE;
-	ignore = WARN_NONE;
+  if (ignore_params.pc_filenames == 1)
+  {
 
+    ignore |= WARN_FILENAME;
 
-	if (ignore_pc_filenames == 1)
-	{
+  } 
+  else if (ignore_params.filters == 1)
+  {
 
-		ignore |= WARN_FILENAME;
+    ignore |= WARN_FILTERS;
 
-	}
-	else if (ignore_filters == 1)
-	{
+  }
+  if (ignore_params.profiles == 1)
+  {
 
-		ignore |= WARN_FILTERS;
+    ignore |= WARN_PROFILES;
 
-	}
-	if (ignore_profiles == 1)
-	{
+  }
+  if (ignore_params.none == 1)
+  {
 
-		ignore |= WARN_PROFILES;
+    ignore = WARN_NONE;
 
-	}
-	if (ignore_none == 1)
-	{
+  }
+  if (ignore_params.all == 1)
+  {
+  
+    ignore = WARN_FILTERS | WARN_PROFILES;
+  
+  }
+  if (root_present == 1)
+  {
+  
+    root = rootdir;
+  
+  }
+  if (warn_params.none == 1)
+  {
+  
+    warn = WARN_NONE;
+  
+  }
+  if (warn_params.constraints == 1)
+  {
+  
+    warn |= WARN_CONSTRAINTS;
+  
+  }
+  if (warn_params.defaults == 1)
+  {
+  
+    warn |= WARN_DEFAULTS;
+  
+  }
+  if (warn_params.duplex == 1)
+  {
+  
+    warn |= WARN_DUPLEX;
+  
+  }
+  if (warn_params.filters == 1)
+  {
+  
+    warn |= WARN_FILTERS;
+  
+  }
+  if (warn_params.profiles == 1)
+  {
+  
+    warn |= WARN_PROFILES;
+  
+  }
+  if (warn_params.sizes == 1)
+  {
+  
+    warn |= WARN_SIZES;
+  
+  }
+  if (warn_params.translations == 1)
+  {
+  
+    warn |= WARN_TRANSLATIONS;
+  
+  }
+  if (warn_params.all == 1)
+  {
+  
+    warn |= WARN_ALL;
+  
+  }
+  if (help == 1)
+  {
+  
+    usage();
+  
+  }
+  if (relaxed == 1)
+  {
+  
+    ppdSetConformance(PPD_CONFORM_RELAXED);
+  
+  }
+  if (q_with_v == 1)
+  {
+  
+    _ppdArrayAddStrings(output,
+						"testppdfile: The -q option is incompatible with the -v option.");
+    log(ld, CF_LOGLEVEL_ERROR,
+						"testppdfile: The -q option is incompatible with the -v option.");
+    return (1);
 
-		ignore = WARN_NONE;
+  }
+  if (v_with_q == 1)
+  {
 
-	}
-	if (ignore_all == 1)
-	{
-
-		ignore = WARN_FILTERS | WARN_PROFILES;
-
-	}
-	if (root_present == 1)
-	{
-
-		root = rootdir;
-
-	}
-	if (warn_none == 1)
-	{
-
-		warn = WARN_NONE;
-
-	}
-	if (warn_constraints == 1)
-	{
-
-		warn |= WARN_CONSTRAINTS;
-
-	}
-	if (warn_defaults == 1)
-	{
-
-		warn |= WARN_DEFAULTS;
-
-	}
-	if (warn_duplex == 1)
-	{
-
-		warn |= WARN_DUPLEX;
-
-	}
-	if (warn_filters == 1)
-	{
-
-		warn |= WARN_FILTERS;
-
-	}
-	if (warn_profiles == 1)
-	{
-
-		warn |= WARN_PROFILES;
-
-	}
-	if (warn_sizes == 1)
-	{
-
-		warn |= WARN_SIZES;
-
-	}
-	if (warn_translations == 1)
-	{
-
-		warn |= WARN_TRANSLATIONS;
-
-	}
-	if (warn_all == 1)
-	{
-
-		warn |= WARN_ALL;
-
-	}
-	if (help == 1)
-	{
-
-		usage();
-
-	}
-	if (relaxed == 1)
-	{
-
-		ppdSetConformance(PPD_CONFORM_RELAXED);
-
-	}
-	if (q_with_v == 1)
-	{
-
-		_ppdArrayAddStrings(output,
-									 "testppdfile: The -q option is incompatible with the -v option.");
-		log(ld, CF_LOGLEVEL_ERROR,
-									 "testppdfile: The -q option is incompatible with the -v option.");
-						return (1);
-
-	}
-	if (v_with_q == 1)
-	{
-
-		_ppdArrayAddStrings(output,
-									 "testppdfile: The -v option is incompatible with the -q option.");
-		log(ld, CF_LOGLEVEL_ERROR,
-									 "testppdfile: The -v option is incompatible with the -q option.");
+    _ppdArrayAddStrings(output,
+						"testppdfile: The -v option is incompatible with the -q option.");
+    log(ld, CF_LOGLEVEL_ERROR,
+						"testppdfile: The -v option is incompatible with the -q option.");
 		
-						return (1);
+    return (1);
 
+  }
+
+  /*
+   * Open the PPD file...
+   */
+
+  if (files && verbose >= 0)
+    _ppdArrayAddStrings(output, "");
+    files++;
+    for (i = 1; i < files; i++)
+      if (cupsArrayCurrent(file_array)=="")
+      {
+       /*
+        * Read from stdin...
+        */
+  
+      ppd = _ppdOpen(cupsFileStdin(), _PPD_LOCALIZATION_ALL);
+  
+      if (verbose >= 0)
+	  {
+        sprintf(str_format,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
+        _ppdArrayAddStrings(output, str_format);
+        log(ld, CF_LOGLEVEL_DEBUG,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
+	  }
+	  cupsArrayNext(file_array);
+  }
+  else
+  {
+    file = cupsArrayCurrent(file_array);
+    /*
+     * Read from a file...
+     */
+
+    if (verbose >= 0)
+	{
+	  sprintf(str_format,"%s:", file);
+      _ppdArrayAddStrings(output, str_format);
+      log(ld, CF_LOGLEVEL_DEBUG,"%s:", file);
+      printf("%s:", file);
+	}
+    if ((fp = cupsFileOpen(file, "r")) != NULL)
+    {
+      ppd = _ppdOpen(fp, _PPD_LOCALIZATION_ALL);
+      cupsFileClose(fp);
+    }
+    else
+    {
+      status = ERROR_FILE_OPEN;
+
+      if (verbose >= 0)
+      {
+        _ppdArrayAddStrings(output, " FAIL");
+        log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+        sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
+							                 "line %d.",strerror(errno), 0);
+        _ppdArrayAddStrings(output, str_format);
+        log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
+							                  "line %d.",strerror(errno), 0);
+        continue;
+      }
+    }
+		cupsArrayNext(file_array);
+  }
+
+  if (ppd == NULL)
+  {
+    error = ppdLastError(&line);
+
+    if (error <= PPD_ALLOC_ERROR)
+    {
+      status = ERROR_FILE_OPEN;
+
+      if (verbose >= 0)
+      {
+        _ppdArrayAddStrings(output, " FAIL");
+        log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+		sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
+										  "line %d.", strerror(errno), 0);
+		_ppdArrayAddStrings(output, str_format);
+		log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
+											  "line %d.", strerror(errno), 0);
+	  }
+    }
+	else
+	{
+      status = ERROR_PPD_FORMAT;
+      if (verbose >= 0)
+      {
+        _ppdArrayAddStrings(output, " FAIL");
+        log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+        sprintf(str_format,"      **FAIL**  Unable to open PPD file - "
+						      "%s on line %d.",	ppdErrorString(error), line);
+        _ppdArrayAddStrings(output, str_format);
+        log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - "
+				           "%s on line %d.",	ppdErrorString(error), line);
+
+        switch (error)
+        {
+          case PPD_MISSING_PPDADOBE4:
+              _ppdArrayAddStrings(output,
+			  	      "                REF: Page 42, section 5.2.");
+              log(ld, CF_LOGLEVEL_ERROR,
+                      "                REF: Page 42, section 5.2.");
+              break;
+          case PPD_MISSING_VALUE:
+              _ppdArrayAddStrings(output,
+				     "                REF: Page 20, section 3.4.");
+              log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Page 20, section 3.4.");
+			  break;
+		  case PPD_BAD_OPEN_GROUP:
+		  case PPD_NESTED_OPEN_GROUP:
+              _ppdArrayAddStrings(output,
+					 "                REF: Pages 45-46, section 5.2.");
+		  log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Pages 45-46, section 5.2.");
+		      break;
+		  case PPD_BAD_OPEN_UI:
+          case PPD_NESTED_OPEN_UI:
+              _ppdArrayAddStrings(output,
+					 "                REF: Pages 42-45, section 5.2.");
+		      log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Pages 42-45, section 5.2.");
+		      break;
+		  case PPD_BAD_ORDER_DEPENDENCY:
+		      _ppdArrayAddStrings(output,
+					 "                REF: Pages 48-49, section 5.2.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Pages 48-49, section 5.2.");
+			  break;
+		  case PPD_BAD_UI_CONSTRAINTS:
+		      _ppdArrayAddStrings(output,
+					 "                REF: Pages 52-54, section "
+										                    "5.2.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Pages 52-54, section "
+										                     "5.2.");
+			  break;
+		  case PPD_MISSING_ASTERISK:
+			  _ppdArrayAddStrings(output,
+					"                REF: Page 15, section "
+										                      "3.2.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					"                REF: Page 15, section "
+										                      "3.2.");
+			  break;
+		  case PPD_LINE_TOO_LONG:
+			  _ppdArrayAddStrings(output,
+					"                REF: Page 15, section "
+										                       "3.1.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					"                REF: Page 15, section "
+										                        "3.1.");
+			  break;
+		  case PPD_ILLEGAL_CHARACTER:
+			  _ppdArrayAddStrings(output,
+					"                REF: Page 15, section "
+										                        "3.1.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					 "                REF: Page 15, section "
+										                        "3.1.");
+			  break;
+		  case PPD_ILLEGAL_MAIN_KEYWORD:
+			  _ppdArrayAddStrings(output,
+					"                REF: Pages 16-17, section "
+										                        "3.2.");
+		      log(ld, CF_LOGLEVEL_ERROR,
+	                "                REF: Pages 16-17, section "
+										                        "3.2.");
+			  break;
+		  case PPD_ILLEGAL_OPTION_KEYWORD:
+			  _ppdArrayAddStrings(output,
+					"                REF: Page 19, section "
+						                                        "3.3.");
+			  log(ld, CF_LOGLEVEL_ERROR,
+					"                REF: Page 19, section "
+										                        "3.3.");
+              break;
+          case PPD_ILLEGAL_TRANSLATION:
+              _ppdArrayAddStrings(output,
+					"                REF: Page 27, section "
+										                        "3.5.");
+              log(ld, CF_LOGLEVEL_ERROR,
+					"                REF: Page 27, section "
+										                        "3.5.");
+              break;
+          default:
+              break;
+        }
+
+		check_basics(file);
+      }
+    }
+
+    continue;
+  }
+
+  /*
+   * Show the header and then perform basic conformance tests (limited
+   * only by what the CUPS PPD functions actually load...)
+   */
+
+  errors = 0;
+  ppdversion = 43;
+
+  if (verbose > 0)
+    _ppdArrayAddStrings(output,
+			"\n    DETAILED CONFORMANCE TEST RESULTS");
+    log(ld, CF_LOGLEVEL_DEBUG,
+			"\n    DETAILED CONFORMANCE TEST RESULTS");
+
+  if ((attr = ppdFindAttr(ppd, "FormatVersion", NULL)) != NULL &&
+				attr->value)
+    ppdversion = (int)(10 * _cupsStrScand(attr->value, NULL, loc) + 0.5);
+
+  if ((attr = ppdFindAttr(ppd, "cupsFilter2", NULL)) != NULL)
+  {
+    do
+    {
+      if (strstr(attr->value, "application/vnd.cups-raster"))
+      {
+        if (!test_raster(ppd, verbose))
+          errors++;
+          break;
+      }
+    }
+    while ((attr = ppdFindNextAttr(ppd, "cupsFilter2", NULL)) != NULL);
+  }
+  else
+  {
+    for (j = 0; j < ppd->num_filters; j++)
+      if (strstr(ppd->filters[j], "application/vnd.cups-raster"))
+      {
+        if (!test_raster(ppd, verbose))
+          errors++;
+          break;
+      }
+  }
+
+  /*
+   * Look for default keywords with no matching option...
+   */
+
+  if (!(warn & WARN_DEFAULTS))
+    errors = check_defaults(ppd, errors, verbose, 0);
+
+  if ((attr = ppdFindAttr(ppd, "DefaultImageableArea", NULL)) == NULL)
+  {
+    if (verbose >= 0)
+    {
+      if (!errors && !verbose)
+	  {
+        _ppdArrayAddStrings(output, " FAIL");
+        log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+	  	_ppdArrayAddStrings(output,
+			    "      **FAIL**  REQUIRED DefaultImageableArea\n"
+				              	  "                REF: Page 102, section 5.15.");
+        log(ld, CF_LOGLEVEL_ERROR,
+				"      **FAIL**  REQUIRED DefaultImageableArea\n"
+								   "                REF: Page 102, section 5.15.");
+      }
 	}
 
-			/*
-			 * Open the PPD file...
-			 */
+    errors++;
+  }
+  else if (ppdPageSize(ppd, attr->value) == NULL && strcmp(attr->value, "Unknown"))
+  {
+    if (verbose >= 0)
+    {
+      if (!errors && !verbose)
+	  {
+        _ppdArrayAddStrings(output, " FAIL");
+        log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-			if (files && verbose >= 0)
-				_ppdArrayAddStrings(output, "");
+        sprintf(str_format,"      **FAIL**  Bad DefaultImageableArea %s\n"
+                                            "                REF: Page 102, section 5.15.",
+									                                            attr->value);
+        _ppdArrayAddStrings(output, str_format);
+        log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultImageableArea %s\n"
+									        "                REF: Page 102, section 5.15.",
+									                                            attr->value);
+      }
+	}
 
-			files++;
-			for (i = 1; i < files; i++)
-			if (cupsArrayCurrent(stdin_array)!="")
-			{
-				/*
-				 * Read from stdin...
-				 */
+    errors++;
+  }
+  else
+  {
+    if (verbose > 0)
+    {
+      _ppdArrayAddStrings(output, "        PASS    DefaultImageableArea");
+      log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultImageableArea");
+    }
 
-				ppd = _ppdOpen(cupsFileStdin(), _PPD_LOCALIZATION_ALL);
-
-				if (verbose >= 0)
-					sprintf(str_format,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
-					_ppdArrayAddStrings(output, str_format);
-					log(ld, CF_LOGLEVEL_DEBUG,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
-				cupsArrayNext(file_array)
-				cupsArrayNext(stdin_array)
-			}
-			else
-			{
-				file = cupsArrayCurrent(file_array)
-				/*
-				 * Read from a file...
-				 */
-
-				if (verbose >= 0)
-					printf("%s:", file);
-
-				if ((fp = cupsFileOpen(file, "r")) != NULL)
-				{
-					ppd = _ppdOpen(fp, _PPD_LOCALIZATION_ALL);
-					cupsFileClose(fp);
-				}
-				else
-				{
-					status = ERROR_FILE_OPEN;
-
-					if (verbose >= 0)
-					{
-						_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-						sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
-										  "line %d.",strerror(errno), 0);
-						_ppdArrayAddStrings(output, str_format);
-						log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
-										  "line %d.",strerror(errno), 0);
-						continue;
-					}
-				}
-				cupsArrayNext(file_array)
-				cupsArrayNext(stdin_array)
-			}
-
-			if (ppd == NULL)
-			{
-				error = ppdLastError(&line);
-
-				if (error <= PPD_ALLOC_ERROR)
-				{
-					status = ERROR_FILE_OPEN;
-
-					if (verbose >= 0)
-					{
-						_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-						sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
-										  "line %d.", strerror(errno), 0);
-						_ppdArrayAddStrings(output, str_format);
-						log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
-										  "line %d.", strerror(errno), 0);
-					}
-				}
-				else
-				{
-					status = ERROR_PPD_FORMAT;
-
-					if (verbose >= 0)
-					{
-						_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-						sprintf(str_format,"      **FAIL**  Unable to open PPD file - "
-										  "%s on line %d.",	ppdErrorString(error), line);
-						_ppdArrayAddStrings(output, str_format);
-						log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - "
-										  "%s on line %d.",	ppdErrorString(error), line);
-
-						switch (error)
-						{
-						case PPD_MISSING_PPDADOBE4:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 42, section 5.2.");
-			log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 42, section 5.2.");
-							break;
-						case PPD_MISSING_VALUE:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 20, section 3.4.");
-			log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 20, section 3.4.");
-							break;
-						case PPD_BAD_OPEN_GROUP:
-						case PPD_NESTED_OPEN_GROUP:
-							_ppdArrayAddStrings(output,
-										 "                REF: Pages 45-46, section 5.2.");
-			log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Pages 45-46, section 5.2.");
-							break;
-						case PPD_BAD_OPEN_UI:
-						case PPD_NESTED_OPEN_UI:
-							_ppdArrayAddStrings(output,
-										 "                REF: Pages 42-45, section 5.2.");
-			log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Pages 42-45, section 5.2.");
-							break;
-						case PPD_BAD_ORDER_DEPENDENCY:
-							_ppdArrayAddStrings(output,
-										 "                REF: Pages 48-49, section 5.2.");
-			log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Pages 48-49, section 5.2.");
-							break;
-						case PPD_BAD_UI_CONSTRAINTS:
-							_ppdArrayAddStrings(output,
-										 "                REF: Pages 52-54, section "
-										   "5.2.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Pages 52-54, section "
-										   "5.2.");
-							break;
-						case PPD_MISSING_ASTERISK:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 15, section "
-										   "3.2.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 15, section "
-										   "3.2.");
-							break;
-						case PPD_LINE_TOO_LONG:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 15, section "
-										   "3.1.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 15, section "
-										   "3.1.");
-							break;
-						case PPD_ILLEGAL_CHARACTER:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 15, section "
-										   "3.1.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 15, section "
-										   "3.1.");
-							break;
-						case PPD_ILLEGAL_MAIN_KEYWORD:
-							_ppdArrayAddStrings(output,
-										 "                REF: Pages 16-17, section "
-										   "3.2.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Pages 16-17, section "
-										   "3.2.");
-							break;
-						case PPD_ILLEGAL_OPTION_KEYWORD:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 19, section "
-										   "3.3.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 19, section "
-										   "3.3.");
-							break;
-						case PPD_ILLEGAL_TRANSLATION:
-							_ppdArrayAddStrings(output,
-										 "                REF: Page 27, section "
-										   "3.5.");
-							log(ld, CF_LOGLEVEL_ERROR,
-										 "                REF: Page 27, section "
-										   "3.5.");
-							break;
-						default:
-							break;
-						}
-
-						check_basics(file);
-					}
-				}
-
-				continue;
-			}
-
-			/*
-			 * Show the header and then perform basic conformance tests (limited
-			 * only by what the CUPS PPD functions actually load...)
-			 */
-
-			errors = 0;
-			ppdversion = 43;
-
-			if (verbose > 0)
-				_ppdArrayAddStrings(output,
-							 "\n    DETAILED CONFORMANCE TEST RESULTS");
-				log(ld, CF_LOGLEVEL_DEBUG,
-							 "\n    DETAILED CONFORMANCE TEST RESULTS");
-
-			if ((attr = ppdFindAttr(ppd, "FormatVersion", NULL)) != NULL &&
-				attr->value)
-				ppdversion = (int)(10 * _cupsStrScand(attr->value, NULL, loc) + 0.5);
-
-			if ((attr = ppdFindAttr(ppd, "cupsFilter2", NULL)) != NULL)
-			{
-				do
-				{
-					if (strstr(attr->value, "application/vnd.cups-raster"))
-					{
-						if (!test_raster(ppd, verbose))
-							errors++;
-						break;
-					}
-				} while ((attr = ppdFindNextAttr(ppd, "cupsFilter2", NULL)) != NULL);
-			}
-			else
-			{
-				for (j = 0; j < ppd->num_filters; j++)
-					if (strstr(ppd->filters[j], "application/vnd.cups-raster"))
-					{
-						if (!test_raster(ppd, verbose))
-							errors++;
-						break;
-					}
-			}
-
-			/*
-			 * Look for default keywords with no matching option...
-			 */
-
-			if (!(warn & WARN_DEFAULTS))
-				errors = check_defaults(ppd, errors, verbose, 0);
-
-			if ((attr = ppdFindAttr(ppd, "DefaultImageableArea", NULL)) == NULL)
-			{
-				if (verbose >= 0)
-				{
-					if (!errors && !verbose)
-		_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-
-					_ppdArrayAddStrings(output,
-								 "      **FAIL**  REQUIRED DefaultImageableArea\n"
-								   "                REF: Page 102, section 5.15.");
-					log(ld, CF_LOGLEVEL_ERROR,
-								 "      **FAIL**  REQUIRED DefaultImageableArea\n"
-								   "                REF: Page 102, section 5.15.");
-				}
-
-				errors++;
-			}
-			else if (ppdPageSize(ppd, attr->value) == NULL &&
-					 strcmp(attr->value, "Unknown"))
-			{
-				if (verbose >= 0)
-				{
-					if (!errors && !verbose)
-		_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-
-					sprintf(str_format,"      **FAIL**  Bad DefaultImageableArea %s\n"
-									  "                REF: Page 102, section 5.15.",
-									attr->value);
-					_ppdArrayAddStrings(output, str_format);
-					log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultImageableArea %s\n"
-									  "                REF: Page 102, section 5.15.",
-									attr->value);
-				}
-
-				errors++;
-			}
-			else
-			{
-				if (verbose > 0)
-	  _ppdArrayAddStrings(output, "        PASS    DefaultImageableArea");
-	  log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultImageableArea");
-			}
-
-			if ((attr = ppdFindAttr(ppd, "DefaultPaperDimension", NULL)) == NULL)
-			{
-				if (verbose >= 0)
-				{
-	  if (!errors && !verbose)
-		_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-
-	  _ppdArrayAddStrings(output,
-				   "      **FAIL**  REQUIRED DefaultPaperDimension\n"
-					 "                REF: Page 103, section 5.15.");
-		log(ld, CF_LOGLEVEL_ERROR,
-				   "      **FAIL**  REQUIRED DefaultPaperDimension\n"
-					 "                REF: Page 103, section 5.15.");
-				}
-
-				errors++;
-			}
-			else if (ppdPageSize(ppd, attr->value) == NULL &&
-					 strcmp(attr->value, "Unknown"))
-			{
-				if (verbose >= 0)
-				{
-	  if (!errors && !verbose)
-		_ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-
-	  sprintf(str_format,"      **FAIL**  Bad DefaultPaperDimension %s\n"
-						"                REF: Page 103, section 5.15.",
-					  attr->value);
-	  _ppdArrayAddStrings(output, str_format);
-	  log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultPaperDimension %s\n"
-						"                REF: Page 103, section 5.15.",
-					  attr->value);
-				}
-
-				errors++;
-			}
-			else if (verbose > 0)
-	_ppdArrayAddStrings(output, "        PASS    DefaultPaperDimension");
-	log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultPaperDimension");
-
-			for (j = 0, group = ppd->groups; j < ppd->num_groups; j++, group++)
-	for (k = 0, option = group->options;
-		 k < group->num_options;
-		 k++, option++)
+	if ((attr = ppdFindAttr(ppd, "DefaultPaperDimension", NULL)) == NULL)
 	{
-	  /*
-	   * Verify that we have a default choice...
-	   */
-
-	  if (option->defchoice[0])
+	  if (verbose >= 0)
 	  {
-		if (ppdFindChoice(option, option->defchoice) == NULL &&
-			strcmp(option->defchoice, "Unknown"))
+	    if (!errors && !verbose)
 		{
-			if (verbose >= 0)
-			{
-				if (!errors && !verbose)
 		  _ppdArrayAddStrings(output, " FAIL");
-log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-
-				sprintf(str_format,"      **FAIL**  Bad Default%s %s\n"
-								  "                REF: Page 40, section 4.5.",
-								option->keyword, option->defchoice);
-				_ppdArrayAddStrings(output, str_format);
-				log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad Default%s %s\n"
-								  "                REF: Page 40, section 4.5.",
-								option->keyword, option->defchoice);
-			}
-
-			errors++;
+          log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+		
+	      _ppdArrayAddStrings(output,
+				   "      **FAIL**  REQUIRED DefaultPaperDimension\n"
+					 "                REF: Page 103, section 5.15.");
+		  log(ld, CF_LOGLEVEL_ERROR,
+				   "      **FAIL**  REQUIRED DefaultPaperDimension\n"
+					 "                REF: Page 103, section 5.15.");
 		}
-		else if (verbose > 0)
-			sprintf(str_format,"        PASS    Default%s",
-							option->keyword);
-			_ppdArrayAddStrings(output, str_format);
-			log(ld, CF_LOGLEVEL_DEBUG,"        PASS    Default%s",
-							option->keyword);
 	  }
-	  else
+
+	  errors++;
+	}
+	else if (ppdPageSize(ppd, attr->value) == NULL && strcmp(attr->value, "Unknown"))
+	{
+	  if (verbose >= 0)
 	  {
+	    if (!errors && !verbose)
+		{
+		  _ppdArrayAddStrings(output, " FAIL");
+          log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+
+	      sprintf(str_format,"      **FAIL**  Bad DefaultPaperDimension %s\n"
+						"                REF: Page 103, section 5.15.",
+					  attr->value);
+	      _ppdArrayAddStrings(output, str_format);
+	      log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultPaperDimension %s\n"
+						"                REF: Page 103, section 5.15.",
+					  attr->value);
+		}
+	  }
+
+	  errors++;
+	}
+	else if (verbose > 0)
+	{
+	  _ppdArrayAddStrings(output, "        PASS    DefaultPaperDimension");
+	  log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultPaperDimension");
+
+	  for (j = 0, group = ppd->groups; j < ppd->num_groups; j++, group++)
+	    for (k = 0, option = group->options;
+						 k < group->num_options;
+		 					k++, option++)
+	    {
+	      /*
+	       * Verify that we have a default choice...
+	       */
+
+	      if (option->defchoice[0])
+	      {
+		    if (ppdFindChoice(option, option->defchoice) == NULL && strcmp(option->defchoice, "Unknown"))
+		    {
+			  if (verbose >= 0)
+			  {
+				if (!errors && !verbose)
+		        {
+				  _ppdArrayAddStrings(output, " FAIL");
+                  log(ld, CF_LOGLEVEL_ERROR, " FAIL");
+
+				  sprintf(str_format,"      **FAIL**  Bad Default%s %s\n"
+								  "                REF: Page 40, section 4.5.",
+								option->keyword, option->defchoice);
+				  _ppdArrayAddStrings(output, str_format);
+				  log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad Default%s %s\n"
+								  "                REF: Page 40, section 4.5.",
+								option->keyword, option->defchoice);
+			    }
+			  }
+
+			  errors++;
+		    }
+		    else if (verbose > 0)
+			{   
+			  sprintf(str_format,"        PASS    Default%s",
+							option->keyword);
+			  _ppdArrayAddStrings(output, str_format);
+			  log(ld, CF_LOGLEVEL_DEBUG,"        PASS    Default%s",
+							option->keyword);
+			}
+	      }
+	      else
+	      {
 		if (verbose >= 0)
 		{
 			if (!errors && !verbose)

@@ -880,31 +880,7 @@ extern cf_cmyk_t	*ppdCMYKLoad(ppd_file_t *ppd,
 
 // **** New in libppd 2.0.0: Function to check the correctness
 //      of PPD files, originally cupstestppd ****
-
-typedef struct ignore_parameters_s
-	{
-		unsigned int pc_filenames : 1;    /* Whether to ignore filename */  
-		unsigned int filters : 1;    /* Whether to ignore filters */
-		unsigned int profiles : 1;    /* Whether to ignore profiles */
-		unsigned int none : 1;    /* Whether to ignore nothing */
-		unsigned int all : 1;    /* Whether to ignore everything */
-	} ignore_parameters_t;
-
-typedef struct warn_parameters_s
-	{
-		unsigned int defaults : 1;    /* Whether to warn about defaults */
-		unsigned int constraints : 1;    /* Whether to warn about constraints */
-		unsigned int profiles : 1;    /* Whether to warn about profiles */
-		unsigned int filters : 1;    /* Whether to warn about filters */
-		unsigned int sizes : 1;    /* Whether to warn about sizes */
-		unsigned int translations : 1;    /* Whether to warn about translations */
-		unsigned int duplex : 1;    /* Whether to warn about duplex */
-		unsigned int none : 1;    /* Whether to warn about nothing */
-		unsigned int all : 1;    /* Whether to warn about everything */
-	} warn_parameters_t;
-
-
-extern cups_array_t *ppdTest(ignore_parameters_t ignore_params, warn_parameters_t warn_params , char *rootdir,
+extern cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 			int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
 			int files, cups_array_t *file_array)
 

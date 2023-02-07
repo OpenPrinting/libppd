@@ -16,6 +16,26 @@
 #include <ppd/array-private.h>
 #include <stdio.h>
 
+
+/*
+ * Error warning overrides...
+ */
+
+enum
+{
+  WARN_NONE = 0,
+  WARN_CONSTRAINTS = 1,
+  WARN_DEFAULTS = 2,
+  WARN_FILTERS = 4,
+  WARN_PROFILES = 8,
+  WARN_TRANSLATIONS = 16,
+  WARN_DUPLEX = 32,
+  WARN_SIZES = 64,
+  WARN_FILENAME = 128,
+  WARN_ALL = 255
+};
+
+
 /*
  * 'main()' - Wrapper function for ppdTest().
  */
@@ -39,8 +59,8 @@ int main(int argc,	   /* I - Number of command-line args */
   cups_array_t	*output;
   int len_output;  /* Length of the output array */
   char[256] txt;
-  ignore_parameters_t ignore_params;
-  warn_parameters_t warn_params;
+  int warn;			   /* Which errors to just warn about */
+  int ignore;			   /* Which errors to ignore */
 
 
   verbose = 0;
@@ -50,8 +70,8 @@ int main(int argc,	   /* I - Number of command-line args */
   q_with_v = 0;
   v_with_q = 0;
   files=0;
-  ignore_params = {0,0,0,0,0};
-  warn_params = {0,0,0,0,0,0,0,0,0};
+  warn = WARN_NONE;
+  ignore = WARN_NONE;
 
   for (i = 1; i < argc; i++)
     if (!strcmp(argv[i], "--help"))
@@ -68,15 +88,15 @@ int main(int argc,	   /* I - Number of command-line args */
               help = 1;
 
             if (!strcmp(argv[i], "none"))
-              ignore_params.none = 1;
-            else if (!strcmp(argv[i], "filename"))
-              ignore_params.pc_filenames = 1;
-            else if (!strcmp(argv[i], "filters"))
-              ignore_params.filters = 1;
-            else if (!strcmp(argv[i], "profiles"))
-              ignore_params.profiles = 1;
-            else if (!strcmp(argv[i], "all"))
-              ignore_params.all = 1;
+              ignore = WARN_NONE;
+	        else if (!strcmp(argv[i], "filename"))
+	          ignore |= WARN_FILENAME;
+	        else if (!strcmp(argv[i], "filters"))
+  	          ignore |= WARN_FILTERS;
+	        else if (!strcmp(argv[i], "profiles"))
+	          ignore |= WARN_PROFILES;
+	        else if (!strcmp(argv[i], "all"))
+	          ignore = WARN_FILTERS | WARN_PROFILES;
             else
               help = 1;
             break;
@@ -98,23 +118,23 @@ int main(int argc,	   /* I - Number of command-line args */
               help = 1;
 
             if (!strcmp(argv[i], "none"))
-              warn_params.none = 1;
-            else if (!strcmp(argv[i], "constraints"))
-              warn_params.constraints = 1;
-            else if (!strcmp(argv[i], "defaults"))
-              warn_params.defaults = 1;
-            else if (!strcmp(argv[i], "duplex"))
-              warn_params.duplex = 1;
-            else if (!strcmp(argv[i], "filters"))
-              warn_params.filters = 1;
-            else if (!strcmp(argv[i], "profiles"))
-              warn_params.profiles = 1;
-            else if (!strcmp(argv[i], "sizes"))
-              warn_params.sizes = 1;
-            else if (!strcmp(argv[i], "translations"))
-              warn_params.translations = 1;
-            else if (!strcmp(argv[i], "all"))
-              warn_params.all = 1;
+              warn = WARN_NONE;
+	        else if (!strcmp(argv[i], "constraints"))
+	          warn |= WARN_CONSTRAINTS;
+	        else if (!strcmp(argv[i], "defaults"))
+	          warn |= WARN_DEFAULTS;
+	        else if (!strcmp(argv[i], "duplex"))
+	          warn |= WARN_DUPLEX;
+	        else if (!strcmp(argv[i], "filters"))
+	          warn |= WARN_FILTERS;
+	        else if (!strcmp(argv[i], "profiles"))
+	          warn |= WARN_PROFILES;
+	        else if (!strcmp(argv[i], "sizes"))
+	          warn |= WARN_SIZES;
+	        else if (!strcmp(argv[i], "translations"))
+	          warn |= WARN_TRANSLATIONS;
+	        else if (!strcmp(argv[i], "all"))
+	          warn = WARN_ALL;
             else
               help = 1;
             break;
@@ -158,7 +178,7 @@ int main(int argc,	   /* I - Number of command-line args */
     }
   }
 
-  output = ppdTest(ignore_params, warn_params, rootdir, help, verbose,
+  output = ppdTest(ignore, warn, rootdir, help, verbose,
                    relaxed, q_with_v, v_with_q, root_present, files, file_array);
 
   len_output = cupsArrayCount(output);

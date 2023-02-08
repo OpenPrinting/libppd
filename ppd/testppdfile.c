@@ -18,25 +18,6 @@
 
 
 /*
- * Error warning overrides...
- */
-
-enum
-{
-  WARN_NONE = 0,
-  WARN_CONSTRAINTS = 1,
-  WARN_DEFAULTS = 2,
-  WARN_FILTERS = 4,
-  WARN_PROFILES = 8,
-  WARN_TRANSLATIONS = 16,
-  WARN_DUPLEX = 32,
-  WARN_SIZES = 64,
-  WARN_FILENAME = 128,
-  WARN_ALL = 255
-};
-
-
-/*
  * 'main()' - Wrapper function for ppdTest().
  */
 

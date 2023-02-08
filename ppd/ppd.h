@@ -882,7 +882,22 @@ extern cf_cmyk_t	*ppdCMYKLoad(ppd_file_t *ppd,
 //      of PPD files, originally cupstestppd ****
 extern cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 			int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
-			int files, cups_array_t *file_array)
+			int files, cups_array_t *file_array);
+
+//Error warning overrides...
+typedef enum overrides_e
+{
+  WARN_NONE = 0,
+  WARN_CONSTRAINTS = 1,
+  WARN_DEFAULTS = 2,
+  WARN_FILTERS = 4,
+  WARN_PROFILES = 8,
+  WARN_TRANSLATIONS = 16,
+  WARN_DUPLEX = 32,
+  WARN_SIZES = 64,
+  WARN_FILENAME = 128,
+  WARN_ALL = 255
+} overrides_t;
 
 //
 // C++ magic...

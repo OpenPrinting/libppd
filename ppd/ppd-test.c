@@ -1,20 +1,15 @@
-/*
- * PPD tset program to check correctness of PPD Files.
- *
- * Copyright © 2021-2022 by OpenPrinting
- *
- * Licensed under Apache License v2.0.  See the file "LICENSE" for more
- * information.
- */
+//PPD tset program to check correctness of PPD Files.
+//Copyright © 2021-2022 by OpenPrinting
+//Licensed under Apache License v2.0.  See the file "LICENSE" for more
+//information.
+ 
 
-/*
- * Include necessary headers...
- */
+//Include necessary headers...
+ 
 
 #include <cups/dir.h>
 #include <cups/raster.h>
 #include <ppd/string-private.h>
-#include <ppd/array-private.h>
 #include <ppd/ppd.h>
 #include <cups/array.h>
 #include <cupsfilters/log.h>
@@ -22,12 +17,11 @@
 #include <math.h>
 #ifdef _WIN32
 #  define X_OK 0
-#endif /* _WIN32 */
+#endif // _WIN32 
 
 
-/*
- * Error codes...
- */
+//Error codes...
+ 
 
 enum
 {
@@ -38,9 +32,9 @@ enum
   ERROR_CONFORMANCE
 };
 
-/*
- * Line endings...
- */
+
+//Line endings...
+ 
 
 enum
 {
@@ -50,20 +44,20 @@ enum
   EOL_CRLF
 };
 
-/*
- * File permissions...
- */
 
-#define MODE_WRITE    0022        /* Group/other write */
-#define MODE_MASK    0555        /* Owner/group/other read+exec/search */
-#define MODE_DATAFILE    0444    /* Owner/group/other read */
-#define MODE_DIRECTORY    0555    /* Owner/group/other read+search */
-#define MODE_PROGRAM    0555    /* Owner/group/other read+exec */
+//File permissions...
+ 
+
+#define MODE_WRITE    0022        // Group/other write 
+#define MODE_MASK    0555        // Owner/group/other read+exec/search 
+#define MODE_DATAFILE    0444    // Owner/group/other read 
+#define MODE_DIRECTORY    0555    // Owner/group/other read+search 
+#define MODE_PROGRAM    0555    // Owner/group/other read+exec 
 
 
-/*
- * Local functions...
- */
+//
+//Local functions...
+ 
 
 static void check_basics(const char *filename);
 static int check_constraints(ppd_file_t *ppd, int errors, int verbose,
@@ -87,50 +81,50 @@ static int valid_path(const char *keyword, const char *path, int errors,
                       int verbose, int warn);
 static int valid_utf8(const char *s);
 
-/*
- * 'ppdTest()' - Test the correctness of PPD files.
- */
+
+//'ppdTest()' - Test the correctness of PPD files.
+ 
 
 cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
             int files, cups_array_t *file_array)
 {
-  int i, j, k, m, n;       /* Looping vars */
-  size_t len;               /* Length of option name */
-  const char *ptr;       /* Pointer into string */
-  cups_file_t *fp;       /* PPD file */
-  int warn;               /* Which errors to just warn about */
-  int ignore;               /* Which errors to ignore */
-  int status;               /* Exit status */
-  int errors;               /* Number of conformance errors */
-  int ppdversion;           /* PPD spec version in PPD file */
-  ppd_status_t error;       /* Status of ppdOpen*() */
-  int line;               /* Line number for error */
-  char *file;
-  char *root;               /* Root directory */
-  char str_format[256];
-  int xdpi,               /* X resolution */
-      ydpi;               /* Y resolution */
-  ppd_file_t *ppd;       /* PPD file record */
-  ppd_attr_t *attr;       /* PPD attribute */
-  ppd_size_t *size;       /* Size record */
-  ppd_group_t *group;       /* UI group */
-  ppd_option_t *option;  /* Standard UI option */
-  ppd_group_t *group2;   /* UI group */
-  ppd_option_t *option2; /* Standard UI option */
-  ppd_choice_t *choice;  /* Standard UI option choice */
-  struct lconv *loc;       /* Locale data */
+  int i, j, k, m, n;       // Looping vars 
+  size_t len;               // Length of option name 
+  const char *ptr;       // Pointer into string 
+  cups_file_t *fp;       // PPD file 
+  int warn;               // Which errors to just warn about 
+  int ignore;               // Which errors to ignore 
+  int status;               // Exit status 
+  int errors;               // Number of conformance errors 
+  int ppdversion;           // PPD spec version in PPD file 
+  ppd_status_t error;       // Status of ppdOpen*() 
+  int line;               // Line number for error 
+  char *file;               //File name in file_array
+  char *root;               // Root directory 
+  char str_format[256];    //Formatted string
+  int xdpi,               // X resolution 
+      ydpi;               // Y resolution 
+  ppd_file_t *ppd;       // PPD file record 
+  ppd_attr_t *attr;       // PPD attribute 
+  ppd_size_t *size;       // Size record 
+  ppd_group_t *group;       // UI group 
+  ppd_option_t *option;  // Standard UI option 
+  ppd_group_t *group2;   // UI group 
+  ppd_option_t *option2; // Standard UI option 
+  ppd_choice_t *choice;  // Standard UI option choice 
+  struct lconv *loc;       // Locale data 
   static char *uis[] = {"BOOLEAN", "PICKONE", "PICKMANY"};
   static char *sections[] = {"ANY", "DOCUMENT", "EXIT",
                                "JCL", "PAGE", "PROLOG"};
-  cups_array_t *output; /* Output cups array */
+  cups_array_t *output; // Output cups array 
   cf_logfunc_t log,        // I - Log function
   void         *ld        // I - Log function data
   loc = localeconv();
 
-  /*
-   * Display PPD files for each file listed on the command-line...
-   */
+  
+  //Display PPD files for each file listed on the command-line...
+   
 
   ppdSetConformance(PPD_CONFORM_STRICT);
 
@@ -154,7 +148,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
   if (q_with_v == 1)
   {
   
-    _ppdArrayAddStrings(output,
+    cupsArrayAdd(output,
                         "testppdfile: The -q option is incompatible with the -v option.");
     if (log) log(ld, CF_LOGLEVEL_ERROR,
                         "testppdfile: The -q option is incompatible with the -v option.");
@@ -164,7 +158,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
   if (v_with_q == 1)
   {
 
-    _ppdArrayAddStrings(output,
+    cupsArrayAdd(output,
                         "testppdfile: The -v option is incompatible with the -q option.");
     if (log) log(ld, CF_LOGLEVEL_ERROR,
                         "testppdfile: The -v option is incompatible with the -q option.");
@@ -173,27 +167,27 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
   }
 
-  /*
-   * Open the PPD file...
-   */
+  
+  //Open the PPD file...
+   
 
   if (files && verbose >= 0)
-    _ppdArrayAddStrings(output, "");
+    cupsArrayAdd(output, "");
   files++;
   for (i = 1; i < files; i++)
   {
     if (cupsArrayCurrent(file_array)=="")
     {
-     /*
-     * Read from stdin...
-     */
+    
+    //Read from stdin...
+     
   
       ppd = _ppdOpen(cupsFileStdin(), _PPD_LOCALIZATION_ALL);
   
       if (verbose >= 0)
       {
         sprintf(str_format,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_DEBUG,"%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
       }
       cupsArrayNext(file_array);
@@ -201,14 +195,15 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
     else
     {
       file = cupsArrayCurrent(file_array);
-      /*
-       * Read from a file...
-       */
+      
+
+      //Read from a file...
+       
 
       if (verbose >= 0)
       {
         sprintf(str_format,"%s:", file);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_DEBUG,"%s:", file);
       }
       if ((fp = cupsFileOpen(file, "r")) != NULL)
@@ -222,11 +217,11 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
         if (verbose >= 0)
         {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
                                              "line %d.",strerror(errno), 0);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
                                               "line %d.",strerror(errno), 0);
           continue;
@@ -245,11 +240,11 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
         if (verbose >= 0)
         {  
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           sprintf(str_format,"      **FAIL**  Unable to open PPD file - %s on "
                                           "line %d.", strerror(errno), 0);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - %s on "
                                               "line %d.", strerror(errno), 0);
         }
@@ -259,50 +254,50 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         status = ERROR_PPD_FORMAT;
         if (verbose >= 0)
         {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           sprintf(str_format,"      **FAIL**  Unable to open PPD file - "
                               "%s on line %d.",    ppdErrorString(error), line);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Unable to open PPD file - "
                            "%s on line %d.",    ppdErrorString(error), line);
 
           switch (error)
           {
             case PPD_MISSING_PPDADOBE4:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                         "                REF: Page 42, section 5.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                       "                REF: Page 42, section 5.2.");
                 break;
             case PPD_MISSING_VALUE:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "                REF: Page 20, section 3.4.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                      "                REF: Page 20, section 3.4.");
                 break;
             case PPD_BAD_OPEN_GROUP:
             case PPD_NESTED_OPEN_GROUP:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "                REF: Pages 45-46, section 5.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                      "                REF: Pages 45-46, section 5.2.");
                 break;
             case PPD_BAD_OPEN_UI:
             case PPD_NESTED_OPEN_UI:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "                REF: Pages 42-45, section 5.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                      "                REF: Pages 42-45, section 5.2.");
                 break;
             case PPD_BAD_ORDER_DEPENDENCY:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "                REF: Pages 48-49, section 5.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                      "                REF: Pages 48-49, section 5.2.");
                 break;
             case PPD_BAD_UI_CONSTRAINTS:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "                REF: Pages 52-54, section "
                                                             "5.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -310,7 +305,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                              "5.2.");
                 break;
             case PPD_MISSING_ASTERISK:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Page 15, section "
                                                               "3.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -318,7 +313,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                               "3.2.");
                 break;
             case PPD_LINE_TOO_LONG:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Page 15, section "
                                                                "3.1.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -326,7 +321,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                                 "3.1.");
                 break;
             case PPD_ILLEGAL_CHARACTER:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Page 15, section "
                                                                 "3.1.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -334,7 +329,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                                 "3.1.");
                 break;
             case PPD_ILLEGAL_MAIN_KEYWORD:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Pages 16-17, section "
                                                                 "3.2.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -342,7 +337,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                                 "3.2.");
                 break;
             case PPD_ILLEGAL_OPTION_KEYWORD:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Page 19, section "
                                                                 "3.3.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -350,7 +345,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                                                                 "3.3.");
                 break;
             case PPD_ILLEGAL_TRANSLATION:
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                     "                REF: Page 27, section "
                                                                 "3.5.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -368,17 +363,17 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
       continue;
     }
 
-    /*
-     * Show the header and then perform basic conformance tests (limited
-     * only by what the CUPS PPD functions actually load...)
-     */
+    
+    //Show the header and then perform basic conformance tests (limited
+    //only by what the CUPS PPD functions actually load...)
+     
 
     errors = 0;
     ppdversion = 43;
 
     if (verbose > 0)
     {
-      _ppdArrayAddStrings(output,
+      cupsArrayAdd(output,
             "\n    DETAILED CONFORMANCE TEST RESULTS");
       if (log) log(ld, CF_LOGLEVEL_DEBUG,
             "\n    DETAILED CONFORMANCE TEST RESULTS");
@@ -386,7 +381,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
     if ((attr = ppdFindAttr(ppd, "FormatVersion", NULL)) != NULL &&
                 attr->value)
-      ppdversion = (int)(10 * _cupsStrScand(attr->value, NULL, loc) + 0.5);
+      ppdversion = (int)(10//_cupsStrScand(attr->value, NULL, loc) + 0.5);
 
     if ((attr = ppdFindAttr(ppd, "cupsFilter2", NULL)) != NULL)
     {
@@ -412,9 +407,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         }
     }
 
-    /*
-     * Look for default keywords with no matching option...
-     */
+    
+    //Look for default keywords with no matching option...
+     
 
     if (!(warn & WARN_DEFAULTS))
       errors = check_defaults(ppd, errors, verbose, 0);
@@ -425,9 +420,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
       {
         if (!errors && !verbose)
         {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
-            _ppdArrayAddStrings(output,
+            cupsArrayAdd(output,
                 "      **FAIL**  REQUIRED DefaultImageableArea\n"
                                     "                REF: Page 102, section 5.15.");
           if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -444,13 +439,13 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
       {
         if (!errors && !verbose)
         {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,"      **FAIL**  Bad DefaultImageableArea %s\n"
                                             "                REF: Page 102, section 5.15.",
                                                                                 attr->value);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultImageableArea %s\n"
                                             "                REF: Page 102, section 5.15.",
                                                                                 attr->value);
@@ -463,7 +458,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
     {
       if (verbose > 0)
       {
-        _ppdArrayAddStrings(output, "        PASS    DefaultImageableArea");
+        cupsArrayAdd(output, "        PASS    DefaultImageableArea");
         if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultImageableArea");
       }
     }
@@ -474,10 +469,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (!errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         
-            _ppdArrayAddStrings(output,
+            cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED DefaultPaperDimension\n"
                      "                REF: Page 103, section 5.15.");
             if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -494,13 +489,13 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (!errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
             sprintf(str_format,"      **FAIL**  Bad DefaultPaperDimension %s\n"
                         "                REF: Page 103, section 5.15.",
                       attr->value);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad DefaultPaperDimension %s\n"
                         "                REF: Page 103, section 5.15.",
                       attr->value);
@@ -511,7 +506,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
       }
       else if (verbose > 0)
       {    
-        _ppdArrayAddStrings(output, "        PASS    DefaultPaperDimension");
+        cupsArrayAdd(output, "        PASS    DefaultPaperDimension");
         if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    DefaultPaperDimension");
       }
 
@@ -520,9 +515,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                          k < group->num_options;
                              k++, option++)
           {
-            /*
-             * Verify that we have a default choice...
-             */
+            
+            //Verify that we have a default choice...
+             
 
             if (option->defchoice[0])
             {
@@ -532,13 +527,13 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                 {
                   if (!errors && !verbose)
                   {
-                    _ppdArrayAddStrings(output, " FAIL");
+                    cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                     sprintf(str_format,"      **FAIL**  Bad Default%s %s\n"
                                   "                REF: Page 40, section 4.5.",
                                 option->keyword, option->defchoice);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  Bad Default%s %s\n"
                                   "                REF: Page 40, section 4.5.",
                                 option->keyword, option->defchoice);
@@ -551,7 +546,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {   
                 sprintf(str_format,"        PASS    Default%s",
                             option->keyword);
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_DEBUG,"        PASS    Default%s",
                             option->keyword);
               }
@@ -562,13 +557,13 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                 if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                   sprintf(str_format,"      **FAIL**  REQUIRED Default%s\n"
                               "                REF: Page 40, section 4.5.",
                             option->keyword);
-                  _ppdArrayAddStrings(output, str_format);
+                  cupsArrayAdd(output, str_format);
                   if (log) log(ld, CF_LOGLEVEL_ERROR,"      **FAIL**  REQUIRED Default%s\n"
                               "                REF: Page 40, section 4.5.",
                              option->keyword);
@@ -591,7 +586,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                 if (!errors && !verbose)
                 {  
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                   sprintf(str_format,"      **FAIL**  Bad FileVersion \"%s\"\n"
@@ -607,7 +602,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             }
             else if (verbose > 0)
             {
-              _ppdArrayAddStrings(output, "        PASS    FileVersion");
+              cupsArrayAdd(output, "        PASS    FileVersion");
               if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    FileVersion");
             }
         }
@@ -617,10 +612,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED FileVersion\n"
                      "                REF: Page 56, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -649,14 +644,14 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                 if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                   sprintf(str_format,
                         "      **FAIL**  Bad FormatVersion \"%s\"\n"
                           "                REF: Page 56, section 5.3.",
                         attr->value);
-                  _ppdArrayAddStrings(output, str_format);
+                  cupsArrayAdd(output, str_format);
                   if (log) log(ld, CF_LOGLEVEL_ERROR,
                         "      **FAIL**  Bad FormatVersion \"%s\"\n"
                           "                REF: Page 56, section 5.3.",
@@ -668,7 +663,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             }
             else if (verbose > 0)
             {
-              _ppdArrayAddStrings(output, "        PASS    FormatVersion");
+              cupsArrayAdd(output, "        PASS    FormatVersion");
               if (log) log(ld, CF_LOGLEVEL_ERROR, "        PASS    FormatVersion");
             }
         }
@@ -678,10 +673,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                     "      **FAIL**  REQUIRED FormatVersion\n"
                      "                REF: Page 56, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -697,7 +692,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    LanguageEncoding");
+            cupsArrayAdd(output, "        PASS    LanguageEncoding");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    LanguageEncoding");
           }
         }
@@ -707,10 +702,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED LanguageEncoding\n"
                      "                REF: Pages 56-57, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -726,7 +721,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    LanguageVersion");
+            cupsArrayAdd(output, "        PASS    LanguageVersion");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    LanguageVersion");
           }
         }
@@ -736,10 +731,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED LanguageVersion\n"
                      "                REF: Pages 57-58, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -760,7 +755,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             {
               if (!errors && !verbose)
               {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                 sprintf(str_format,
@@ -768,7 +763,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           "\"%s\")\n"
                           "                REF: Page 211, table D.1.",
                         "HP");
-                        _ppdArrayAddStrings(output, str_format);
+                        cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                         "      **FAIL**  Bad Manufacturer (should be "
                           "\"%s\")\n"
@@ -786,7 +781,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             {
               if (!errors && !verbose)
               {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                 sprintf(str_format,
@@ -794,7 +789,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           "\"%s\")\n"
                           "                REF: Page 211, table D.1.",
                         "Oki");
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                         "      **FAIL**  Bad Manufacturer (should be "
                           "\"%s\")\n"
@@ -807,7 +802,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           }
           else if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    Manufacturer");
+            cupsArrayAdd(output, "        PASS    Manufacturer");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    Manufacturer");
           }
         }
@@ -817,10 +812,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED Manufacturer\n"
                      "                REF: Pages 58-59, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -844,7 +839,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             {
               if (!errors && !verbose)
               {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                 sprintf(str_format,
                         "      **FAIL**  Bad ModelName - \"%c\" not "
@@ -863,7 +858,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           }
           else if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    ModelName");
+            cupsArrayAdd(output, "        PASS    ModelName");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    ModelName");
           }
         }
@@ -873,10 +868,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED ModelName\n"
                      "                REF: Pages 59-60, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -892,7 +887,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    NickName");
+            cupsArrayAdd(output, "        PASS    NickName");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    NickName");
           }
         }
@@ -902,10 +897,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED NickName\n"
                      "                REF: Page 60, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -921,7 +916,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    PageSize");
+            cupsArrayAdd(output, "        PASS    PageSize");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    PageSize");
           }
         }
@@ -931,10 +926,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                 _ppdArrayAddStrings(output,
+                 cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED PageSize\n"
                      "                REF: Pages 99-100, section 5.14.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -950,7 +945,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-              _ppdArrayAddStrings(output, "        PASS    PageRegion");
+              cupsArrayAdd(output, "        PASS    PageRegion");
              if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    PageRegion");
           }
         }
@@ -960,10 +955,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
               if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED PageRegion\n"
                      "                REF: Page 100, section 5.14.");
                  if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -979,7 +974,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           if (verbose > 0)
           {
-            _ppdArrayAddStrings(output, "        PASS    PCFileName");
+            cupsArrayAdd(output, "        PASS    PCFileName");
             if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    PCFileName");
           }
         }
@@ -989,10 +984,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                        "      **FAIL**  REQUIRED PCFileName\n"
                          "                REF: Pages 61-62, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1013,10 +1008,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
             {
               if (!errors && !verbose)
                 {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "      **FAIL**  Bad Product - not \"(string)\".\n"
                        "                REF: Page 62, section 5.3.");
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1029,7 +1024,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           }
           else if (verbose > 0)
           {
-              _ppdArrayAddStrings(output, "        PASS    Product");
+              cupsArrayAdd(output, "        PASS    Product");
               if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    Product");
           }
         }
@@ -1039,10 +1034,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-               _ppdArrayAddStrings(output,
+               cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED Product\n"
                      "                REF: Page 62, section 5.3.");
                  if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1057,8 +1052,8 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         if ((attr = ppdFindAttr(ppd, "PSVersion", NULL)) != NULL &&
              attr->value != NULL)
         {
-          char junkstr[255]; /* Temp string */
-          int junkint;       /* Temp integer */
+          char junkstr[255]; // Temp string 
+          int junkint;       // Temp integer 
 
           if (sscanf(attr->value, "(%254[^)\n])%d", junkstr, &junkint) != 2)
           {
@@ -1066,10 +1061,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
               if (!errors && !verbose)
               {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "      **FAIL**  Bad PSVersion - not \"(string) "
                        "int\".\n"
                        "                REF: Pages 62-64, section 5.3.");
@@ -1084,7 +1079,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
              }
           else if (verbose > 0)
           {
-              _ppdArrayAddStrings(output, "        PASS    PSVersion");
+              cupsArrayAdd(output, "        PASS    PSVersion");
               if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    PSVersion");
           }
         }
@@ -1094,10 +1089,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
               if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED PSVersion\n"
                      "                REF: Pages 62-64, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1117,10 +1112,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
               if (!errors && !verbose)
               {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                      "      **FAIL**  Bad ShortNickName - longer "
                        "than 31 chars.\n"
                        "                REF: Pages 64-65, section 5.3.");
@@ -1135,7 +1130,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           }
           else if (verbose > 0)
           {
-              _ppdArrayAddStrings(output, "        PASS    ShortNickName");
+              cupsArrayAdd(output, "        PASS    ShortNickName");
               if (log) log(ld, CF_LOGLEVEL_DEBUG, "        PASS    ShortNickName");
           }
         }
@@ -1145,10 +1140,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
              {
               if (!errors && !verbose)
             {
-                 _ppdArrayAddStrings(output, " FAIL");
+                 cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED ShortNickName\n"
                      "                REF: Page 64-65, section 5.3.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1167,10 +1162,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
               if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
                if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                    "      **FAIL**  Bad JobPatchFile attribute in file\n"
                      "                REF: Page 24, section 3.4.");
               if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -1182,10 +1177,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           errors++;
         }
 
-        /*
-        * Check for page sizes without the corresponding ImageableArea or
-        * PaperDimension values...
-        */
+
+       //Check for page sizes without the corresponding ImageableArea or
+       //PaperDimension values...
+        
 
         if (ppd->num_sizes == 0)
         {
@@ -1193,10 +1188,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
             if (!errors && !verbose)
             {
-                 _ppdArrayAddStrings(output, " FAIL");
+                 cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
-               _ppdArrayAddStrings(output,
+               cupsArrayAdd(output,
                    "      **FAIL**  REQUIRED PageSize\n"
                      "                REF: Page 41, section 5.\n"
                      "                REF: Page 99, section 5.14.");
@@ -1213,16 +1208,16 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         {
           for (j = 0, size = ppd->sizes; j < ppd->num_sizes; j++, size++)
           {
-              /*
-               * Don't check custom size...
-               */
+              
+              //Don't check custom size...
+               
 
               if (!strcmp(size->name, "Custom"))
               continue;
 
-              /*
-               * Check for ImageableArea...
-               */
+              
+              //Check for ImageableArea...
+               
 
               if (size->left == 0.0 && size->bottom == 0.0 &&
                   size->right == 0.0 && size->top == 0.0)
@@ -1231,7 +1226,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                   if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                     sprintf(str_format,
@@ -1240,7 +1235,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                             "                REF: Page 41, section 5.\n"
                             "                REF: Page 102, section 5.15.",
                           size->name);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                           "      **FAIL**  REQUIRED ImageableArea for "
                             "PageSize %s\n"
@@ -1253,9 +1248,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               errors++;
               }
 
-            /*
-            * Check for PaperDimension...
-            */
+        
+           //Check for PaperDimension...
+            
 
             if (size->width <= 0.0 && size->length <= 0.0)
             {
@@ -1263,7 +1258,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                 if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                     sprintf(str_format,
@@ -1272,7 +1267,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                             "                REF: Page 41, section 5.\n"
                             "                REF: Page 103, section 5.15.",
                           size->name);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                           "      **FAIL**  REQUIRED PaperDimension "
                             "for PageSize %s\n"
@@ -1287,9 +1282,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
              }
         }
 
-        /*
-         * Check for valid Resolution, JCLResolution, or SetResolution values...
-         */
+        
+        //Check for valid Resolution, JCLResolution, or SetResolution values...
+         
 
         if ((option = ppdFindOption(ppd, "Resolution")) == NULL)
           if ((option = ppdFindOption(ppd, "JCLResolution")) == NULL)
@@ -1301,10 +1296,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                  j > 0;
                  j--, choice++)
           {
-              /*
-                * Verify that all resolution options are of the form NNNdpi
-             * or NNNxNNNdpi...
-                */
+            
+             //Verify that all resolution options are of the form NNNdpi
+             //or NNNxNNNdpi...
+                
 
               xdpi = strtol(choice->choice, (char **)&ptr, 10);
               if (ptr > choice->choice && xdpi > 0)
@@ -1324,14 +1319,14 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
                   if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                     sprintf(str_format,
                           "      **FAIL**  Bad option %s choice %s\n"
                             "                REF: Page 84, section 5.9",
                           option->keyword, choice->choice);
-                  _ppdArrayAddStrings(output, str_format);
+                  cupsArrayAdd(output, str_format);
                   if (log) log(ld, CF_LOGLEVEL_ERROR,
                           "      **FAIL**  Bad option %s choice %s\n"
                             "                REF: Page 84, section 5.9",
@@ -1351,7 +1346,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           {
               if (!errors && !verbose)
             {
-              _ppdArrayAddStrings(output, " FAIL");
+              cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
                 sprintf(str_format,
@@ -1359,7 +1354,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                         "                REF: Page 72, section 5.5",
                       attr->name);
 
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_ERROR,
                       "      **FAIL**  %s must be 1284DeviceID\n"
                         "                REF: Page 72, section 5.5",
@@ -1393,10 +1388,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
         if ((attr = ppdFindAttr(ppd, "cupsLanguages", NULL)) != NULL &&
                 attr->value)
         {
-        /*
-         * This file contains localizations, check for conformance of the
-         * base translation...
-         */
+        
+          //This file contains localizations, check for conformance of the
+          //base translation...
+         
 
           if ((attr = ppdFindAttr(ppd, "LanguageEncoding", NULL)) != NULL)
           {
@@ -1404,7 +1399,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
               if (!errors && !verbose)
               {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
               }
 
@@ -1414,7 +1409,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           _("      **FAIL**  Bad LanguageEncoding %s - "
                             "must be ISOLatin1."),
                           attr->value ? attr->value : "(null)");
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      **FAIL**  Bad LanguageEncoding %s - "
                             "must be ISOLatin1."),
@@ -1428,7 +1423,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               {
               if (!errors && !verbose)
                 {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
               }
 
@@ -1438,7 +1433,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           _("      **FAIL**  Bad LanguageVersion %s - "
                             "must be English."),
                           ppd->lang_version ? ppd->lang_version : "(null)");
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      **FAIL**  Bad LanguageVersion %s - "
                             "must be English."),
@@ -1448,18 +1443,18 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               errors++;
               }
 
-              /*
-               * Loop through all options and choices...
-               */
+              
+              //Loop through all options and choices...
+               
 
               for (option = ppdFirstOption(ppd);
                    option;
                    option = ppdNextOption(ppd))
               {
-              /*
-               * Check for special characters outside A0 to BF, F7, or F8
-               * that are used for languages other than English.
-                */
+              
+              //Check for special characters outside A0 to BF, F7, or F8
+              //that are used for languages other than English.
+                
 
               for (ptr = option->text; *ptr; ptr++)
                   if ((*ptr & 0x80) && (*ptr & 0xe0) != 0xa0 &&
@@ -1470,7 +1465,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                {
                   if (!errors && !verbose)
                 {
-                  _ppdArrayAddStrings(output, " FAIL");
+                  cupsArrayAdd(output, " FAIL");
                   if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                 }
 
@@ -1481,7 +1476,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           "string for option %s contains 8-bit "
                           "characters."),
                         option->keyword);
-                  _ppdArrayAddStrings(output, str_format);
+                  cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      **FAIL**  Default translation "
                           "string for option %s contains 8-bit "
@@ -1493,10 +1488,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
               for (j = 0; j < option->num_choices; j++)
               {
-                  /*
-                   * Check for special characters outside A0 to BF, F7, or F8
-                   * that are used for languages other than English.
-                   */
+                  
+                  //Check for special characters outside A0 to BF, F7, or F8
+                  //that are used for languages other than English.
+                   
 
                   for (ptr = option->choices[j].text; *ptr; ptr++)
                   if ((*ptr & 0x80) && (*ptr & 0xe0) != 0xa0 &&
@@ -1507,7 +1502,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                  {
                   if (!errors && !verbose)
                   {
-                      _ppdArrayAddStrings(output, " FAIL");
+                      cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                   }
 
@@ -1519,7 +1514,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                             "8-bit characters."),
                           option->keyword,
                           option->choices[j].choice);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      **FAIL**  Default translation "
                             "string for option %s choice %s contains "
@@ -1535,14 +1530,14 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           }
         }
 
-        /*
-         * Final pass/fail notification...
-         */
+        
+        //Final pass/fail notification...
+         
 
         if (errors)
           status = ERROR_CONFORMANCE;
         else if (!verbose)
-          _ppdArrayAddStrings(output, " PASS");
+          cupsArrayAdd(output, " PASS");
 
         if (verbose >= 0)
         {
@@ -1571,9 +1566,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           if (warn & WARN_DUPLEX)
               errors = check_duplex(ppd, errors, verbose, 1);
 
-          /*
-            * Look for legacy duplex keywords...
-            */
+          
+           //Look for legacy duplex keywords...
+            
 
           if ((option = ppdFindOption(ppd, "JCLDuplex")) == NULL)
               if ((option = ppdFindOption(ppd, "EFDuplex")) == NULL)
@@ -1586,7 +1581,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                         "work as expected and should be named Duplex.\n"
                         "                REF: Page 122, section 5.17"),
                       option->keyword);
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_WARN,
                       _("        WARN    Duplex option keyword %s may not "
                         "work as expected and should be named Duplex.\n"
@@ -1594,9 +1589,9 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                       option->keyword);
           }
 
-          /*
-           * Look for default keywords with no corresponding option...
-           */
+          
+          //Look for default keywords with no corresponding option...
+           
 
           for (j = 0; j < ppd->num_attrs; j++)
           {
@@ -1622,7 +1617,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                         _("        WARN    %s has no corresponding "
                           "options."),
                         attr->name);
-                        _ppdArrayAddStrings(output, str_format);
+                        cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_WARN,
                         _("        WARN    %s has no corresponding "
                           "options."),
@@ -1635,17 +1630,17 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               sprintf(str_format,
                       _("        WARN    Obsolete PPD version %.1f.\n"
                         "                REF: Page 42, section 5.2."),
-                      0.1f * ppdversion);
-                      _ppdArrayAddStrings(output, str_format);
+                      0.1f//ppdversion);
+                      cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_WARN,
                       _("        WARN    Obsolete PPD version %.1f.\n"
                         "                REF: Page 42, section 5.2."),
-                      0.1f * ppdversion);
+                      0.1f//ppdversion);
           }
 
           if (!ppd->lang_encoding && ppdversion < 41)
           {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "        WARN    LanguageEncoding required by PPD "
                      "4.3 spec.\n"
                      "                REF: Pages 56-57, section 5.3.");
@@ -1657,7 +1652,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
           if (!ppd->manufacturer && ppdversion < 43)
           {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "        WARN    Manufacturer required by PPD "
                      "4.3 spec.\n"
                      "                REF: Pages 58-59, section 5.3.");
@@ -1667,16 +1662,16 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                      "                REF: Pages 58-59, section 5.3.");
           }
 
-          /*
-           * Treat a PCFileName attribute longer than 12 characters as
-            * a warning and not a hard error...
-            */
+          
+          //Treat a PCFileName attribute longer than 12 characters as
+          //a warning and not a hard error...
+            
 
           if (!(ignore & WARN_FILENAME) && ppd->pcfilename)
           {
               if (strlen(ppd->pcfilename) > 12)
               {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                      "        WARN    PCFileName longer than 8.3 in "
                        "violation of PPD spec.\n"
                        "                REF: Pages 61-62, section "
@@ -1690,7 +1685,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
               if (!_cups_strcasecmp(ppd->pcfilename, "unused.ppd"))
             {
-                _ppdArrayAddStrings(output,
+                cupsArrayAdd(output,
                        "        WARN    PCFileName should contain a "
                          "unique filename.\n"
                          "                REF: Pages 61-62, section "
@@ -1705,7 +1700,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
           if (!ppd->shortnickname && ppdversion < 43)
           {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                    "        WARN    ShortNickName required by PPD "
                      "4.3 spec.\n"
                      "                REF: Pages 64-65, section 5.3.");
@@ -1715,10 +1710,10 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                      "                REF: Pages 64-65, section 5.3.");
           }
 
-          /*
-            * Check the Protocols line and flag PJL + BCP since TBCP is
-            * usually used with PJL...
-            */
+          
+           //Check the Protocols line and flag PJL + BCP since TBCP is
+           //usually used with PJL...
+            
 
           if (ppd->protocols)
           {
@@ -1726,7 +1721,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                   strstr(ppd->protocols, "BCP") &&
                   !strstr(ppd->protocols, "TBCP"))
               {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                      "        WARN    Protocols contains both PJL "
                        "and BCP; expected TBCP.\n"
                        "                REF: Pages 78-79, section 5.7.");
@@ -1739,7 +1734,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               if (strstr(ppd->protocols, "PJL") &&
                   (!ppd->jcl_begin || !ppd->jcl_end || !ppd->jcl_ps))
               {
-              _ppdArrayAddStrings(output,
+              cupsArrayAdd(output,
                      "        WARN    Protocols contains PJL but JCL "
                        "attributes are not set.\n"
                        "                REF: Pages 78-79, section 5.7.");
@@ -1750,11 +1745,11 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
               }
           }
 
-          /*
-            * Check for options with a common prefix, e.g. Duplex and Duplexer,
-           * which are errors according to the spec but won't cause problems
-            * with CUPS specifically...
-            */
+          
+          //Check for options with a common prefix, e.g. Duplex and Duplexer,
+          //which are errors according to the spec but won't cause problems
+          //with CUPS specifically...
+            
 
           for (j = 0, group = ppd->groups; j < ppd->num_groups; j++, group++)
               for (k = 0, option = group->options;
@@ -1779,7 +1774,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                             "                REF: Page 15, section "
                             "3.2."),
                           option->keyword, option2->keyword);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_WARN,
                           _("        WARN    %s shares a common "
                             "prefix with %s\n"
@@ -1795,19 +1790,19 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           if (errors)
           {
               sprintf(str_format, _("    %d ERRORS FOUND"), errors);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_ERROR, _("    %d ERRORS FOUND"), errors);
           }
           else
             {
-            _ppdArrayAddStrings(output, "    NO ERRORS FOUND");
+            cupsArrayAdd(output, "    NO ERRORS FOUND");
               if (log) log(ld, CF_LOGLEVEL_DEBUG, "    NO ERRORS FOUND");
           }
         }
 
-        /*
-         * Then list the options, if "-v" was provided...
-         */
+        
+        //Then list the options, if "-v" was provided...
+         
 
         if (verbose > 1)
         {
@@ -1821,7 +1816,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                     ppd->color_device ? "TRUE" : "FALSE",
                     ppd->variable_sizes ? "TRUE" : "FALSE",
                     ppd->landscape);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_INFO,
                     "\n"
                     "    language_level = %d\n"
@@ -1836,87 +1831,87 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
           switch (ppd->colorspace)
           {
             case PPD_CS_CMYK:
-                  _ppdArrayAddStrings(output, "    colorspace = PPD_CS_CMYK");
+                  cupsArrayAdd(output, "    colorspace = PPD_CS_CMYK");
                   if (log) log(ld, CF_LOGLEVEL_INFO, "    colorspace = PPD_CS_CMYK");
                   break;
             case PPD_CS_CMY:
-                  _ppdArrayAddStrings(output, "    colorspace = PPD_CS_CMY");
+                  cupsArrayAdd(output, "    colorspace = PPD_CS_CMY");
                   if (log) log(ld, CF_LOGLEVEL_INFO, "    colorspace = PPD_CS_CMY");
                   break;
             case PPD_CS_GRAY:
-                  _ppdArrayAddStrings(output, "    colorspace = PPD_CS_GRAY");
+                  cupsArrayAdd(output, "    colorspace = PPD_CS_GRAY");
                   if (log) log(ld, CF_LOGLEVEL_INFO, "    colorspace = PPD_CS_GRAY");
                  break;
             case PPD_CS_RGB:
-                  _ppdArrayAddStrings(output, "    colorspace = PPD_CS_RGB");
+                  cupsArrayAdd(output, "    colorspace = PPD_CS_RGB");
                   if (log) log(ld, CF_LOGLEVEL_INFO, "    colorspace = PPD_CS_RGB");
                   break;
             default:
-                  _ppdArrayAddStrings(output, "    colorspace = <unknown>");
+                  cupsArrayAdd(output, "    colorspace = <unknown>");
                   if (log) log(ld, CF_LOGLEVEL_INFO, "    colorspace = <unknown>");
                   break;
           }
 
           sprintf(str_format, "    num_emulations = %d",
                     ppd->num_emulations);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_INFO, "    num_emulations = %d",
                     ppd->num_emulations);
           for (j = 0; j < ppd->num_emulations; j++)
                 sprintf(str_format, "        emulations[%d] = %s",
                       j, ppd->emulations[j].name);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "        emulations[%d] = %s",
                       j, ppd->emulations[j].name);
 
             sprintf(str_format, "    lang_encoding = %s",
                     ppd->lang_encoding);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    lang_encoding = %s",
                     ppd->lang_encoding);
             sprintf(str_format, "    lang_version = %s",
                     ppd->lang_version);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    lang_version = %s",
                     ppd->lang_version);
             sprintf(str_format, "    modelname = %s", ppd->modelname);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    modelname = %s", ppd->modelname);
             sprintf(str_format, "    ttrasterizer = %s",
                     ppd->ttrasterizer == NULL ? "None" : ppd->ttrasterizer);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    ttrasterizer = %s",
                     ppd->ttrasterizer == NULL ? "None" : ppd->ttrasterizer);
             sprintf(str_format, "    manufacturer = %s",
                     ppd->manufacturer);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    manufacturer = %s",
                     ppd->manufacturer);
             sprintf(str_format, "    product = %s", ppd->product);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    product = %s", ppd->product);
             sprintf(str_format, "    nickname = %s", ppd->nickname);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO,"    nickname = %s", ppd->nickname);
             sprintf(str_format, "    shortnickname = %s",
                     ppd->shortnickname);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    shortnickname = %s",
                     ppd->shortnickname);
             sprintf(str_format, "    patches = %d bytes",
                     ppd->patches == NULL ? 0 : (int)strlen(ppd->patches));
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    patches = %d bytes",
                     ppd->patches == NULL ? 0 : (int)strlen(ppd->patches));
 
             sprintf(str_format, "    num_groups = %d", ppd->num_groups);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    num_groups = %d", ppd->num_groups);
             for (j = 0, group = ppd->groups; j < ppd->num_groups; j++, group++)
             {
                 sprintf(str_format, "        group[%d] = %s",
                       j, group->text);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO, "        group[%d] = %s",
                       j, group->text);
 
@@ -1928,7 +1923,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                         k, option->keyword, option->text, uis[option->ui],
                         sections[option->section], option->order,
                         option->num_choices);
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_INFO,
                         "            options[%d] = %s (%s) %s %s %.0f "
                         "(%d choices)",
@@ -1953,7 +1948,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           !strcmp(option->defchoice, choice->choice)
                               ? " *"
                               : "");
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
                       if (log) log(ld, CF_LOGLEVEL_INFO,
                           "                %s (%s) = ERROR%s",
                           choice->choice, choice->text,
@@ -1973,7 +1968,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                           !strcmp(option->defchoice, choice->choice)
                               ? " *"
                               : "");
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
                       if (log) log(ld, CF_LOGLEVEL_INFO,
                           "                %s (%s) = %.2fx%.2fin "
                           "(%.1f,%.1f,%.1f,%.1f)%s",
@@ -1998,7 +1993,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                         !strcmp(option->defchoice, choice->choice)
                             ? " *"
                             : "");
-                  _ppdArrayAddStrings(output, str_format);
+                  cupsArrayAdd(output, str_format);
                   if (log) log(ld, CF_LOGLEVEL_INFO, "                %s (%s)%s",
                         choice->choice, choice->text,
                         !strcmp(option->defchoice, choice->choice)
@@ -2011,7 +2006,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
             sprintf(str_format, "    num_consts = %d",
                     ppd->num_consts);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_INFO, "    num_consts = %d",
                     ppd->num_consts);
             for (j = 0; j < ppd->num_consts; j++)
@@ -2020,7 +2015,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                       "        consts[%d] = *%s %s *%s %s",
                       j, ppd->consts[j].option1, ppd->consts[j].choice1,
                       ppd->consts[j].option2, ppd->consts[j].choice2);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO,
                       "        consts[%d] = *%s %s *%s %s",
                       j, ppd->consts[j].option1, ppd->consts[j].choice1,
@@ -2028,7 +2023,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
               sprintf(str_format, "    num_profiles = %d",
                     ppd->num_profiles);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO, "    num_profiles = %d",
                     ppd->num_profiles);
             }
@@ -2049,7 +2044,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                       ppd->profiles[j].matrix[2][0],
                       ppd->profiles[j].matrix[2][1],
                       ppd->profiles[j].matrix[2][2]);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO,
                       "        profiles[%d] = %s/%s %.3f %.3f "
                       "[ %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f ]",
@@ -2067,19 +2062,19 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                       ppd->profiles[j].matrix[2][2]);
 
               sprintf(str_format, "    num_fonts = %d", ppd->num_fonts);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO, "    num_fonts = %d", ppd->num_fonts);
             }
             for (j = 0; j < ppd->num_fonts; j++)
               {
               sprintf(str_format, "        fonts[%d] = %s",
                       j, ppd->fonts[j]);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
                if (log) log(ld, CF_LOGLEVEL_INFO, "        fonts[%d] = %s",
                       j, ppd->fonts[j]);
 
               sprintf(str_format, "    num_attrs = %d", ppd->num_attrs);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO, "    num_attrs = %d", ppd->num_attrs);
             }
             for (j = 0; j < ppd->num_attrs; j++)
@@ -2090,7 +2085,7 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
                       ppd->attrs[j]->text[0] ? "/" : "",
                       ppd->attrs[j]->text,
                       ppd->attrs[j]->value ? ppd->attrs[j]->value : "(null)");
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_INFO,
                       "        attrs[%d] = %s %s%s%s: \"%s\"", j,
                       ppd->attrs[j]->name, ppd->attrs[j]->spec,
@@ -2105,27 +2100,27 @@ cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 
     if (!files)
         usage();
-    _ppdArrayAddStrings(status)
+    cupsArrayAdd(status)
     if (log) log(ld, CF_LOGLEVEL_INFO,status)
 
     return (output);
 }
 
 
-/*
- * 'check_basics()' - Check for CR LF, mixed line endings, and blank lines.
- */
+
+//'check_basics()' - Check for CR LF, mixed line endings, and blank lines.
+ 
 
 static void
-check_basics(const char *filename) /* I - PPD file to check */
+check_basics(const char *filename) // I - PPD file to check 
 {
-  cups_file_t *fp; /* File pointer */
-  int ch;             /* Current character */
-  int col,         /* Current column */
-      whitespace;     /* Only seen whitespace? */
-  int eol;         /* Line endings */
-  int linenum;     /* Line number */
-  int mixed;         /* Mixed line endings? */
+  cups_file_t *fp; // File pointer 
+  int ch;             // Current character 
+  int col,         // Current column 
+      whitespace;     // Only seen whitespace? 
+  int eol;         // Line endings 
+  int linenum;     // Line number 
+  int mixed;         // Mixed line endings? 
 
   if ((fp = cupsFileOpen(filename, "r")) == NULL)
     return;
@@ -2169,7 +2164,7 @@ check_basics(const char *filename) /* I - PPD file to check */
         sprintf(str_format,
                     _("        WARN    Line %d only contains whitespace."),
                     linenum);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_WARN,
                     _("        WARN    Line %d only contains whitespace."),
                     linenum);
@@ -2189,7 +2184,7 @@ check_basics(const char *filename) /* I - PPD file to check */
 
   if (mixed)
   {
-    _ppdArrayAddStrings(output,
+    cupsArrayAdd(output,
                      "        WARN    File contains a mix of CR, LF, and "
                        "CR LF line endings.");
     if (log) log(ld, CF_LOGLEVEL_WARN,
@@ -2199,7 +2194,7 @@ check_basics(const char *filename) /* I - PPD file to check */
 
   if (eol == EOL_CRLF)
   {
-    _ppdArrayAddStrings(output,
+    cupsArrayAdd(output,
                      "        WARN    Non-Windows PPD files should use lines "
                        "ending with only LF, not CR LF.");
     if (log) log(ld, CF_LOGLEVEL_WARN,
@@ -2210,41 +2205,41 @@ check_basics(const char *filename) /* I - PPD file to check */
   cupsFileClose(fp);
 }
 
-/*
- * 'check_constraints()' - Check UIConstraints in the PPD file.
- */
 
-static int                           /* O - Errors found */
-check_constraints(ppd_file_t *ppd, /* I - PPD file */
-                  int errors,       /* I - Errors found */
-                  int verbose,       /* I - Verbosity level */
-                  int warn)           /* I - Warnings only? */
+//'check_constraints()' - Check UIConstraints in the PPD file.
+ 
+
+static int                           // O - Errors found 
+check_constraints(ppd_file_t *ppd, // I - PPD file 
+                  int errors,       // I - Errors found 
+                  int verbose,       // I - Verbosity level 
+                  int warn)           // I - Warnings only? 
 {
-  int i;                   /* Looping var */
-  const char *prefix;       /* WARN/FAIL prefix */
-  ppd_const_t *c;           /* Current UIConstraints data */
-  ppd_attr_t *constattr; /* Current cupsUIConstraints attribute */
-  const char *vptr;       /* Pointer into constraint value */
+  int i;                   // Looping var 
+  const char *prefix;       // WARN/FAIL prefix 
+  ppd_const_t *c;           // Current UIConstraints data 
+  ppd_attr_t *constattr; // Current cupsUIConstraints attribute 
+  const char *vptr;       // Pointer into constraint value 
   char option[PPD_MAX_NAME],
-      /* Option name/MainKeyword */
+      // Option name/MainKeyword 
       choice[PPD_MAX_NAME],
-      /* Choice/OptionKeyword */
-      *ptr;                /* Pointer into option or choice */
-  int num_options;        /* Number of options */
-  cups_option_t *options; /* Options */
-  ppd_option_t *o;        /* PPD option */
+      // Choice/OptionKeyword 
+      *ptr;                // Pointer into option or choice 
+  int num_options;        // Number of options 
+  cups_option_t *options; // Options 
+  ppd_option_t *o;        // PPD option 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
-  /*
-   * See what kind of constraint data we have in the PPD...
-   */
+  
+  //See what kind of constraint data we have in the PPD...
+   
 
   if ((constattr = ppdFindAttr(ppd, "cupsUIConstraints", NULL)) != NULL)
   {
-  /*
-   * Check new-style cupsUIConstraints data...
-   */
+  
+  //Check new-style cupsUIConstraints data...
+   
 
   for (; constattr;
         constattr = ppdFindNextAttr(ppd, "cupsUIConstraints", NULL))
@@ -2253,13 +2248,13 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
         sprintf(str_format,
                     _("      %s  Empty cupsUIConstraints %s"),
                     prefix, constattr->spec);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Empty cupsUIConstraints %s"),
                     prefix, constattr->spec);
@@ -2279,13 +2274,13 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
                     _("      %s  Bad cupsUIConstraints %s: \"%s\""),
                     prefix, constattr->spec, constattr->value);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad cupsUIConstraints %s: \"%s\""),
                     prefix, constattr->spec, constattr->value);
@@ -2304,13 +2299,13 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
                     _("      %s  Missing cupsUIResolver %s"),
                     prefix, constattr->spec);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Missing cupsUIResolver %s"),
                     prefix, constattr->spec);
@@ -2329,9 +2324,9 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                  vptr;
                  vptr = strchr(vptr, '*'))
       {
-        /*
-         * Extract "*Option Choice" or just "*Option"...
-         */
+        
+        //Extract "*Option Choice" or just "*Option"...
+         
 
         for (vptr++, ptr = option; *vptr && !isspace(*vptr & 255); vptr++)
             if (ptr < (option + sizeof(option) - 1))
@@ -2363,14 +2358,14 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
               sprintf(str_format,
                       _("      %s  Missing option %s in "
                         "cupsUIConstraints %s: \"%s\""),
                       prefix, option, constattr->spec, constattr->value);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Missing option %s in "
                         "cupsUIConstraints %s: \"%s\""),
@@ -2387,7 +2382,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
               sprintf(str_format,
@@ -2395,7 +2390,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                         "cupsUIConstraints %s: \"%s\""),
                       prefix, option, choice, constattr->spec,
                       constattr->value);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Missing choice *%s %s in "
                         "cupsUIConstraints %s: \"%s\""),
@@ -2425,22 +2420,22 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
         }
       }
 
-      /*
-       * Resolvers must list at least two options...
-       */
+      
+      //Resolvers must list at least two options...
+       
 
       if (num_options < 2)
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
                     _("      %s  cupsUIResolver %s does not list at least "
                       "two different options."),
                     prefix, constattr->spec);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  cupsUIResolver %s does not list at least "
                       "two different options."),
@@ -2451,21 +2446,21 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
             errors++;
       }
 
-      /*
-       * Test the resolver...
-       */
+      
+      //Test the resolver...
+       
 
       if (!cupsResolveConflicts(ppd, NULL, NULL, &num_options, &options))
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
                     _("      %s  cupsUIResolver %s causes a loop."),
                     prefix, constattr->spec);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  cupsUIResolver %s causes a loop."),
                     prefix, constattr->spec);
@@ -2480,9 +2475,9 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
   }
   else
   {
-    /*
-     * Check old-style [Non]UIConstraints data...
-     */
+    
+    //Check old-style [Non]UIConstraints data...
+     
 
     for (i = ppd->num_consts, c = ppd->consts; i > 0; i--, c++)
     {
@@ -2502,7 +2497,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
@@ -2510,7 +2505,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                       "UIConstraints \"*%s %s *%s %s\"."),
                     prefix, c->option1,
                     c->option1, c->choice1, c->option2, c->choice2);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Missing option %s in "
                       "UIConstraints \"*%s %s *%s %s\"."),
@@ -2525,7 +2520,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
@@ -2533,7 +2528,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                       "UIConstraints \"*%s %s *%s %s\"."),
                     prefix, c->option1, c->choice1,
                     c->option1, c->choice1, c->option2, c->choice2);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Missing choice *%s %s in "
                       "UIConstraints \"*%s %s *%s %s\"."),
@@ -2561,7 +2556,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
@@ -2569,7 +2564,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                       "UIConstraints \"*%s %s *%s %s\"."),
                     prefix, c->option2,
                     c->option1, c->choice1, c->option2, c->choice2);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Missing option %s in "
                       "UIConstraints \"*%s %s *%s %s\"."),
@@ -2584,7 +2579,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
@@ -2592,7 +2587,7 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
                       "UIConstraints \"*%s %s *%s %s\"."),
                     prefix, c->option2, c->choice2,
                     c->option1, c->choice1, c->option2, c->choice2);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Missing choice *%s %s in "
                       "UIConstraints \"*%s %s *%s %s\"."),
@@ -2609,27 +2604,27 @@ check_constraints(ppd_file_t *ppd, /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'check_case()' - Check that there are no duplicate groups, options,
- *                  or choices that differ only by case.
- */
 
-static int                    /* O - Errors found */
-check_case(ppd_file_t *ppd, /* I - PPD file */
-           int errors,        /* I - Errors found */
-           int verbose)        /* I - Verbosity level */
+//'check_case()' - Check that there are no duplicate groups, options,
+//                 or choices that differ only by case.
+ 
+
+static int                    // O - Errors found 
+check_case(ppd_file_t *ppd, // I - PPD file 
+           int errors,        // I - Errors found 
+           int verbose)        // I - Verbosity level 
 {
-  int i, j;               /* Looping vars */
-  ppd_group_t *groupa,   /* First group */
-        *groupb;           /* Second group */
-  ppd_option_t *optiona, /* First option */
-        *optionb;           /* Second option */
-  ppd_choice_t *choicea, /* First choice */
-        *choiceb;           /* Second choice */
+  int i, j;               // Looping vars 
+  ppd_group_t *groupa,   // First group 
+        *groupb;           // Second group 
+  ppd_option_t *optiona, // First option 
+        *optionb;           // Second option 
+  ppd_choice_t *choicea, // First choice 
+        *choiceb;           // Second choice 
 
-  /*
-   * Check that the groups do not have any duplicate names...
-   */
+  
+  //Check that the groups do not have any duplicate names...
+   
 
   for (i = ppd->num_groups, groupa = ppd->groups; i > 1; i--, groupa++)
     for (j = i - 1, groupb = groupa + 1; j > 0; j--, groupb++)
@@ -2637,7 +2632,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!errors && !verbose)
             {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           }
 
@@ -2647,7 +2642,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                       _("      **FAIL**  Group names %s and %s differ only "
                         "by case."),
                       groupa->name, groupb->name);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      **FAIL**  Group names %s and %s differ only "
                         "by case."),
@@ -2657,9 +2652,9 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
           errors++;
         }
 
-        /*
-         * Check that the options do not have any duplicate names...
-         */
+        
+        //Check that the options do not have any duplicate names...
+         
 
         for (optiona = ppdFirstOption(ppd); optiona; optiona = ppdNextOption(ppd))
         {
@@ -2669,7 +2664,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
             {
               if (!errors && !verbose)
                 {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
               }
 
@@ -2679,7 +2674,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                       _("      **FAIL**  Option names %s and %s differ only "
                         "by case."),
                       optiona->keyword, optionb->keyword);
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      **FAIL**  Option names %s and %s differ only "
                         "by case."),
@@ -2690,9 +2685,9 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
             }
              cupsArrayRestore(ppd->options);
 
-            /*
-             * Then the choices...
-             */
+            
+            //Then the choices...
+             
 
             for (i = optiona->num_choices, choicea = optiona->choices;
                  i > 1;
@@ -2702,7 +2697,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                 {
                     if (!errors && !verbose)
                   {
-                    _ppdArrayAddStrings(output, " FAIL");
+                    cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                   }
 
@@ -2712,7 +2707,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                         _("      **FAIL**  Multiple occurrences of "
                           "option %s choice name %s."),
                         optiona->keyword, choicea->choice);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      **FAIL**  Multiple occurrences of "
                           "option %s choice name %s."),
@@ -2729,7 +2724,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                 {
                     if (!errors && !verbose)
                   {
-                    _ppdArrayAddStrings(output, " FAIL");
+                    cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                   }
 
@@ -2739,7 +2734,7 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                         _("      **FAIL**  Option %s choice names %s and "
                           "%s differ only by case."),
                         optiona->keyword, choicea->choice, choiceb->choice);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      **FAIL**  Option %s choice names %s and "
                           "%s differ only by case."),
@@ -2750,27 +2745,27 @@ check_case(ppd_file_t *ppd, /* I - PPD file */
                 }
         }
 
-        /*
-         * Return the number of errors found...
-         */
+        
+        //Return the number of errors found...
+         
 
         return (errors);
 }
 
-/*
- * 'check_defaults()' - Check default option keywords in the PPD file.
- */
+//
+//'check_defaults()' - Check default option keywords in the PPD file.
+ 
 
-static int                        /* O - Errors found */
-check_defaults(ppd_file_t *ppd, /* I - PPD file */
-               int errors,        /* I - Errors found */
-               int verbose,        /* I - Verbosity level */
-               int warn)        /* I - Warnings only? */
+static int                        // O - Errors found 
+check_defaults(ppd_file_t *ppd, // I - PPD file 
+               int errors,        // I - Errors found 
+               int verbose,        // I - Verbosity level 
+               int warn)        // I - Warnings only? 
 {
-  int j, k;              /* Looping vars */
-  ppd_attr_t *attr;      /* PPD attribute */
-  ppd_option_t *option; /* Standard UI option */
-  const char *prefix;      /* WARN/FAIL prefix */
+  int j, k;              // Looping vars 
+  ppd_attr_t *attr;      // PPD attribute 
+  ppd_option_t *option; // Standard UI option 
+  const char *prefix;      // WARN/FAIL prefix 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -2779,7 +2774,7 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
   {
     if (!warn && !errors && !verbose)
     {
-      _ppdArrayAddStrings(output, " FAIL");
+      cupsArrayAdd(output, " FAIL");
       if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
     }
 
@@ -2787,7 +2782,7 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
     {
       sprintf(str_format,
                       _("      %s  Default choices conflicting."), prefix);
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Default choices conflicting."), prefix);
     }
@@ -2818,9 +2813,9 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
       if ((option = ppdFindOption(ppd, attr->name + 7)) != NULL &&
           strcmp(attr->value, "Unknown"))
       {
-        /*
-         * Check that the default option value matches a choice...
-         */
+        
+        //Check that the default option value matches a choice...
+         
 
         for (k = 0; k < option->num_choices; k++)
             if (!strcmp(option->choices[k].choice, attr->value))
@@ -2830,7 +2825,7 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           }
 
@@ -2839,7 +2834,7 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
             sprintf(str_format,
                         _("      %s  %s %s does not exist."),
                         prefix, attr->name, attr->value);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      %s  %s %s does not exist."),
                         prefix, attr->name, attr->value);
@@ -2855,26 +2850,26 @@ check_defaults(ppd_file_t *ppd, /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'check_duplex()' - Check duplex keywords in the PPD file.
- */
 
-static int                      /* O - Errors found */
-check_duplex(ppd_file_t *ppd, /* I - PPD file */
-             int errors,      /* I - Error found */
-             int verbose,      /* I - Verbosity level */
-             int warn)          /* I - Warnings only? */
+//'check_duplex()' - Check duplex keywords in the PPD file.
+ 
+
+static int                      // O - Errors found 
+check_duplex(ppd_file_t *ppd, // I - PPD file 
+             int errors,      // I - Error found 
+             int verbose,      // I - Verbosity level 
+             int warn)          // I - Warnings only? 
 {
-  int i;                  /* Looping var */
-  ppd_option_t *option; /* PPD option */
-  ppd_choice_t *choice; /* Current choice */
-  const char *prefix;      /* Message prefix */
+  int i;                  // Looping var 
+  ppd_option_t *option; // PPD option 
+  ppd_choice_t *choice; // Current choice 
+  const char *prefix;      // Message prefix 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
-  /*
-   * Check for a duplex option, and for standard values...
-   */
+  //
+  //Check for a duplex option, and for standard values...
+   
 
   if ((option = ppdFindOption(ppd, "Duplex")) != NULL)
   {
@@ -2884,7 +2879,7 @@ check_duplex(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
           sprintf(str_format,
@@ -2892,7 +2887,7 @@ check_duplex(ppd_file_t *ppd, /* I - PPD file */
                       "choice None.\n"
                       "                REF: Page 122, section 5.17"),
                     prefix, option->keyword);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  REQUIRED %s does not define "
                       "choice None.\n"
@@ -2917,14 +2912,14 @@ check_duplex(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
 
               sprintf(str_format,
                       _("      %s  Bad %s choice %s.\n"
                         "                REF: Page 122, section 5.17"),
                       prefix, option->keyword, choice->choice);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,    
                       _("      %s  Bad %s choice %s.\n"
                         "                REF: Page 122, section 5.17"),
@@ -2939,34 +2934,34 @@ check_duplex(ppd_file_t *ppd, /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'check_filters()' - Check filters in the PPD file.
- */
 
-static int                        /* O - Errors found */
-check_filters(ppd_file_t *ppd,    /* I - PPD file */
-              const char *root, /* I - Root directory */
-              int errors,        /* I - Errors found */
-              int verbose,        /* I - Verbosity level */
-              int warn)            /* I - Warnings only? */
+//'check_filters()' - Check filters in the PPD file.
+ 
+
+static int                        // O - Errors found 
+check_filters(ppd_file_t *ppd,    // I - PPD file 
+              const char *root, // I - Root directory 
+              int errors,        // I - Errors found 
+              int verbose,        // I - Verbosity level 
+              int warn)            // I - Warnings only? 
 {
-  ppd_attr_t *attr;      /* PPD attribute */
-  const char *ptr;      /* Pointer into string */
-  char super[16],          /* Super-type for filter */
-    type[256],          /* Type for filter */
-    dstsuper[16],      /* Destination super-type for filter */
-    dsttype[256],      /* Destination type for filter */
-    program[1024],      /* Program/filter name */
-    pathprog[1024];      /* Complete path to program/filter */
-  int cost;              /* Cost of filter */
-  const char *prefix;      /* WARN/FAIL prefix */
-  struct stat fileinfo; /* File information */
+  ppd_attr_t *attr;      // PPD attribute 
+  const char *ptr;      // Pointer into string 
+  char super[16],          // Super-type for filter 
+    type[256],          // Type for filter 
+    dstsuper[16],      // Destination super-type for filter 
+    dsttype[256],      // Destination type for filter 
+    program[1024],      // Program/filter name 
+    pathprog[1024];      // Complete path to program/filter 
+  int cost;              // Cost of filter 
+  const char *prefix;      // WARN/FAIL prefix 
+  struct stat fileinfo; // File information 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
-  /*
-   * cupsFilter
-   */
+  //
+  //cupsFilter
+   
 
   for (attr = ppdFindAttr(ppd, "cupsFilter", NULL);
          attr;
@@ -2976,7 +2971,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -2985,7 +2980,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsFilter");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsFilter");
@@ -3001,7 +2996,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3010,7 +3005,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad cupsFilter value \"%s\"."),
                     prefix, attr->value);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad cupsFilter value \"%s\"."),
                     prefix, attr->value);
@@ -3024,7 +3019,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
 
     if (!strncmp(program, "maxsize(", 8))
     {
-      char *mptr; /* Pointer into maxsize(nnnn) program */
+      char *mptr; // Pointer into maxsize(nnnn) program 
 
       strtoll(program + 8, &mptr, 10);
 
@@ -3032,7 +3027,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3041,7 +3036,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad cupsFilter value \"%s\"."),
                       prefix, attr->value);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad cupsFilter value \"%s\"."),
                       prefix, attr->value);
@@ -3081,7 +3076,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
           if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3089,7 +3084,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         {
             sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsFilter", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsFilter", pathprog);
         }
@@ -3103,7 +3098,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
           {
-          _ppdArrayAddStrings(output, " FAIL");
+          cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3112,7 +3107,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsFilter", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsFilter", pathprog);
@@ -3126,9 +3121,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     }
   }
 
-  /*
-   * cupsFilter2
-   */
+  
+  //cupsFilter2
+   
 
   for (attr = ppdFindAttr(ppd, "cupsFilter2", NULL);
         attr;
@@ -3138,7 +3133,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3147,7 +3142,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsFilter2");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsFilter2");
@@ -3162,7 +3157,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3171,7 +3166,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad cupsFilter2 value \"%s\"."),
                     prefix, attr->value);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad cupsFilter2 value \"%s\"."),
                     prefix, attr->value);
@@ -3185,7 +3180,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
 
     if (!strncmp(program, "maxsize(", 8))
     {
-      char *mptr; /* Pointer into maxsize(nnnn) program */
+      char *mptr; // Pointer into maxsize(nnnn) program 
 
       strtoll(program + 8, &mptr, 10);
 
@@ -3193,7 +3188,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3202,7 +3197,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad cupsFilter2 value \"%s\"."),
                       prefix, attr->value);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad cupsFilter2 value \"%s\"."),
                       prefix, attr->value);
@@ -3252,7 +3247,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3260,7 +3255,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         {
             sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsFilter2", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsFilter2", pathprog);
         }
@@ -3274,7 +3269,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3283,7 +3278,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsFilter2", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsFilter2", pathprog);
@@ -3298,9 +3293,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     }
   }
 
-  /*
-   * cupsPreFilter
-   */
+  
+  //cupsPreFilter
+   
 
   for (attr = ppdFindAttr(ppd, "cupsPreFilter", NULL);
          attr;
@@ -3310,7 +3305,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3319,7 +3314,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsPreFilter");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "cupsPreFilter");
@@ -3336,7 +3331,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3345,7 +3340,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad cupsPreFilter value \"%s\"."),
                     prefix, attr->value ? attr->value : "");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad cupsPreFilter value \"%s\"."),
                     prefix, attr->value ? attr->value : "");
@@ -3376,7 +3371,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3384,7 +3379,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         {
             sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsPreFilter", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                       prefix, "cupsPreFilter", pathprog);
         }
@@ -3399,7 +3394,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -3408,7 +3403,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsPreFilter", pathprog);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad permissions on %s file \"%s\"."),
                       prefix, "cupsPreFilter", pathprog);
@@ -3424,9 +3419,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
   }
 
   #ifdef __APPLE__
-  /*
-   * APDialogExtension
-   */
+  
+  //APDialogExtension
+   
 
   for (attr = ppdFindAttr(ppd, "APDialogExtension", NULL);
          attr != NULL;
@@ -3436,7 +3431,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3445,7 +3440,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APDialogExtension");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APDialogExtension");
@@ -3463,7 +3458,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3471,7 +3466,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APDialogExtension", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APDialogExtension", pathprog);
       }
@@ -3486,7 +3481,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3495,7 +3490,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APDialogExtension", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APDialogExtension", pathprog);
@@ -3510,9 +3505,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
                           warn);
   }
 
-  /*
-   * APPrinterIconPath
-   */
+  
+  //APPrinterIconPath
+   
 
   if ((attr = ppdFindAttr(ppd, "APPrinterIconPath", NULL)) != NULL)
   {
@@ -3520,7 +3515,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3529,7 +3524,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterIconPath");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterIconPath");
@@ -3547,7 +3542,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3555,7 +3550,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterIconPath", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterIconPath", pathprog);
       }
@@ -3570,7 +3565,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3579,7 +3574,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterIconPath", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterIconPath", pathprog);
@@ -3594,9 +3589,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
                           warn);
   }
 
-  /*
-   * APPrinterLowInkTool
-   */
+  
+  //APPrinterLowInkTool
+   
 
   if ((attr = ppdFindAttr(ppd, "APPrinterLowInkTool", NULL)) != NULL)
   {
@@ -3604,7 +3599,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3613,7 +3608,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterLowInkTool");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterLowInkTool");
@@ -3631,7 +3626,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3639,7 +3634,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterLowInkTool", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterLowInkTool", pathprog);
       }
@@ -3654,7 +3649,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3663,7 +3658,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterLowInkTool", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterLowInkTool", pathprog);
@@ -3678,9 +3673,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
                           warn);
   }
 
-  /*
-   * APPrinterUtilityPath
-   */
+  
+  //APPrinterUtilityPath
+   
 
   if ((attr = ppdFindAttr(ppd, "APPrinterUtilityPath", NULL)) != NULL)
   {
@@ -3688,7 +3683,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3697,7 +3692,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterUtilityPath");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APPrinterUtilityPath");
@@ -3714,7 +3709,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3722,7 +3717,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
       {
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterUtilityPath", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APPrinterUtilityPath", pathprog);
       }
@@ -3736,7 +3731,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3745,7 +3740,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterUtilityPath", pathprog);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APPrinterUtilityPath", pathprog);
@@ -3759,9 +3754,9 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
                           warn);
   }
 
-  /*
-   * APScanAppBundleID and APScanAppPath
-   */
+  
+  //APScanAppBundleID and APScanAppPath
+   
 
   if ((attr = ppdFindAttr(ppd, "APScanAppPath", NULL)) != NULL)
   {
@@ -3769,7 +3764,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3778,7 +3773,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APScanAppPath");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad spelling of %s - should be %s."),
                     prefix, attr->name, "APScanAppPath");
@@ -3792,7 +3787,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3801,7 +3796,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APScanAppPath",
                     attr->value ? attr->value : "<NULL>");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "APScanAppPath",
                     attr->value ? attr->value : "<NULL>");
@@ -3816,7 +3811,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3825,7 +3820,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APScanAppPath", attr->value);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "APScanAppPath", attr->value);
@@ -3842,7 +3837,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3851,7 +3846,7 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         sprintf(str_format, _("      %s  Cannot provide both "
                               "APScanAppPath and APScanAppBundleID."),
                     prefix);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Cannot provide both "
                               "APScanAppPath and APScanAppBundleID."),
                     prefix);
@@ -3861,32 +3856,32 @@ check_filters(ppd_file_t *ppd,    /* I - PPD file */
         errors++;
     }
   }
-  #endif /* __APPLE__ */
+  #endif // __APPLE__ 
 
   return (errors);
 }
 
-/*
- * 'check_profiles()' - Check ICC color profiles in the PPD file.
- */
 
-static int                         /* O - Errors found */
-check_profiles(ppd_file_t *ppd,     /* I - PPD file */
-               const char *root, /* I - Root directory */
-               int errors,         /* I - Errors found */
-               int verbose,         /* I - Verbosity level */
-               int warn)         /* I - Warnings only? */
+//'check_profiles()' - Check ICC color profiles in the PPD file.
+ 
+
+static int                         // O - Errors found 
+check_profiles(ppd_file_t *ppd,     // I - PPD file 
+               const char *root, // I - Root directory 
+               int errors,         // I - Errors found 
+               int verbose,         // I - Verbosity level 
+               int warn)         // I - Warnings only? 
 {
-  int i;                     /* Looping var */
-  ppd_attr_t *attr;         /* PPD attribute */
-  const char *ptr;         /* Pointer into string */
-  const char *prefix;         /* WARN/FAIL prefix */
-  char filename[1024];     /* Profile filename */
-  struct stat fileinfo;     /* File information */
-  int num_profiles = 0;     /* Number of profiles */
-  unsigned hash,             /* Current hash value */
-      hashes[1000];         /* Hash values of profile names */
-  const char *specs[1000]; /* Specifiers for profiles */
+  int i;                     // Looping var 
+  ppd_attr_t *attr;         // PPD attribute 
+  const char *ptr;         // Pointer into string 
+  const char *prefix;         // WARN/FAIL prefix 
+  char filename[1024];     // Profile filename 
+  struct stat fileinfo;     // File information 
+  int num_profiles = 0;     // Number of profiles 
+  unsigned hash,             // Current hash value 
+      hashes[1000];         // Hash values of profile names 
+  const char *specs[1000]; // Specifiers for profiles 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -3894,9 +3889,9 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
        attr;
        attr = ppdFindNextAttr(ppd, "cupsICCProfile", NULL))
   {
-    /*
-     * Check for valid selector...
-     */
+    
+    //Check for valid selector...
+     
 
     for (i = 0, ptr = strchr(attr->spec, '.'); ptr; ptr = strchr(ptr + 1, '.'))
       i++;
@@ -3905,7 +3900,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3914,7 +3909,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad cupsICCProfile %s."),
                     prefix, attr->spec);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad cupsICCProfile %s."),
                     prefix, attr->spec);
@@ -3926,9 +3921,9 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
       continue;
     }
 
-    /*
-     * Check for valid profile filename...
-     */
+    
+    //Check for valid profile filename...
+     
 
     if (attr->value[0] == '/')
       snprintf(filename, sizeof(filename), "%s%s", root, attr->value);
@@ -3949,7 +3944,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3957,7 +3952,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
       {
         sprintf(str_format, _("      %s  Missing %s file \"%s\"."),
                     prefix, "cupsICCProfile", filename);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  Missing %s file \"%s\"."),
                     prefix, "cupsICCProfile", filename);
       }
@@ -3971,7 +3966,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -3980,7 +3975,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
         sprintf(str_format,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "cupsICCProfile", filename);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Bad permissions on %s file \"%s\"."),
                     prefix, "cupsICCProfile", filename);
@@ -3992,9 +3987,9 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
     else
       errors = valid_path("cupsICCProfile", filename, errors, verbose, warn);
 
-    /*
-     * Check for hash collisions...
-     */
+    
+    //Check for hash collisions...
+     
 
     hash = _ppdHashName(attr->spec);
 
@@ -4008,7 +4003,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -4019,7 +4014,7 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
                         "collides with %s."),
                       prefix, attr->spec,
                       specs[i]);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  cupsICCProfile %s hash value "
                         "collides with %s."),
@@ -4032,9 +4027,9 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
       }
     }
 
-    /*
-     * Remember up to 1000 profiles...
-     */
+    
+    //Remember up to 1000 profiles...
+     
 
     if (num_profiles < 1000)
     {
@@ -4047,35 +4042,35 @@ check_profiles(ppd_file_t *ppd,     /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'check_sizes()' - Check media sizes in the PPD file.
- */
 
-static int                     /* O - Errors found */
-check_sizes(ppd_file_t *ppd, /* I - PPD file */
-            int errors,         /* I - Errors found */
-            int verbose,     /* I - Verbosity level */
-            int warn)         /* I - Warnings only? */
+//'check_sizes()' - Check media sizes in the PPD file.
+ 
+
+static int                     // O - Errors found 
+check_sizes(ppd_file_t *ppd, // I - PPD file 
+            int errors,         // I - Errors found 
+            int verbose,     // I - Verbosity level 
+            int warn)         // I - Warnings only? 
 {
-  int i;                     /* Looping var */
-  ppd_size_t *size;         /* Current size */
-  int width,                 /* Custom width */
-      length;                 /* Custom length */
-  const char *prefix;         /* WARN/FAIL prefix */
-  ppd_option_t *page_size, /* PageSize option */
-      *page_region;         /* PageRegion option */
-  pwg_media_t *pwg_media;     /* PWG media */
-  char buf[PPD_MAX_NAME];     /* PapeSize name that is supposed to be */
-  const char *ptr;         /* Pointer into string */
-  int width_2540ths,         /* PageSize width in 2540ths */
-      length_2540ths;         /* PageSize length in 2540ths */
-  int is_ok;                 /* Flag for PageSize name verification */
-  double width_tmp,         /* Width after rounded up */
-      length_tmp,             /* Length after rounded up */
-      width_inch,             /* Width in inches */
-      length_inch,         /* Length in inches */
-      width_mm,             /* Width in millimeters */
-      length_mm;             /* Length in millimeters */
+  int i;                     // Looping var 
+  ppd_size_t *size;         // Current size 
+  int width,                 // Custom width 
+      length;                 // Custom length 
+  const char *prefix;         // WARN/FAIL prefix 
+  ppd_option_t *page_size, // PageSize option 
+      *page_region;         // PageRegion option 
+  pwg_media_t *pwg_media;     // PWG media 
+  char buf[PPD_MAX_NAME];     // PapeSize name that is supposed to be 
+  const char *ptr;         // Pointer into string 
+  int width_2540ths,         // PageSize width in 2540ths 
+      length_2540ths;         // PageSize length in 2540ths 
+  int is_ok;                 // Flag for PageSize name verification 
+  double width_tmp,         // Width after rounded up 
+      length_tmp,             // Length after rounded up 
+      width_inch,             // Width in inches 
+      length_inch,         // Length in inches 
+      width_mm,             // Width in millimeters 
+      length_mm;             // Length in millimeters 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -4083,7 +4078,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
   {
     if (!warn && !errors && !verbose)
     {
-      _ppdArrayAddStrings(output, " FAIL");
+      cupsArrayAdd(output, " FAIL");
       if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
     }
 
@@ -4093,7 +4088,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                       _("      %s  Missing REQUIRED PageSize option.\n"
                         "                REF: Page 99, section 5.14."),
                       prefix);
-      _ppdArrayAddStrings(output, str_format);
+      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Missing REQUIRED PageSize option.\n"
                         "                REF: Page 99, section 5.14."),
@@ -4108,7 +4103,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
   {
     if (!warn && !errors && !verbose)
     {
-      _ppdArrayAddStrings(output, " FAIL");
+      cupsArrayAdd(output, " FAIL");
       if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
     }
 
@@ -4118,7 +4113,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                       _("      %s  Missing REQUIRED PageRegion option.\n"
                         "                REF: Page 100, section 5.14."),
                       prefix);
-      _ppdArrayAddStrings(output, str_format);
+      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Missing REQUIRED PageRegion option.\n"
                         "                REF: Page 100, section 5.14."),
@@ -4131,15 +4126,15 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
 
   for (i = ppd->num_sizes, size = ppd->sizes; i > 0; i--, size++)
   {
-    /*
-     * Check that the size name is standard...
-     */
+    
+    //Check that the size name is standard...
+     
 
     if (!strcmp(size->name, "Custom"))
     {
-      /*
-       * Skip custom page size...
-       */
+      
+      //Skip custom page size...
+       
 
       continue;
     }
@@ -4147,17 +4142,17 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
     if (warn != 2 && size->name[0] == 'w' &&
             sscanf(size->name, "w%dh%d", &width, &length) == 2)
     {
-      /*
-       * Validate device-specific size wNNNhNNN should have proper width and
-       * length...
-       */
+      
+      //Validate device-specific size wNNNhNNN should have proper width and
+      //length...
+       
 
       if (fabs(width - size->width) >= 1.0 ||
           fabs(length - size->length) >= 1.0)
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -4167,7 +4162,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                       _("      %s  Size \"%s\" has unexpected dimensions "
                         "(%gx%g)."),
                       prefix, size->name, size->width, size->length);
-          _ppdArrayAddStrings(output, str_format);
+          cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Size \"%s\" has unexpected dimensions "
                         "(%gx%g)."),
@@ -4180,15 +4175,15 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
       }
     }
 
-    /*
-     * Verify that the size is defined for both PageSize and PageRegion...
-     */
+    
+    //Verify that the size is defined for both PageSize and PageRegion...
+     
 
     if (warn != 2 && !ppdFindChoice(page_size, size->name))
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -4198,7 +4193,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                     _("      %s  Size \"%s\" defined for %s but not for "
                       "%s."),
                     prefix, size->name, "PageRegion", "PageSize");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Size \"%s\" defined for %s but not for "
                       "%s."),
@@ -4212,7 +4207,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -4222,7 +4217,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                     _("      %s  Size \"%s\" defined for %s but not for "
                       "%s."),
                     prefix, size->name, "PageSize", "PageRegion");
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  Size \"%s\" defined for %s but not for "
                       "%s."),
@@ -4233,12 +4228,12 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
         errors++;
     }
 
-    /*
-     * Verify that the size name is Adobe standard name if it's a standard size
-     * and the dimensional name if it's not a standard size.  Suffix should be
-     * .Fullbleed, etc., or numeric, e.g., Letter, Letter.Fullbleed,
-     * Letter.Transverse, Letter1, Letter2, 4x8, 55x91mm, 55x91mm.Fullbleed, etc.
-     */
+    
+    //Verify that the size name is Adobe standard name if it's a standard size
+    //and the dimensional name if it's not a standard size.  Suffix should be
+    //.Fullbleed, etc., or numeric, e.g., Letter, Letter.Fullbleed,
+    //Letter.Transverse, Letter1, Letter2, 4x8, 55x91mm, 55x91mm.Fullbleed, etc.
+     
 
     if (warn != 0)
     {
@@ -4250,13 +4245,13 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
       if (pwg_media &&
           (abs(pwg_media->width - width_2540ths) > 34 ||
            abs(pwg_media->length - length_2540ths) > 34))
-        pwg_media = NULL; /* Only flag matches within a point */
+        pwg_media = NULL; // Only flag matches within a point 
 
       if (pwg_media && pwg_media->ppd &&
           (pwg_media->ppd[0] < 'a' || pwg_media->ppd[0] > 'z'))
       {
         size_t ppdlen = strlen(pwg_media->ppd);
-        /* Length of standard PPD name */
+        // Length of standard PPD name 
 
         strlcpy(buf, pwg_media->ppd, sizeof(buf));
 
@@ -4278,11 +4273,11 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
             strlcat(buf, ".Fullbleed", sizeof(buf) - strlen(buf));
             if (_cups_strcasecmp(size->name, buf))
             {
-            /*
-             * Allow an additional qualifier such as ".WithTab"...
-             */
+            
+            //Allow an additional qualifier such as ".WithTab"...
+             
 
-            size_t buflen = strlen(buf); /* Length of full bleed name */
+            size_t buflen = strlen(buf); // Length of full bleed name 
 
             if (_ppd_strncasecmp(size->name, buf, buflen) ||
                 size->name[buflen] != '.')
@@ -4291,9 +4286,9 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
         }
         else if (!strncmp(size->name, pwg_media->ppd, ppdlen))
         {
-            /*
-             * Check for a proper qualifier (number, "Small", or .something)...
-             */
+            
+            //Check for a proper qualifier (number, "Small", or .something)...
+             
 
             ptr = size->name + ppdlen;
 
@@ -4313,9 +4308,9 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
         }
         else
         {
-            /*
-           * Check for EnvSizeName as well...
-           */
+        
+          //Check for EnvSizeName as well...
+           
 
             if (strncmp(pwg_media->ppd, "Env", 3) &&
                   !strncmp(size->name, "Env", 3))
@@ -4331,7 +4326,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                       _("      %s  Size \"%s\" should be the Adobe "
                         "standard name \"%s\"."),
                       prefix, size->name, buf);
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Size \"%s\" should be the Adobe "
                         "standard name \"%s\"."),
@@ -4352,8 +4347,8 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
         }
         else
         {
-            width_mm = size->width / 72.0 * 25.4;
-            length_mm = size->length / 72.0 * 25.4;
+            width_mm = size->width / 72.0//25.4;
+            length_mm = size->length / 72.0//25.4;
 
             snprintf(buf, sizeof(buf), "%.0fx%.0fmm", width_mm, length_mm);
         }
@@ -4367,15 +4362,15 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
         if (_cups_strcasecmp(size->name, buf))
         {
             size_t buflen = strlen(buf);
-            /* Length of proposed name */
+            // Length of proposed name 
 
             if (_ppd_strncasecmp(size->name, buf, buflen) ||
                    (strcmp(size->name + buflen, "in") &&
                    size->name[buflen] != '.'))
             {
             char altbuf[PPD_MAX_NAME];
-            /* Alternate "wNNNhNNN" name */
-            size_t altlen; /* Length of alternate name */
+            // Alternate "wNNNhNNN" name 
+            size_t altlen; // Length of alternate name 
 
             snprintf(altbuf, sizeof(altbuf), "w%.0fh%.0f", size->width,
                  size->length);
@@ -4386,7 +4381,7 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
                 sprintf(str_format,
                           _("      %s  Size \"%s\" should be \"%s\"."),
                           prefix, size->name, buf);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
               if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      %s  Size \"%s\" should be \"%s\"."),
                           prefix, size->name, buf);
@@ -4400,40 +4395,40 @@ check_sizes(ppd_file_t *ppd, /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'check_translations()' - Check translations in the PPD file.
- */
 
-static int                            /* O - Errors found */
-check_translations(ppd_file_t *ppd, /* I - PPD file */
-                   int errors,        /* I - Errors found */
-                   int verbose,        /* I - Verbosity level */
-                   int warn)        /* I - Warnings only? */
+//'check_translations()' - Check translations in the PPD file.
+ 
+
+static int                            // O - Errors found 
+check_translations(ppd_file_t *ppd, // I - PPD file 
+                   int errors,        // I - Errors found 
+                   int verbose,        // I - Verbosity level 
+                   int warn)        // I - Warnings only? 
 {
-  int j;                         /* Looping var */
-  ppd_attr_t *attr;             /* PPD attribute */
-  cups_array_t *languages;     /* Array of languages */
-  int langlen;                 /* Length of language */
-  char *language,                 /* Current language */
-      keyword[PPD_MAX_NAME],     /* Localization keyword (full) */
-      llkeyword[PPD_MAX_NAME], /* Localization keyword (base) */
-      ckeyword[PPD_MAX_NAME],     /* Custom option keyword (full) */
+  int j;                         // Looping var 
+  ppd_attr_t *attr;             // PPD attribute 
+  cups_array_t *languages;     // Array of languages 
+  int langlen;                 // Length of language 
+  char *language,                 // Current language 
+      keyword[PPD_MAX_NAME],     // Localization keyword (full) 
+      llkeyword[PPD_MAX_NAME], // Localization keyword (base) 
+      ckeyword[PPD_MAX_NAME],     // Custom option keyword (full) 
       cllkeyword[PPD_MAX_NAME];
-  /* Custom option keyword (base) */
-  ppd_option_t *option;    /* Standard UI option */
-  ppd_coption_t *coption; /* Custom option */
-  ppd_cparam_t *cparam;    /* Custom parameter */
-  char ll[3];                /* Base language */
-  const char *prefix;        /* WARN/FAIL prefix */
-  const char *text;        /* Pointer into UI text */
+  // Custom option keyword (base) 
+  ppd_option_t *option;    // Standard UI option 
+  ppd_coption_t *coption; // Custom option 
+  ppd_cparam_t *cparam;    // Custom parameter 
+  char ll[3];                // Base language 
+  const char *prefix;        // WARN/FAIL prefix 
+  const char *text;        // Pointer into UI text 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
   if ((languages = _ppdGetLanguages(ppd)) != NULL)
   {
-    /*
-     * This file contains localizations, check them...
-     */
+    //
+    //This file contains localizations, check them...
+     
 
     for (language = (char *)cupsArrayFirst(languages);
          language;
@@ -4444,7 +4439,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
       {
         if (!warn && !errors && !verbose)
         {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
           if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
         }
 
@@ -4453,7 +4448,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
             sprintf(str_format,
                       _("      %s  Bad language \"%s\"."),
                       prefix, language);
-                      _ppdArrayAddStrings(output, str_format);
+                      cupsArrayAdd(output, str_format);
           if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  Bad language \"%s\"."),
                       prefix, language);
@@ -4470,9 +4465,9 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
 
       strlcpy(ll, language, sizeof(ll));
 
-      /*
-       * Loop through all options and choices...
-       */
+      
+      //Loop through all options and choices...
+       
 
       for (option = ppdFirstOption(ppd);
            option;
@@ -4489,7 +4484,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           }
 
@@ -4499,7 +4494,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                         _("      %s  Missing \"%s\" translation "
                           "string for option %s."),
                         prefix, language, option->keyword);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
              if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      %s  Missing \"%s\" translation "
                           "string for option %s."),
@@ -4513,7 +4508,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           }
 
@@ -4523,7 +4518,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                         _("      %s  Bad UTF-8 \"%s\" translation "
                           "string for option %s."),
                         prefix, language, option->keyword);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      %s  Bad UTF-8 \"%s\" translation "
                           "string for option %s."),
@@ -4541,10 +4536,10 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
 
         for (j = 0; j < option->num_choices; j++)
         {
-            /*
-              * First see if this choice is a number; if so, don't require
-           * translation...
-           */
+            
+           //First see if this choice is a number; if so, don't require
+           //translation...
+           
 
             for (text = option->choices[j].text; *text; text++)
             if (!strchr("0123456789-+.", *text))
@@ -4553,9 +4548,9 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
             if (!*text)
             continue;
 
-            /*
-              * Check custom choices differently...
-           */
+            
+             //Check custom choices differently...
+           
  
             if (!_cups_strcasecmp(option->choices[j].choice, "Custom") &&
                   (coption = ppdFindCustomOption(ppd,
@@ -4569,7 +4564,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
             {
                 if (!warn && !errors && !verbose)
               {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
                 if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
               }
 
@@ -4582,7 +4577,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                         prefix, language,
                         ckeyword + 1 + strlen(language),
                         "True");
-                _ppdArrayAddStrings(output, str_format);
+                cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                         _("      %s  Bad UTF-8 \"%s\" "
                           "translation string for option %s, "
@@ -4614,7 +4609,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                 {
                     if (!warn && !errors && !verbose)
                   {
-                    _ppdArrayAddStrings(output, " FAIL");
+                    cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                   }
 
@@ -4627,7 +4622,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                             prefix, language,
                             ckeyword + 1 + strlen(language),
                             cparam->name);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                             _("      %s  Missing \"%s\" "
                               "translation string for option %s, "
@@ -4644,7 +4639,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                 {
                     if (!warn && !errors && !verbose)
                   {
-                    _ppdArrayAddStrings(output, " FAIL");
+                    cupsArrayAdd(output, " FAIL");
                     if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
                   }
 
@@ -4657,7 +4652,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                             prefix, language,
                             ckeyword + 1 + strlen(language),
                             cparam->name);
-                    _ppdArrayAddStrings(output, str_format);
+                    cupsArrayAdd(output, str_format);
                     if (log) log(ld, CF_LOGLEVEL_ERROR,
                             _("      %s  Bad UTF-8 \"%s\" "
                               "translation string for option %s, "
@@ -4680,7 +4675,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
             {
             if (!warn && !errors && !verbose)
             {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
             }
 
@@ -4692,7 +4687,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                             "choice %s."),
                           prefix, language, option->keyword,
                           option->choices[j].choice);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      %s  Missing \"%s\" "
                             "translation string for option %s, "
@@ -4708,7 +4703,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
             {
             if (!warn && !errors && !verbose)
             {
-                _ppdArrayAddStrings(output, " FAIL");
+                cupsArrayAdd(output, " FAIL");
               if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
             }
 
@@ -4720,7 +4715,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                             "choice %s."),
                           prefix, language, option->keyword,
                           option->choices[j].choice);
-              _ppdArrayAddStrings(output, str_format);
+              cupsArrayAdd(output, str_format);
                 if (log) log(ld, CF_LOGLEVEL_ERROR,
                           _("      %s  Bad UTF-8 \"%s\" "
                             "translation string for option %s, "
@@ -4736,18 +4731,18 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
       }
     }
 
-    /*
-     * Verify that we have the base language for each localized one...
-     */
+    
+    //Verify that we have the base language for each localized one...
+     
 
     for (language = (char *)cupsArrayFirst(languages);
             language;
             language = (char *)cupsArrayNext(languages))
       if (language[2])
       {
-        /*
-         * Lookup the base language...
-         */
+        
+        //Lookup the base language...
+         
 
         cupsArraySave(languages);
 
@@ -4758,7 +4753,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
         {
             if (!warn && !errors && !verbose)
           {
-            _ppdArrayAddStrings(output, " FAIL");
+            cupsArrayAdd(output, " FAIL");
             if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
           }
 
@@ -4768,7 +4763,7 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
                         _("      %s  No base translation \"%s\" "
                           "is included in file."),
                         prefix, ll);
-            _ppdArrayAddStrings(output, str_format);
+            cupsArrayAdd(output, str_format);
             if (log) log(ld, CF_LOGLEVEL_ERROR, _("      %s  No base translation \"%s\" "
                           "is included in file."),
                         prefix, ll);
@@ -4781,9 +4776,9 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
         cupsArrayRestore(languages);
       }
 
-      /*
-       * Free memory used for the languages...
-       */
+      
+      //Free memory used for the languages...
+       
 
       _ppdFreeLanguages(languages);
     }
@@ -4791,29 +4786,29 @@ check_translations(ppd_file_t *ppd, /* I - PPD file */
   return (errors);
 }
 
-/*
- * 'show_conflicts()' - Show option conflicts in a PPD file.
- */
+
+//'show_conflicts()' - Show option conflicts in a PPD file.
+ 
 
 static void
-show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
-               const char *prefix) /* I - Prefix string */
+show_conflicts(ppd_file_t *ppd,       // I - PPD to check 
+               const char *prefix) // I - Prefix string 
 {
-  int i, j;               /* Looping variables */
-  ppd_const_t *c;           /* Current constraint */
-  ppd_option_t *o1, *o2; /* Options */
-  ppd_choice_t *c1, *c2; /* Choices */
+  int i, j;               // Looping variables 
+  ppd_const_t *c;           // Current constraint 
+  ppd_option_t *o1, *o2; // Options 
+  ppd_choice_t *c1, *c2; // Choices 
 
-  /*
-   * Loop through all of the UI constraints and report any options
-   * that conflict...
-   */
+  
+  //Loop through all of the UI constraints and report any options
+  //that conflict...
+   
 
   for (i = ppd->num_consts, c = ppd->consts; i > 0; i--, c++)
   {
-    /*
-     * Grab pointers to the first option...
-     */
+    
+    //Grab pointers to the first option...
+     
 
     o1 = ppdFindOption(ppd, c->option1);
 
@@ -4821,17 +4816,17 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
       continue;
     else if (c->choice1[0] != '\0')
     {
-      /*
-       * This constraint maps to a specific choice.
-       */
+      
+      //This constraint maps to a specific choice.
+       
 
       c1 = ppdFindChoice(o1, c->choice1);
     }
     else
     {
-      /*
-       * This constraint applies to any choice for this option.
-       */
+      
+      //This constraint applies to any choice for this option.
+       
 
       for (j = o1->num_choices, c1 = o1->choices; j > 0; j--, c1++)
         if (c1->marked)
@@ -4844,9 +4839,9 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
         c1 = NULL;
     }
 
-    /*
-     * Grab pointers to the second option...
-     */
+    
+    //Grab pointers to the second option...
+     
 
     o2 = ppdFindOption(ppd, c->option2);
 
@@ -4854,17 +4849,17 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
       continue;
     else if (c->choice2[0] != '\0')
     {
-      /*
-       * This constraint maps to a specific choice.
-       */
+      
+      //This constraint maps to a specific choice.
+       
 
       c2 = ppdFindChoice(o2, c->choice2);
     }
     else
     {
-      /*
-       * This constraint applies to any choice for this option.
-       */
+      
+      //This constraint applies to any choice for this option.
+       
 
       for (j = o2->num_choices, c2 = o2->choices; j > 0; j--, c2++)
         if (c2->marked)
@@ -4877,9 +4872,9 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
         c2 = NULL;
     }
 
-    /*
-     * If both options are marked then there is a conflict...
-     */
+    
+    //If both options are marked then there is a conflict...
+     
 
     if (c1 != NULL && c1->marked && c2 != NULL && c2->marked)
     {
@@ -4888,7 +4883,7 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
                         "                (constraint=\"%s %s %s %s\")."),
                       prefix, o1->keyword, c1->choice, o2->keyword, c2->choice,
                       c->option1, c->choice1, c->option2, c->choice2);
-      _ppdArrayAddStrings(output, str_format);
+      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,
                       _("      %s  \"%s %s\" conflicts with \"%s %s\"\n"
                         "                (constraint=\"%s %s %s %s\")."),
@@ -4898,22 +4893,22 @@ show_conflicts(ppd_file_t *ppd,       /* I - PPD to check */
   }
 }
 
-/*
- * 'test_raster()' - Test PostScript commands for raster printers.
- */
 
-static int                     /* O - 1 on success, 0 on failure */
-test_raster(ppd_file_t *ppd, /* I - PPD file */
-            int verbose)     /* I - Verbosity */
+//'test_raster()' - Test PostScript commands for raster printers.
+ 
+
+static int                     // O - 1 on success, 0 on failure 
+test_raster(ppd_file_t *ppd, // I - PPD file 
+            int verbose)     // I - Verbosity 
 {
-  cups_page_header2_t header; /* Page header */
+  cups_page_header2_t header; // Page header 
 
   ppdMarkDefaults(ppd);
   if (cupsRasterInterpretPPD(&header, ppd, 0, NULL, 0))
   {
     if (!verbose)
     {
-      _ppdArrayAddStrings(output, " FAIL");
+      cupsArrayAdd(output, " FAIL");
       if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
     }
 
@@ -4923,7 +4918,7 @@ test_raster(ppd_file_t *ppd, /* I - PPD file */
                       _("      **FAIL**  Default option code cannot be "
                         "interpreted: %s"),
                       cupsRasterErrorString());
-      _ppdArrayAddStrings(output, str_format);
+      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,  _("      **FAIL**  Default option code cannot be "
                         "interpreted: %s"),
                       cupsRasterErrorString());
@@ -4932,9 +4927,9 @@ test_raster(ppd_file_t *ppd, /* I - PPD file */
     return (0);
   }
 
-  /*
-   * Try a test of custom page size code, if available...
-   */
+  
+  //Try a test of custom page size code, if available...
+   
 
   if (!ppdPageSize(ppd, "Custom.612x792"))
     return (1);
@@ -4945,7 +4940,7 @@ test_raster(ppd_file_t *ppd, /* I - PPD file */
   {
     if (!verbose)
     {
-      _ppdArrayAddStrings(output, " FAIL");
+      cupsArrayAdd(output, " FAIL");
       if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
     }
 
@@ -4955,7 +4950,7 @@ test_raster(ppd_file_t *ppd, /* I - PPD file */
                       _("      **FAIL**  Default option code cannot be "
                         "interpreted: %s"),
                       cupsRasterErrorString());
-      _ppdArrayAddStrings(output, str_format);
+      cupsArrayAdd(output, str_format);
       if (log) log(ld, CF_LOGLEVEL_ERROR,  _("      **FAIL**  Default option code cannot be "
                         "interpreted: %s"),
                       cupsRasterErrorString());
@@ -4967,80 +4962,80 @@ test_raster(ppd_file_t *ppd, /* I - PPD file */
   return (1);
 }
 
-/*
- * 'usage()' - Show program usage.
- */
+
+//'usage()' - Show program usage.
+ 
 
 static void
 usage(void)
 {
-  _ppdArrayAddStrings(output, "Warning: This program will be removed in a future version of CUPS.");
+  cupsArrayAdd(output, "Warning: This program will be removed in a future version of CUPS.");
   if (log) log(ld, CF_LOGLEVEL_INFO, "Warning: This program will be removed in a future version of CUPS.");
-  _ppdArrayAddStrings(output, "Usage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
+  cupsArrayAdd(output, "Usage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
                   "       program | testppdfile [options] -");
   if (log) log(ld, CF_LOGLEVEL_INFO, "Usage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
                   "       program | testppdfile [options] -");
-  _ppdArrayAddStrings(output, "Options:");
+  cupsArrayAdd(output, "Options:");
   if (log) log(ld, CF_LOGLEVEL_INFO, "Options:");
-  _ppdArrayAddStrings(output, "-I {filename,filters,none,profiles}\n"
+  cupsArrayAdd(output, "-I {filename,filters,none,profiles}\n"
                           "                          Ignore specific warnings");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-I {filename,filters,none,profiles}\n"
                           "                          Ignore specific warnings");
-  _ppdArrayAddStrings(output, "-R root-directory       Set alternate root");
+  cupsArrayAdd(output, "-R root-directory       Set alternate root");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-R root-directory       Set alternate root");
-  _ppdArrayAddStrings(output, "-W {all,none,constraints,defaults,duplex,filters,profiles,sizes,translations}\n"
+  cupsArrayAdd(output, "-W {all,none,constraints,defaults,duplex,filters,profiles,sizes,translations}\n"
                           "                          Issue warnings instead of errors");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-W {all,none,constraints,defaults,duplex,filters,profiles,sizes,translations}\n"
                           "                          Issue warnings instead of errors");
-  _ppdArrayAddStrings(output, "-q                      Run silently");
+  cupsArrayAdd(output, "-q                      Run silently");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-q                      Run silently");
-  _ppdArrayAddStrings(output, "-r                      Use 'relaxed' open mode");
+  cupsArrayAdd(output, "-r                      Use 'relaxed' open mode");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-r                      Use 'relaxed' open mode");
-  _ppdArrayAddStrings(output, "-v                      Be verbose");
+  cupsArrayAdd(output, "-v                      Be verbose");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-v                      Be verbose");
-  _ppdArrayAddStrings(output, "-vv                     Be very verbose");
+  cupsArrayAdd(output, "-vv                     Be very verbose");
   if (log) log(ld, CF_LOGLEVEL_INFO, "-vv                     Be very verbose");
 
   exit(ERROR_USAGE);
 }
 
-/*
- * 'valid_path()' - Check whether a path has the correct capitalization.
- */
 
-static int                        /* O - Errors found */
-valid_path(const char *keyword, /* I - Keyword using path */
-           const char *path,    /* I - Path to check */
-           int errors,            /* I - Errors found */
-           int verbose,            /* I - Verbosity level */
-           int warn)            /* I - Warnings only? */
+//'valid_path()' - Check whether a path has the correct capitalization.
+ 
+
+static int                        // O - Errors found 
+valid_path(const char *keyword, // I - Keyword using path 
+           const char *path,    // I - Path to check 
+           int errors,            // I - Errors found 
+           int verbose,            // I - Verbosity level 
+           int warn)            // I - Warnings only? 
 {
-  cups_dir_t *dir;         /* Current directory */
-  cups_dentry_t *dentry; /* Current directory entry */
-  char temp[1024],         /* Temporary path */
-      *ptr;                 /* Pointer into temporary path */
-  const char *prefix;     /* WARN/FAIL prefix */
+  cups_dir_t *dir;         // Current directory 
+  cups_dentry_t *dentry; // Current directory entry 
+  char temp[1024],         // Temporary path 
+      *ptr;                 // Pointer into temporary path 
+  const char *prefix;     // WARN/FAIL prefix 
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
-  /*
-   * Loop over the components of the path, checking that the entry exists with
-   * the same capitalization...
-   */
+  
+  //Loop over the components of the path, checking that the entry exists with
+  //the same capitalization...
+   
 
   strlcpy(temp, path, sizeof(temp));
 
   while ((ptr = strrchr(temp, '/')) != NULL)
   {
-    /*
-     * Chop off the trailing component so temp == dirname and ptr == basename.
-     */
+    
+    //Chop off the trailing component so temp == dirname and ptr == basename.
+     
 
     *ptr++ = '\0';
 
-    /*
-     * Try opening the directory containing the base name...
-     */
+    
+    //Try opening the directory containing the base name...
+     
 
     if (temp[0])
       dir = cupsDirOpen(temp);
@@ -5060,16 +5055,16 @@ valid_path(const char *keyword, /* I - Keyword using path */
       cupsDirClose(dir);
     }
 
-    /*
-     * Display an error if the filename doesn't exist with the same
-     * capitalization...
-     */
+    
+    //Display an error if the filename doesn't exist with the same
+    //capitalization...
+     
 
     if (!dentry)
     {
       if (!warn && !errors && !verbose)
       {
-        _ppdArrayAddStrings(output, " FAIL");
+        cupsArrayAdd(output, " FAIL");
         if (log) log(ld, CF_LOGLEVEL_ERROR, " FAIL");
       }
 
@@ -5079,7 +5074,7 @@ valid_path(const char *keyword, /* I - Keyword using path */
                     _("      %s  %s file \"%s\" has the wrong "
                       "capitalization."),
                     prefix, keyword, path);
-        _ppdArrayAddStrings(output, str_format);
+        cupsArrayAdd(output, str_format);
         if (log) log(ld, CF_LOGLEVEL_ERROR,
                     _("      %s  %s file \"%s\" has the wrong "
                       "capitalization."),
@@ -5096,73 +5091,73 @@ valid_path(const char *keyword, /* I - Keyword using path */
   return (errors);
 }
 
-/*
- * 'valid_utf8()' - Check whether a string contains valid UTF-8 text.
- */
 
-static int                  /* O - 1 if valid, 0 if not */
-valid_utf8(const char *s) /* I - String to check */
+//'valid_utf8()' - Check whether a string contains valid UTF-8 text.
+ 
+
+static int                  // O - 1 if valid, 0 if not 
+valid_utf8(const char *s) // I - String to check 
 {
   while (*s)
   {
     if (*s & 0x80)
     {
-      /*
-       * Check for valid UTF-8 sequence...
-       */
+      
+      //Check for valid UTF-8 sequence...
+       
 
       if ((*s & 0xc0) == 0x80)
-        return (0); /* Illegal suffix byte */
+        return (0); // Illegal suffix byte 
       else if ((*s & 0xe0) == 0xc0)
       {
-        /*
-          * 2-byte sequence...
-          */
+        
+         //2-byte sequence...
+          
 
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
       }    
       else if ((*s & 0xf0) == 0xe0)
       {
-        /*
-         * 3-byte sequence...
-          */
+        
+        //3-byte sequence...
+          
 
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
 
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
       }
       else if ((*s & 0xf8) == 0xf0)
       {
-        /*
-          * 4-byte sequence...
-          */
+        
+         //4-byte sequence...
+          
 
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
 
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
     
         s++;
 
         if ((*s & 0xc0) != 0x80)
-            return (0); /* Missing suffix byte */
+            return (0); // Missing suffix byte 
       }
       else
-        return (0); /* Bad sequence */
+        return (0); // Bad sequence 
     }
 
     s++;

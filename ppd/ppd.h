@@ -389,6 +389,21 @@ typedef enum ppd_pwg_print_content_optimize_e // * PWG print-content-optimize *
   PPD_PWG_PRINT_CONTENT_OPTIMIZE_MAX
 } ppd_pwg_print_content_optimize_t;
 
+//Error warning overrides...
+typedef enum overrides_e
+{
+  WARN_NONE = 0,  //Override all warnings
+  WARN_CONSTRAINTS = 1,  //Override constraint warnings
+  WARN_DEFAULTS = 2,  //Override defaults warnings
+  WARN_FILTERS = 4,  //Override filters warnings
+  WARN_PROFILES = 8,  //Override profiles warnings
+  WARN_TRANSLATIONS = 16,  //Override translations warnings
+  WARN_DUPLEX = 32,  //Override duplex warnings
+  WARN_SIZES = 64,  //Override sizes warnings
+  WARN_FILENAME = 128,  //Override filename warnings
+  WARN_ALL = 255  //Override no warnings
+} overrides_t;
+
 typedef struct ppd_pwg_finishings_s    // **** PWG finishings mapping data ****
 {
   ipp_finishings_t	value;		// finishings value
@@ -884,20 +899,6 @@ extern cups_array_t *ppdTest(int ignore, int warn, char *rootdir,
 			int help, int verbose, int relaxed, int q_with_v, int v_with_q, int root_present,
 			int files, cups_array_t *file_array);
 
-//Error warning overrides...
-typedef enum overrides_e
-{
-  WARN_NONE = 0,
-  WARN_CONSTRAINTS = 1,
-  WARN_DEFAULTS = 2,
-  WARN_FILTERS = 4,
-  WARN_PROFILES = 8,
-  WARN_TRANSLATIONS = 16,
-  WARN_DUPLEX = 32,
-  WARN_SIZES = 64,
-  WARN_FILENAME = 128,
-  WARN_ALL = 255
-} overrides_t;
 
 //
 // C++ magic...

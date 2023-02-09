@@ -46,8 +46,8 @@ int main(int argc,	    I - Number of command-line args
   q_with_v = 0;
   v_with_q = 0;
   files=0;
-  warn = WARN_NONE;
-  ignore = WARN_NONE;
+  warn = PPD_TEST_WARN_NONE;
+  ignore = PPD_TEST_WARN_NONE;
 
   for (i = 1; i < argc; i++)
     if (!strcmp(argv[i], "--help"))
@@ -64,15 +64,15 @@ int main(int argc,	    I - Number of command-line args
               help = 1;
 
             if (!strcmp(argv[i], "none"))
-              ignore = WARN_NONE;
+              ignore = PPD_TEST_WARN_NONE;
 	        else if (!strcmp(argv[i], "filename"))
-	          ignore |= WARN_FILENAME;
+	          ignore |= PPD_TEST_WARN_FILENAME;
 	        else if (!strcmp(argv[i], "filters"))
-  	          ignore |= WARN_FILTERS;
+  	          ignore |= PPD_TEST_WARN_FILTERS;
 	        else if (!strcmp(argv[i], "profiles"))
-	          ignore |= WARN_PROFILES;
+	          ignore |= PPD_TEST_WARN_PROFILES;
 	        else if (!strcmp(argv[i], "all"))
-	          ignore = WARN_FILTERS | WARN_PROFILES;
+	          ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
             else
               help = 1;
             break;
@@ -94,23 +94,23 @@ int main(int argc,	    I - Number of command-line args
               help = 1;
 
             if (!strcmp(argv[i], "none"))
-              warn = WARN_NONE;
+              warn = PPD_TEST_WARN_NONE;
 	        else if (!strcmp(argv[i], "constraints"))
-	          warn |= WARN_CONSTRAINTS;
+	          warn |= PPD_TEST_WARN_CONSTRAINTS;
 	        else if (!strcmp(argv[i], "defaults"))
-	          warn |= WARN_DEFAULTS;
+	          warn |= PPD_TEST_WARN_DEFAULTS;
 	        else if (!strcmp(argv[i], "duplex"))
-	          warn |= WARN_DUPLEX;
+	          warn |= PPD_TEST_WARN_DUPLEX;
 	        else if (!strcmp(argv[i], "filters"))
-	          warn |= WARN_FILTERS;
+	          warn |= PPD_TEST_WARN_FILTERS;
 	        else if (!strcmp(argv[i], "profiles"))
-	          warn |= WARN_PROFILES;
+	          warn |= PPD_TEST_WARN_PROFILES;
 	        else if (!strcmp(argv[i], "sizes"))
-	          warn |= WARN_SIZES;
+	          warn |= PPD_TEST_WARN_SIZES;
 	        else if (!strcmp(argv[i], "translations"))
-	          warn |= WARN_TRANSLATIONS;
+	          warn |= PPD_TEST_WARN_TRANSLATIONS;
 	        else if (!strcmp(argv[i], "all"))
-	          warn = WARN_ALL;
+	          warn = PPD_TEST_WARN_ALL;
             else
               help = 1;
             break;

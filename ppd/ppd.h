@@ -392,16 +392,16 @@ typedef enum ppd_pwg_print_content_optimize_e // * PWG print-content-optimize *
 //Error warning overrides...
 typedef enum ppd_test_overrides_e
 {
-  WARN_NONE = 0,  //Override all warnings
-  WARN_CONSTRAINTS = 1,  //Override constraint warnings
-  WARN_DEFAULTS = 2,  //Override defaults warnings
-  WARN_FILTERS = 4,  //Override filters warnings
-  WARN_PROFILES = 8,  //Override profiles warnings
-  WARN_TRANSLATIONS = 16,  //Override translations warnings
-  WARN_DUPLEX = 32,  //Override duplex warnings
-  WARN_SIZES = 64,  //Override sizes warnings
-  WARN_FILENAME = 128,  //Override filename warnings
-  WARN_ALL = 255  //Override no warnings
+  PPD_TEST_WARN_NONE = 0,  //Override all warnings
+  PPD_TEST_WARN_CONSTRAINTS = 1,  //Override constraint warnings
+  PPD_TEST_WARN_DEFAULTS = 2,  //Override defaults warnings
+  PPD_TEST_WARN_FILTERS = 4,  //Override filters warnings
+  PPD_TEST_WARN_PROFILES = 8,  //Override profiles warnings
+  PPD_TEST_WARN_TRANSLATIONS = 16,  //Override translations warnings
+  PPD_TEST_WARN_DUPLEX = 32,  //Override duplex warnings
+  PPD_TEST_WARN_SIZES = 64,  //Override sizes warnings
+  PPD_TEST_WARN_FILENAME = 128,  //Override filename warnings
+  PPD_TEST_WARN_ALL = 255  //Override no warnings
 } ppd_test_overrides_t;
 
 typedef struct ppd_pwg_finishings_s    // **** PWG finishings mapping data ****

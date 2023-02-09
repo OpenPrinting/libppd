@@ -390,7 +390,7 @@ typedef enum ppd_pwg_print_content_optimize_e // * PWG print-content-optimize *
 } ppd_pwg_print_content_optimize_t;
 
 //Error warning overrides...
-typedef enum overrides_e
+typedef enum ppd_test_overrides_e
 {
   WARN_NONE = 0,  //Override all warnings
   WARN_CONSTRAINTS = 1,  //Override constraint warnings
@@ -402,7 +402,7 @@ typedef enum overrides_e
   WARN_SIZES = 64,  //Override sizes warnings
   WARN_FILENAME = 128,  //Override filename warnings
   WARN_ALL = 255  //Override no warnings
-} overrides_t;
+} ppd_test_overrides_t;
 
 typedef struct ppd_pwg_finishings_s    // **** PWG finishings mapping data ****
 {

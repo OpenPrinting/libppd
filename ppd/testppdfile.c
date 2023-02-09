@@ -17,8 +17,8 @@
  
 
 
-int main(int argc,	    I - Number of command-line args 
-		 char *argv[])  I - Command-line arguments 
+int main(int argc,	    // I - Number of command-line args 
+		 char *argv[])  // I - Command-line arguments 
 {
 
   int i;  //Looping vars 
@@ -34,7 +34,7 @@ int main(int argc,	    I - Number of command-line args
   int files;			   // Number of files 
   cups_array_t	*output;  //Output array
   int len_output;   //Length of the output array 
-  char[256] txt;   //Strings in output_array
+  char txt[256];   //Strings in output_array
   int warn;			    //Which errors to just warn about 
   int ignore;			   // Which errors to ignore 
 
@@ -48,6 +48,8 @@ int main(int argc,	    I - Number of command-line args
   files=0;
   warn = PPD_TEST_WARN_NONE;
   ignore = PPD_TEST_WARN_NONE;
+  rootdir = "";
+  file_array = cupsArrayNew(NULL,"");
 
   for (i = 1; i < argc; i++)
     if (!strcmp(argv[i], "--help"))
@@ -125,12 +127,12 @@ int main(int argc,	    I - Number of command-line args
             break;
 
         case 'r':  //Relaxed mode 
-            relaxed = 1
+            relaxed = 1;
 
         case 'v':  //Verbose mode 
             if (verbose < 0)
             {
-              v_with_q = 1
+              v_with_q = 1;
             }
 
             verbose++;
@@ -154,20 +156,20 @@ int main(int argc,	    I - Number of command-line args
     }
   }
 
+  
+
   output = ppdTest(ignore, warn, rootdir, help, verbose,
                    relaxed, q_with_v, v_with_q, root_present, files, file_array);
 
   len_output = cupsArrayCount(output);
 	
-  for (int j = 1, j<= len_output, j++)
+  for (int j = 1; j<= len_output; j++)
   {
-    txt = cupsArrayCurrent(output);
-    puts(txt);
+    puts(cupsArrayCurrent(output));
     cupsArrayNext(output);
 
   }
-  txt = cupsArrayCurrent(output);
-  puts(txt);
+  puts(cupsArrayCurrent(output));
 
   return(0);
 	

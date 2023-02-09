@@ -31,7 +31,7 @@ EXTRA_DIST += \
 # =========
 
 pkgutilsdir = $(bindir)
-pkgutils_PROGRAMS =
+pkgutils_PROGRAMS = testppdfile
 
 # ==========================
 # PPD legacy support library
@@ -73,6 +73,7 @@ libppd_la_SOURCES = \
 	ppd/ppd-mark.c \
 	ppd/ppd-page.c \
 	ppd/ppd-ipp.c \
+	ppd/ppd-test.c \
 	ppd/array.c \
 	ppd/array-private.h \
 	ppd/debug.c \
@@ -93,6 +94,7 @@ libppd_la_SOURCES = \
 	ppd/string.c \
 	ppd/snprintf.c \
 	ppd/string-private.h \
+	ppd/testppdfile.c \
 	ppd/thread.c \
 	ppd/thread-private.h \
 	ppd/ppdc-array.cxx \
@@ -130,6 +132,13 @@ libppd_la_LDFLAGS = \
 testppd_SOURCES = ppd/testppd.c
 testppd_LDADD = libppd.la \
 		-lcups
+
+testppdfile_SOURCES = ppd/testppdfile.c
+testppdfile_LDADD = libppd.la \
+		$(CUPS_LIBS)
+testppdfile_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

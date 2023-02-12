@@ -1,19 +1,20 @@
-//Wrapper function to check correctness of PPD files.
-//Copyright © 2021-2022 by OpenPrinting
-//Licensed under Apache License v2.0.  See the file "LICENSE" for more
-//information.
+// Wrapper function to check correctness of PPD files.
+// Copyright © 2021-2022 by OpenPrinting
+// Licensed under Apache License v2.0.  See the file "LICENSE" for more
+// information.
  
 
-//Include necessary headers...
+// Include necessary headers...
  
 
 #include <ppd/ppd.h>
+#include <string.h>
 #include <cups/array.h>
 #include <stdio.h>
 
 
 
-//'main()' - Wrapper function for ppdTest().
+// 'main()' - Wrapper function for ppdTest().
  
 
 
@@ -21,21 +22,21 @@ int main(int argc,	    // I - Number of command-line args
 		 char *argv[])  // I - Command-line arguments 
 {
 
-  int i;  //Looping vars 
+  int i;  // Looping vars 
   int verbose;	   // Want verbose output? 
   int root_present;  // Whether root directory is specified 
   char *rootdir;  // What is the root directory if mentioned 
   int help;  // Whether to run help dialog 
-  char *opt;  //Option character 
+  char *opt;  // Option character 
   int q_with_v;  // If q is used together with v in the command line 
   int v_with_q;  // If v is used together with q in the command line 
   int relaxed;  // If relaxed mode is to be used 
   cups_array_t *file_array;  // Array consisting of filenames of the ppd files to be checked 
   int files;			   // Number of files 
-  cups_array_t	*output;  //Output array
-  int len_output;   //Length of the output array 
-  char txt[256];   //Strings in output_array
-  int warn;			    //Which errors to just warn about 
+  cups_array_t	*output;  // Output array
+  int len_output;   // Length of the output array 
+  char *txt;   // Strings in output_array
+  int warn;			    // Which errors to just warn about 
   int ignore;			   // Which errors to ignore 
 
 
@@ -50,16 +51,20 @@ int main(int argc,	    // I - Number of command-line args
   ignore = PPD_TEST_WARN_NONE;
   rootdir = "";
   file_array = cupsArrayNew(NULL,"");
+  cupsArrayAdd(file_array," ");
+  
 
   for (i = 1; i < argc; i++)
-    if (!strcmp(argv[i], "--help"))
+  if (!strcmp(argv[i], "--help"))
     help = 1;
   else if (argv[i][0] == '-' && argv[i][1])
   {
-    for (opt = argv[i] + 1; *opt; opt++)
+    for (opt = argv[i] + 1; *opt; opt++) 
+    // puts is used to print the string char array
+      
       switch (*opt)
       {
-        case 'I':  //ignore_params errors 
+        case 'I':  // ignore_params errors 
             i++;
 
             if (i >= argc)
@@ -79,7 +84,7 @@ int main(int argc,	    // I - Number of command-line args
               help = 1;
             break;
 
-        case 'R':  //Alternate root directory 
+        case 'R':  // Alternate root directory 
             i++;
 
             if (i >= argc)
@@ -89,7 +94,7 @@ int main(int argc,	    // I - Number of command-line args
               root_present = 1;
               break;
 
-        case 'W':  //Turn errors into warn_paramsings 
+        case 'W':  // Turn errors into warn_paramsings 
             i++;
 
             if (i >= argc)
@@ -117,7 +122,7 @@ int main(int argc,	    // I - Number of command-line args
               help = 1;
             break;
 
-        case 'q':  //Quiet mode 
+        case 'q':  // Quiet mode 
 
             if (verbose > 0)
             {
@@ -126,10 +131,10 @@ int main(int argc,	    // I - Number of command-line args
             verbose--;
             break;
 
-        case 'r':  //Relaxed mode 
+        case 'r':  // Relaxed mode 
             relaxed = 1;
 
-        case 'v':  //Verbose mode 
+        case 'v':  // Verbose mode 
             if (verbose < 0)
             {
               v_with_q = 1;
@@ -148,29 +153,29 @@ int main(int argc,	    // I - Number of command-line args
 
     if (argv[i][0] == '-')
     {
-      cupsArrayAdd(file_array,"");
+      cupsArrayAdd(file_array,"error");
     }
     else
     {
       cupsArrayAdd(file_array,argv[i]);
     }
   }
-
   
 
   output = ppdTest(ignore, warn, rootdir, help, verbose,
                    relaxed, q_with_v, v_with_q, root_present, files, file_array);
-
   len_output = cupsArrayCount(output);
 	
-  for (int j = 1; j<= len_output; j++)
+  (cupsArrayFirst(output));
+  for (int j = 1; j< len_output; j++)
   {
-    puts(cupsArrayCurrent(output));
     cupsArrayNext(output);
+    txt = (cupsArrayCurrent(output));
+    puts(txt);
+    
 
   }
-  puts(cupsArrayCurrent(output));
-
+  
   return(0);
 	
 }

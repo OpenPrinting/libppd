@@ -135,10 +135,12 @@ testppd_LDADD = libppd.la \
 
 testppdfile_SOURCES = ppd/testppdfile.c
 testppdfile_LDADD = libppd.la \
-		$(CUPS_LIBS)
+		$(CUPS_LIBS) \
+		$(CUPS-FILTERS_LIBS)
 testppdfile_CFLAGS = \
 	-I$(srcdir)/ppd/ \
-	$(CUPS_CFLAGS)
+	$(CUPS_CFLAGS) \
+	$(CUPS-FILTERS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

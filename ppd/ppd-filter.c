@@ -1577,7 +1577,8 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 	    if (log) log(ld, CF_LOGLEVEL_DEBUG,
 			 "ppdFilterUniversal:       --> Selecting this line");
 	    // Take the input format of the line as output format for us
-	    strncpy(output, in, sizeof(output));
+	    strncpy(output, in, sizeof(output) - 1);
+      output[sizeof(output) - 1] = '\0';
 	    // Update the minimum cost found
 	    lowest_cost = cost;
 	    // We cannot find a "better" solution ...

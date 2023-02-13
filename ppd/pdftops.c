@@ -373,6 +373,8 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
   {
     if (log) log(ld, CF_LOGLEVEL_ERROR,
 		 "ppdFilterPDFToPS: Unable to copy PDF file: %s", strerror(errno));
+
+    fclose(inputfp);
     return (1);
   }
 

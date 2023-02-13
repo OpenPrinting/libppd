@@ -708,6 +708,9 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
       if (log) log(ld, CF_LOGLEVEL_ERROR,
 		   "ppdFilterImageToPS: Unable to copy input: %s",
 		   strerror(errno));
+
+      fclose(inputfp);
+
       return (1);
     }
 

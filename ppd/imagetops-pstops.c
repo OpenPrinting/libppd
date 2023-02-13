@@ -401,6 +401,10 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 		 "ppdFilterPSToPS: The print file is empty.");
     // Do not treat this an error, if a previous filter eliminated all
     // pages the job should get dequeued without anything printed.
+
+    fclose(outputfp);
+    cupsFileClose(inputfp);
+
     return (0);
   }
 

@@ -46,6 +46,7 @@ ppdFilterCUPSWrapper(
   cups_option_t	*options = NULL;	// Print options
   cf_filter_data_t filter_data;
   const char    *val;
+  char          *ppdfile = NULL;
   char          buf[256];
   int           retval = 0;
 
@@ -161,20 +162,26 @@ ppdFilterCUPSWrapper(
   // to the filter_data structure
   //
 
-  if (getenv("PPD"))
-    retval = ppdFilterLoadPPDFile(&filter_data, getenv("PPD"));
+  ppdfile = getenv("PPD");
+
+  if (ppdfile && (retval = ppdFilterLoadPPDFile(&filter_data, getenv("PPD"))) != 0)
+  {
+    fprintf(stderr, "ERROR: ppdFilterCUPSWrapper: Cannot open the PPD file %s\n", ppdfile);
+    close(inputfd);
+    goto out;
+  }
 
   //
   // Fire up the filter function (output to stdout, file descriptor 1)
   //
 
-  if (!retval)
-    retval = filter(inputfd, 1, inputseekable, &filter_data, parameters);
+  retval = filter(inputfd, 1, inputseekable, &filter_data, parameters);
 
   //
   // Clean up
   //
 
+out:
   cupsFreeOptions(filter_data.num_options, filter_data.options);
   ppdFilterFreePPDFile(&filter_data);
 

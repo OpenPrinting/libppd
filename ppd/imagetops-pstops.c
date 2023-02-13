@@ -280,7 +280,6 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 			 log, ld, iscanceled, icd) == 1)
   {
     close(inputfd);
-    close(outputfd);
 
     return (1);
   }
@@ -568,7 +567,6 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
   close(inputfd);
 
   fclose(outputfp);
-  close(outputfd);
 
   return (status);
 }

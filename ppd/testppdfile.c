@@ -166,8 +166,7 @@ int main(int argc,	    // I - Number of command-line args
   len_output = cupsArrayCount(output);
   
   (cupsArrayFirst(output));
-  cupsArrayNext(output);
-  for (int j = 1; j< len_output-1; j++)
+  for (int j = 1; j< len_output; j++)
   {
     cupsArrayNext(output);
 

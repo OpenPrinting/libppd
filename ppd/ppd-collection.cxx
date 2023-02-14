@@ -1573,8 +1573,11 @@ load_drv(const char  *filename,		// I - Actual filename
 			mtime, (size_t)size, d->model_number, type, "drv",
 			ppdlist, log, ld);
 	else if (products_found < PPD_MAX_PROD)
+  {
 	  strncpy(ppd->record.products[products_found], product->value->value,
-		  sizeof(ppd->record.products[0]));
+		  sizeof(ppd->record.products[0]) - 1);
+    ppd->record.products[products_found][sizeof(ppd->record.products[0]) - 1] = '\0';
+  }
 	else
 	  break;
 

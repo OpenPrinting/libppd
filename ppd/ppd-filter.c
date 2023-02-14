@@ -46,6 +46,7 @@ ppdFilterCUPSWrapper(
   cups_option_t	*options = NULL;	// Print options
   cf_filter_data_t filter_data;
   const char    *val;
+  char          *ppdfile = NULL;
   char          buf[256];
   int           retval = 0;
 
@@ -161,20 +162,26 @@ ppdFilterCUPSWrapper(
   // to the filter_data structure
   //
 
-  if (getenv("PPD"))
-    retval = ppdFilterLoadPPDFile(&filter_data, getenv("PPD"));
+  ppdfile = getenv("PPD");
+
+  if (ppdfile && (retval = ppdFilterLoadPPDFile(&filter_data, getenv("PPD"))) != 0)
+  {
+    fprintf(stderr, "ERROR: ppdFilterCUPSWrapper: Cannot open the PPD file %s\n", ppdfile);
+    close(inputfd);
+    goto out;
+  }
 
   //
   // Fire up the filter function (output to stdout, file descriptor 1)
   //
 
-  if (!retval)
-    retval = filter(inputfd, 1, inputseekable, &filter_data, parameters);
+  retval = filter(inputfd, 1, inputseekable, &filter_data, parameters);
 
   //
   // Clean up
   //
 
+out:
   cupsFreeOptions(filter_data.num_options, filter_data.options);
   ppdFilterFreePPDFile(&filter_data);
 
@@ -1570,7 +1577,8 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 	    if (log) log(ld, CF_LOGLEVEL_DEBUG,
 			 "ppdFilterUniversal:       --> Selecting this line");
 	    // Take the input format of the line as output format for us
-	    strncpy(output, in, sizeof(output));
+	    strncpy(output, in, sizeof(output) - 1);
+      output[sizeof(output) - 1] = '\0';
 	    // Update the minimum cost found
 	    lowest_cost = cost;
 	    // We cannot find a "better" solution ...

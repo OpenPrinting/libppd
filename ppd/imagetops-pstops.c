@@ -280,7 +280,6 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 			 log, ld, iscanceled, icd) == 1)
   {
     close(inputfd);
-    close(outputfd);
 
     return (1);
   }
@@ -401,6 +400,10 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 		 "ppdFilterPSToPS: The print file is empty.");
     // Do not treat this an error, if a previous filter eliminated all
     // pages the job should get dequeued without anything printed.
+
+    fclose(outputfp);
+    cupsFileClose(inputfp);
+
     return (0);
   }
 
@@ -564,7 +567,6 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
   close(inputfd);
 
   fclose(outputfp);
-  close(outputfd);
 
   return (status);
 }
@@ -704,6 +706,9 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
       if (log) log(ld, CF_LOGLEVEL_ERROR,
 		   "ppdFilterImageToPS: Unable to copy input: %s",
 		   strerror(errno));
+
+      fclose(inputfp);
+
       return (1);
     }
 

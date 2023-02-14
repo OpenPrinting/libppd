@@ -142,9 +142,9 @@ cups_array_t *ppdTest(int ignore,          // Which errors to ignore
   status = ERROR_NONE;
   root = rootdir;
   output = cupsArrayNew3(NULL, NULL, NULL, 0,
-                        (cups_acopy_func_t)_ppdStrAlloc,
-			                  (cups_afree_func_t)_ppdStrFree);
-  cupsArrayAdd(output," ");
+                         (cups_acopy_func_t)_ppdStrAlloc,
+			 (cups_afree_func_t)_ppdStrFree);
+  cupsArrayAdd(output, " ");
 
   if (help == 1)
   {

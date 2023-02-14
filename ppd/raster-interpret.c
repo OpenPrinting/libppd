@@ -527,7 +527,7 @@ ppdRasterMatchPPDSize(
   }
 
   strncpy(pageSizeRequested, header->cupsPageSizeName, 63);
-  pageSizeRequested[63] = "\0";
+  pageSizeRequested[63] = '\0';
 					// Prefer user-selected page size.
   memset(dimensions, 0, sizeof(double)*2);
   memset(margins, 0, sizeof(double)*4);

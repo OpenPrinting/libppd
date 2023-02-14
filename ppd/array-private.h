@@ -33,6 +33,8 @@ extern "C" {
 extern int		_ppdArrayAddStrings(cups_array_t *a, const char *s,
 			                     char delim);
 extern cups_array_t	*_ppdArrayNewStrings(const char *s, char delim);
+extern int      ppdArrayAdd(cups_array_t *a, const char   *s);
+extern cups_array_t *ppdArrayNew(const char *s);
 
 #  ifdef __cplusplus
 }

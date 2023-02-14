@@ -34,8 +34,7 @@ int main(int argc,	    // I - Number of command-line args
   cups_array_t *file_array;  // Array consisting of filenames of the ppd files to be checked 
   int files;			   // Number of files 
   cups_array_t	*output;  // Output array
-  int len_output;   // Length of the output array 
-  char *txt;   // Strings in output_array
+  int len_output;   // Length of the output array
   int warn;			    // Which errors to just warn about 
   int ignore;			   // Which errors to ignore 
 
@@ -165,13 +164,14 @@ int main(int argc,	    // I - Number of command-line args
   output = ppdTest(ignore, warn, rootdir, help, verbose,
                    relaxed, q_with_v, v_with_q, root_present, files, file_array);
   len_output = cupsArrayCount(output);
-	
+  
   (cupsArrayFirst(output));
-  for (int j = 1; j< len_output; j++)
+  cupsArrayNext(output);
+  for (int j = 1; j< len_output-1; j++)
   {
     cupsArrayNext(output);
-    txt = (cupsArrayCurrent(output));
-    puts(txt);
+
+    puts(cupsArrayCurrent(output));
     
 
   }

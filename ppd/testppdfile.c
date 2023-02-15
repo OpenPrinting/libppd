@@ -165,7 +165,7 @@ int main(int argc,	    // I - Number of command-line args
                    relaxed, q_with_v, v_with_q, root_present, files, file_array);
   len_output = cupsArrayCount(output);
   
-  (cupsArrayFirst(output));
+  puts(cupsArrayFirst(output));
   for (int j = 0; j< len_output-1; j++)
   {
     cupsArrayNext(output);

@@ -144,7 +144,12 @@ cups_array_t *ppdTest(int ignore,          // Which errors to ignore
   output = cupsArrayNew3(NULL, NULL, NULL, 0,
                          (cups_acopy_func_t)_ppdStrAlloc,
 			 (cups_afree_func_t)_ppdStrFree);
-  cupsArrayAdd(output, " ");
+  if (output == NULL)
+  {
+    if (log) log(ld, CF_LOGLEVEL_ERROR, "ppdTest: Could not allocate memory.");
+    return (NULL);
+  }
+  
 
   if (help == 1)
   {

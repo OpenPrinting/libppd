@@ -1372,7 +1372,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     const char *default_color = NULL;	// Default
     int first_choice = 1;
 
-    if ((keyword = ippGetString(defattr, 0, NULL)) != NULL)
+    if ((keyword = ippGetString(defattr, 0, NULL)) != NULL &&
+	strcmp(keyword, "auto"))
     {
       if (!strcmp(keyword, "bi-level"))
         default_color = "FastGray";

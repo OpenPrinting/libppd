@@ -34,7 +34,7 @@ int main(int argc,	    // I - Number of command-line args
   cups_array_t *file_array;  // Array consisting of filenames of the ppd files to be checked 
   int files;			   // Number of files 
   cups_array_t	*output;  // Output array
-  char *line;   // Length of the output array
+  char *line;   // Looping var for output array
   int warn;			    // Which errors to just warn about 
   int ignore;			   // Which errors to ignore 
 

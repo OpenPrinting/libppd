@@ -1349,7 +1349,6 @@ main(int  argc,				// I - Number of command-line arguments
       printf("\nPPD file %s from %s:\n\n", s + 1, filename);
     else
       printf("\nPPD file %s:\n\n", filename);
-    free(filename);
 
     if ((ppd = ppdOpen2(ppdCollectionGetPPD(name, NULL, _log, NULL))) ==
 	NULL)
@@ -1397,6 +1396,7 @@ main(int  argc,				// I - Number of command-line arguments
         text = ppdLocalizeIPPReason(ppd, argv[3], NULL, buffer, sizeof(buffer));
 	printf("ppdLocalizeIPPReason(%s)=%s\n", argv[3],
 	       text ? text : "(null)");
+	free(filename);
 	return (text == NULL);
       }
 
@@ -1532,6 +1532,7 @@ main(int  argc,				// I - Number of command-line arguments
 
     if (!strncmp(argv[1], "-d", 2))
       unlink(filename);
+    free(filename);
   }
 
 #ifdef __APPLE__

@@ -37,6 +37,8 @@ int main(int argc,	    // I - Number of command-line args
   char *line;   // Looping var for output array
   int warn;			    // Which errors to just warn about 
   int ignore;			   // Which errors to ignore 
+  cups_array_t *report = NULL;   // Report variable
+  int result;    // Whether PPD pased or not
 
 
   verbose = 0;
@@ -161,15 +163,20 @@ int main(int argc,	    // I - Number of command-line args
   }
   
 
-  output = ppdTest(ignore, warn, rootdir, help, verbose,
-                   relaxed, q_with_v, v_with_q, root_present, files, file_array);
-
-
-  for (line = (char *)cupsArrayFirst(output); line; line = (char *)cupsArrayNext(output))
-  {
-    puts(line);
-  }
+  result = ppdTest(ignore, warn, rootdir, help, verbose,
+                   relaxed, q_with_v, v_with_q, root_present, files, file_array, &report);
   
+  if (result == 1) puts("PPD PASSED");
+  else if (result == 0) puts("PPD FAILED");
+  else if (result == -1) puts("ERROR");
+
+  if (report)
+  {
+    for (line = (char *)cupsArrayFirst(report); line; line = (char *)cupsArrayNext(report))
+    {
+      puts(line);
+    }
+  }
   return(0);
 	
 }

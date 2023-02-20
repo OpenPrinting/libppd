@@ -145,8 +145,8 @@ int ppdTest(int ignore,          // Which errors to ignore
   if (report && *report == NULL)
   {
     *report = cupsArrayNew3(NULL, NULL, NULL, 0,
-                         (cups_acopy_func_t)_ppdStrAlloc,
-                   (cups_afree_func_t)_ppdStrFree);
+                            (cups_acopy_func_t)_ppdStrAlloc,
+                            (cups_afree_func_t)_ppdStrFree);
     if (*report == NULL)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR, "ppdTest: Could not allocate memory.");

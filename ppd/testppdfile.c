@@ -80,8 +80,8 @@ int main(int argc,          // I - Number of command-line args
                 ignore |= PPD_TEST_WARN_PROFILES;
               else if (!strcmp(argv[i], "all"))
                 ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
-            else
-              help = 1;
+              else
+                help = 1;
             break;
 
         case 'R':  // Alternate root directory 
@@ -90,9 +90,9 @@ int main(int argc,          // I - Number of command-line args
             if (i >= argc)
               help = 1;
 
-              rootdir = argv[i];
-              root_present = 1;
-              break;
+            rootdir = argv[i];
+            root_present = 1;
+            break;
 
         case 'W':  // Turn errors into warn_paramsings 
             i++;

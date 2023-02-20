@@ -12,18 +12,18 @@
 #include <cups/array.h>
 #include <stdio.h>
 
-
+      
 
 // 'main()' - Wrapper function for ppdTest().
  
 
 
-int main(int argc,	    // I - Number of command-line args 
-		 char *argv[])  // I - Command-line arguments 
+int main(int argc,          // I - Number of command-line args 
+             char *argv[])  // I - Command-line arguments 
 {
 
   int i;  // Looping vars 
-  int verbose;	   // Want verbose output? 
+  int verbose;         // Want verbose output? 
   int root_present;  // Whether root directory is specified 
   char *rootdir;  // What is the root directory if mentioned 
   int help;  // Whether to run help dialog 
@@ -32,10 +32,10 @@ int main(int argc,	    // I - Number of command-line args
   int v_with_q;  // If v is used together with q in the command line 
   int relaxed;  // If relaxed mode is to be used 
   cups_array_t *file_array;  // Array consisting of filenames of the ppd files to be checked 
-  int files;			   // Number of files 
+  int files;                     // Number of files 
   char *line;   // Looping var for output array
-  int warn;			    // Which errors to just warn about 
-  int ignore;			   // Which errors to ignore 
+  int warn;                      // Which errors to just warn about 
+  int ignore;                     // Which errors to ignore 
   cups_array_t *report = NULL;   // Report variable
   int result;    // Whether PPD pased or not
 
@@ -72,14 +72,14 @@ int main(int argc,	    // I - Number of command-line args
 
             if (!strcmp(argv[i], "none"))
               ignore = PPD_TEST_WARN_NONE;
-	        else if (!strcmp(argv[i], "filename"))
-	          ignore |= PPD_TEST_WARN_FILENAME;
-	        else if (!strcmp(argv[i], "filters"))
-  	          ignore |= PPD_TEST_WARN_FILTERS;
-	        else if (!strcmp(argv[i], "profiles"))
-	          ignore |= PPD_TEST_WARN_PROFILES;
-	        else if (!strcmp(argv[i], "all"))
-	          ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
+              else if (!strcmp(argv[i], "filename"))
+                ignore |= PPD_TEST_WARN_FILENAME;
+              else if (!strcmp(argv[i], "filters"))
+                ignore |= PPD_TEST_WARN_FILTERS;
+              else if (!strcmp(argv[i], "profiles"))
+                ignore |= PPD_TEST_WARN_PROFILES;
+              else if (!strcmp(argv[i], "all"))
+                ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
             else
               help = 1;
             break;
@@ -102,22 +102,22 @@ int main(int argc,	    // I - Number of command-line args
 
             if (!strcmp(argv[i], "none"))
               warn = PPD_TEST_WARN_NONE;
-	        else if (!strcmp(argv[i], "constraints"))
-	          warn |= PPD_TEST_WARN_CONSTRAINTS;
-	        else if (!strcmp(argv[i], "defaults"))
-	          warn |= PPD_TEST_WARN_DEFAULTS;
-	        else if (!strcmp(argv[i], "duplex"))
-	          warn |= PPD_TEST_WARN_DUPLEX;
-	        else if (!strcmp(argv[i], "filters"))
-	          warn |= PPD_TEST_WARN_FILTERS;
-	        else if (!strcmp(argv[i], "profiles"))
-	          warn |= PPD_TEST_WARN_PROFILES;
-	        else if (!strcmp(argv[i], "sizes"))
-	          warn |= PPD_TEST_WARN_SIZES;
-	        else if (!strcmp(argv[i], "translations"))
-	          warn |= PPD_TEST_WARN_TRANSLATIONS;
-	        else if (!strcmp(argv[i], "all"))
-	          warn = PPD_TEST_WARN_ALL;
+            else if (!strcmp(argv[i], "constraints"))
+              warn |= PPD_TEST_WARN_CONSTRAINTS;
+            else if (!strcmp(argv[i], "defaults"))
+              warn |= PPD_TEST_WARN_DEFAULTS;
+            else if (!strcmp(argv[i], "duplex"))
+              warn |= PPD_TEST_WARN_DUPLEX;
+            else if (!strcmp(argv[i], "filters"))
+              warn |= PPD_TEST_WARN_FILTERS;
+            else if (!strcmp(argv[i], "profiles"))
+              warn |= PPD_TEST_WARN_PROFILES;
+            else if (!strcmp(argv[i], "sizes"))
+              warn |= PPD_TEST_WARN_SIZES;
+            else if (!strcmp(argv[i], "translations"))
+              warn |= PPD_TEST_WARN_TRANSLATIONS;
+            else if (!strcmp(argv[i], "all"))
+              warn = PPD_TEST_WARN_ALL;
             else
               help = 1;
             break;
@@ -148,7 +148,7 @@ int main(int argc,	    // I - Number of command-line args
       }
   }
   else
-  {			
+  {                  
     files++;
 
     if (argv[i][0] == '-')
@@ -177,5 +177,5 @@ int main(int argc,	    // I - Number of command-line args
     }
   }
   return(0);
-	
+      
 }

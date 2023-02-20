@@ -72,16 +72,16 @@ int main(int argc,          // I - Number of command-line args
 
             if (!strcmp(argv[i], "none"))
               ignore = PPD_TEST_WARN_NONE;
-              else if (!strcmp(argv[i], "filename"))
-                ignore |= PPD_TEST_WARN_FILENAME;
-              else if (!strcmp(argv[i], "filters"))
-                ignore |= PPD_TEST_WARN_FILTERS;
-              else if (!strcmp(argv[i], "profiles"))
-                ignore |= PPD_TEST_WARN_PROFILES;
-              else if (!strcmp(argv[i], "all"))
-                ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
-              else
-                help = 1;
+            else if (!strcmp(argv[i], "filename"))
+              ignore |= PPD_TEST_WARN_FILENAME;
+            else if (!strcmp(argv[i], "filters"))
+              ignore |= PPD_TEST_WARN_FILTERS;
+            else if (!strcmp(argv[i], "profiles"))
+              ignore |= PPD_TEST_WARN_PROFILES;
+            else if (!strcmp(argv[i], "all"))
+              ignore = PPD_TEST_WARN_FILTERS | PPD_TEST_WARN_PROFILES;
+            else
+              help = 1;
             break;
 
         case 'R':  // Alternate root directory 

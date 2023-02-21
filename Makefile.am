@@ -31,7 +31,11 @@ EXTRA_DIST += \
 # =========
 
 pkgutilsdir = $(bindir)
-pkgutils_PROGRAMS = testppdfile
+pkgutils_PROGRAMS =
+
+if ENABLE_TESTPPDFILE
+pkgutils_PROGRAMS += testppdfile
+endif
 
 # ==========================
 # PPD legacy support library

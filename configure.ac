@@ -124,6 +124,15 @@ AC_SUBST(CUPS_STATEDIR)
 # ========================
 PKG_CHECK_MODULES([LIBCUPSFILTERS], [libcupsfilters])
 
+# ============================================================
+# Check for whether we want to install the testppdfile utility
+# ============================================================
+AC_ARG_ENABLE([testppdfile], [AS_HELP_STRING([--enable-testppdfile], [enable testppdfile utility, to test correctness and integrity of PPD files.])],
+        [enable_testppdfile="$enableval"],
+        [enable_testppdfile="no"])
+AM_CONDITIONAL([ENABLE_TESTPPDFILE],
+[test "x$enable_testppdfile" != "xno"])
+
 # =======================================================
 # Check for whether we want to install the ppdc utilities
 # =======================================================
@@ -507,6 +516,7 @@ Build configuration:
 	pdftops:         ${CUPS_PDFTOPS_RENDERER}
 	Poppler's pdftops: ${enable_pdftops}
 	pdftops-path:    ${with_pdftops_path}
+	testppdfile:     ${enable_testppdfile}
 	ppdc utilities:  ${enable_ppdc_utils}
 	genstrings:      ${enable_genstrings}
 	werror:          ${enable_werror}

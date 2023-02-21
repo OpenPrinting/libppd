@@ -109,10 +109,6 @@ int ppdTest(int ignore,          // Which errors to ignore
             char *rootdir,       // What is the root directory if mentioned
             int verbose,         // Want verbose output?
             int relaxed,         // If relaxed mode is to be used
-            int q_with_v,        // If q is used together with v in the command
-	                         // line
-            int v_with_q,        // If v is used together with q in the command
-	                         // line
             int root_present,    // Whether root directory is specified
             int files,           // Number of files
             cups_array_t *file_array, // Array consisting of filenames of the
@@ -177,30 +173,6 @@ int ppdTest(int ignore,          // Which errors to ignore
 
   if (relaxed == 1)
     ppdSetConformance(PPD_CONFORM_RELAXED);
-
-  if (q_with_v == 1)
-  {
-    snprintf(str_format, sizeof(str_format) - 1,
-	     "ppdTest: The -q option is incompatible with the -v option.");
-    if (*report)
-      cupsArrayAdd(*report, (void *)str_format);
-    if (log) log(ld, CF_LOGLEVEL_ERROR, "ppdTest: %s", str_format);
-    return (-1);
-
-  }
-
-  if (v_with_q == 1)
-  {
-
-    snprintf(str_format, sizeof(str_format) - 1,
-	     "ppdTest: The -v option is incompatible with the -q option.");
-    if (*report)
-      cupsArrayAdd(*report, (void *)str_format);
-    if (log) log(ld, CF_LOGLEVEL_ERROR, "ppdTest: %s", str_format);
-
-    return (-1);
-
-  }
 
   //
   // Open the PPD file...

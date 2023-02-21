@@ -31,10 +31,13 @@ usage()
   fprintf(stderr, "-W {all, none, constraints, defaults, duplex, filters,\n"
 	          "    profiles, sizes, translations}\n"
 	          "                        Issue warnings instead of errors\n");
-  fprintf(stderr, "-q                      Run silently\n");
+  fprintf(stderr, "-q                      Run silently (not to be used\n"
+	          "                        together with -v)\n");
   fprintf(stderr, "-r                      Use 'relaxed' open mode\n");
-  fprintf(stderr, "-v                      Be verbose\n");
-  fprintf(stderr, "-vv                     Be very verbose\n\n");
+  fprintf(stderr, "-v                      Be verbose (not to be used\n"
+	          "                        together with -q)\n");
+  fprintf(stderr, "-vv                     Be very verbose (not to be used\n"
+	          "                        together with -q)\n\n");
 }
 
 
@@ -51,10 +54,6 @@ int main(int argc,     // I - Number of command-line args
   char *rootdir = "";              // What is the root directory if mentioned
   int help = 0;                    // Whether to run help dialog
   char *opt;                       // Option character
-  int q_with_v = 0;                // If q is used together with v in the
-                                   // command line
-  int v_with_q = 0;                // If v is used together with q in the
-                                   // command line
   int relaxed = 0;                 // If relaxed mode is to be used
   cups_array_t *file_array;        // Array consisting of filenames of the ppd
                                    // files to be checked
@@ -138,7 +137,7 @@ int main(int argc,     // I - Number of command-line args
           case 'q':  // Quiet mode
 
               if (verbose > 0)
-		q_with_v = 1;
+		help = 1;
 	      verbose --;
 	      break;
 
@@ -147,7 +146,7 @@ int main(int argc,     // I - Number of command-line args
 
           case 'v':  // Verbose mode
               if (verbose < 0)
-		v_with_q = 1;
+		help = 1;
 
 	      verbose ++;
 	      break;
@@ -168,8 +167,7 @@ int main(int argc,     // I - Number of command-line args
     return (0);
   }
 
-  result = ppdTest(ignore, warn, rootdir, verbose,
-		   relaxed, q_with_v, v_with_q, root_present, files,
+  result = ppdTest(ignore, warn, rootdir, verbose, relaxed, root_present, files,
 		   file_array, &report, NULL, NULL);
 
   if (result == 1 && files > 0) puts("PPD PASSED");

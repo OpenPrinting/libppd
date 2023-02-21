@@ -92,7 +92,6 @@ static void show_conflicts(ppd_file_t *ppd, const char *prefix,
 			   cups_array_t **report, cf_logfunc_t log, void *ld);
 static int test_raster(ppd_file_t *ppd, int verbose, cups_array_t **report,
 		       cf_logfunc_t log, void *ld);
-static int usage(cups_array_t **report, cf_logfunc_t log, void *ld);
 static int valid_path(const char *keyword, const char *path, int errors,
                       int verbose, int warn, cups_array_t **report,
 		      cf_logfunc_t log, void *ld);
@@ -105,7 +104,6 @@ static int valid_utf8(const char *s);
 int ppdTest(int ignore,          // Which errors to ignore 
             int warn,            //Which errors to just warn about 
             char *rootdir,       // What is the root directory if mentioned
-            int help,            // Whether to run help dialog 
             int verbose,         // Want verbose output? 
             int relaxed,         // If relaxed mode is to be used 
             int q_with_v,        // If q is used together with v in the command line 
@@ -166,15 +164,6 @@ int ppdTest(int ignore,          // Which errors to ignore
     }
   }
 
-  
-
-  if (help == 1)
-  {
-  
-    usage(report, log, ld);
-  
-  }
-  
   if (relaxed == 1)
   {
   
@@ -2213,8 +2202,12 @@ int ppdTest(int ignore,          // Which errors to ignore
 
   }
 
-  if (!files && !help)
-    usage(report, log, ld);
+  if (!files)
+  {
+    if (log) log(ld, CF_LOGLEVEL_ERROR,
+		 "ppdTest: No PPD file to be tested supplied.");
+    return (-1);
+  }
 
   return (!status);
 }
@@ -5167,61 +5160,6 @@ test_raster(ppd_file_t *ppd,      // I - PPD file
   }
 
   return (1);
-}
-
-
-// 'usage()' - Show program usage.
- 
-
-static int
-usage(cups_array_t **report,// I - Report text
-      cf_logfunc_t log,     // I - Log function
-      void *ld)             // I - Log function data
-{
-  char str_format[2048];    // Formatted string
-
-
-  snprintf(str_format, sizeof(str_format)-1, "Usage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
-                  "       program | testppdfile [options] -");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "Options:");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-I {filename,filters,none,profiles}\n"
-                          "                          Ignore specific warnings");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-R root-directory       Set alternate root");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-W {all,none,constraints,defaults,duplex,filters,profiles,sizes,translations}\n"
-                          "                          Issue warnings instead of errors");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-q                      Run silently");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-r                      Use 'relaxed' open mode");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-v                      Be verbose");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-  snprintf(str_format, sizeof(str_format)-1, "-vv                     Be very verbose");
-  if (*report)
-    cupsArrayAdd(*report,(void *)str_format);
-  if (log) log(ld, CF_LOGLEVEL_INFO, "ppdTest: %s", str_format);
-
-  return(0);
 }
 
 

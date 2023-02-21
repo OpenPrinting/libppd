@@ -13,6 +13,25 @@
 #include <stdio.h>
 
       
+// 'usage()' - Show program usage.
+
+void
+usage()
+{
+  fprintf(stderr, "\nUsage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
+	          "       program | testppdfile [options] -\n\n");
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "-I {filename, filters, none, profiles}\n"
+	          "                        Ignore specific warnings\n");
+  fprintf(stderr, "-R root-directory       Set alternate root\n");
+  fprintf(stderr, "-W {all, none, constraints, defaults, duplex, filters,\n"
+	          "    profiles, sizes, translations}\n"
+	          "                        Issue warnings instead of errors\n");
+  fprintf(stderr, "-q                      Run silently\n");
+  fprintf(stderr, "-r                      Use 'relaxed' open mode\n");
+  fprintf(stderr, "-v                      Be verbose\n");
+  fprintf(stderr, "-vv                     Be very verbose\n\n");
+}
 
 // 'main()' - Wrapper function for ppdTest().
  
@@ -152,9 +171,14 @@ int main(int argc,          // I - Number of command-line args
     files++;
     cupsArrayAdd(file_array, argv[i]);
   }
-  
 
-  result = ppdTest(ignore, warn, rootdir, help, verbose,
+  if (help)
+  {
+    usage();
+    exit (0);
+  }
+
+  result = ppdTest(ignore, warn, rootdir, verbose,
                    relaxed, q_with_v, v_with_q, root_present, files,
 		   file_array, &report, NULL, NULL);
   

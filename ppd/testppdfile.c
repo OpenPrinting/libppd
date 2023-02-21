@@ -150,20 +150,13 @@ int main(int argc,          // I - Number of command-line args
   else
   {                  
     files++;
-
-    if (argv[i][0] == '-')
-    {
-      cupsArrayAdd(file_array,"error");
-    }
-    else
-    {
-      cupsArrayAdd(file_array,argv[i]);
-    }
+    cupsArrayAdd(file_array, argv[i]);
   }
   
 
   result = ppdTest(ignore, warn, rootdir, help, verbose,
-                   relaxed, q_with_v, v_with_q, root_present, files, file_array, &report);
+                   relaxed, q_with_v, v_with_q, root_present, files,
+		   file_array, &report, NULL, NULL);
   
   if (result == 1 && files > 0) puts("PPD PASSED");
   else if (result == 0) puts("PPD FAILED");

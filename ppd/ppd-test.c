@@ -64,26 +64,38 @@ enum
 // Local functions...
  
 
-static void check_basics(const char *filename, cups_array_t **report);
+static void check_basics(const char *filename, cups_array_t **report,
+			 cf_logfunc_t log, void *ld);
 static int check_constraints(ppd_file_t *ppd, int errors, int verbose,
-                             int warn, cups_array_t **report);
-static int check_case(ppd_file_t *ppd, int errors, int verbose, cups_array_t **report);
+                             int warn, cups_array_t **report,
+			     cf_logfunc_t log, void *ld);
+static int check_case(ppd_file_t *ppd, int errors, int verbose,
+		      cups_array_t **report, cf_logfunc_t log, void *ld);
 static int check_defaults(ppd_file_t *ppd, int errors, int verbose,
-                          int warn, cups_array_t **report);
+                          int warn, cups_array_t **report,
+			  cf_logfunc_t log, void *ld);
 static int check_duplex(ppd_file_t *ppd, int errors, int verbose,
-                        int warn, cups_array_t **report);
+                        int warn, cups_array_t **report,
+			cf_logfunc_t log, void *ld);
 static int check_filters(ppd_file_t *ppd, const char *root, int errors,
-                         int verbose, int warn, cups_array_t **report);
+                         int verbose, int warn, cups_array_t **report,
+			 cf_logfunc_t log, void *ld);
 static int check_profiles(ppd_file_t *ppd, const char *root, int errors,
-                          int verbose, int warn, cups_array_t **report);
-static int check_sizes(ppd_file_t *ppd, int errors, int verbose, int warn, cups_array_t **report);
+                          int verbose, int warn, cups_array_t **report,
+			  cf_logfunc_t log, void *ld);
+static int check_sizes(ppd_file_t *ppd, int errors, int verbose, int warn,
+		       cups_array_t **report, cf_logfunc_t log, void *ld);
 static int check_translations(ppd_file_t *ppd, int errors, int verbose,
-                              int warn, cups_array_t **report);
-static void show_conflicts(ppd_file_t *ppd, const char *prefix, cups_array_t **report);
-static int test_raster(ppd_file_t *ppd, int verbose, cups_array_t **report);
-static int usage(cups_array_t **report);
+                              int warn, cups_array_t **report,
+			      cf_logfunc_t log, void *ld);
+static void show_conflicts(ppd_file_t *ppd, const char *prefix,
+			   cups_array_t **report, cf_logfunc_t log, void *ld);
+static int test_raster(ppd_file_t *ppd, int verbose, cups_array_t **report,
+		       cf_logfunc_t log, void *ld);
+static int usage(cups_array_t **report, cf_logfunc_t log, void *ld);
 static int valid_path(const char *keyword, const char *path, int errors,
-                      int verbose, int warn, cups_array_t **report);
+                      int verbose, int warn, cups_array_t **report,
+		      cf_logfunc_t log, void *ld);
 static int valid_utf8(const char *s);
 
 
@@ -101,7 +113,9 @@ int ppdTest(int ignore,          // Which errors to ignore
             int root_present,    // Whether root directory is specified 
             int files,           // Number of files 
             cups_array_t *file_array,    // Array consisting of filenames of the ppd files to be checked 
-            cups_array_t **report)    // Report array
+            cups_array_t **report, // Report array
+	    cf_logfunc_t log,    // I - Log function
+	    void *ld)            // I - Log function data
 {
   int i, j, k, m, n;       // Looping vars 
   size_t len;               // Length of option name 
@@ -112,9 +126,9 @@ int ppdTest(int ignore,          // Which errors to ignore
   int ppdversion;           // PPD spec version in PPD file 
   ppd_status_t error;       // Status of ppdOpen*() 
   int line;               // Line number for error 
-  char *file;               // File name in file_array
+  char *file = NULL;               // File name in file_array
   char *root;               // Root directory 
-  char str_format[256];    // Formatted string
+  char str_format[2048];    // Formatted string
   int xdpi,               // X resolution 
       ydpi;               // Y resolution 
   ppd_file_t *ppd;       // PPD file record 
@@ -129,8 +143,6 @@ int ppdTest(int ignore,          // Which errors to ignore
   static char *uis[] = {"BOOLEAN", "PICKONE", "PICKMANY"};
   static char *sections[] = {"ANY", "DOCUMENT", "EXIT",
                                "JCL", "PAGE", "PROLOG"};
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
   loc = localeconv();
 
 
@@ -159,7 +171,7 @@ int ppdTest(int ignore,          // Which errors to ignore
   if (help == 1)
   {
   
-    usage(report);
+    usage(report, log, ld);
   
   }
   
@@ -201,14 +213,15 @@ int ppdTest(int ignore,          // Which errors to ignore
   for (i = 1; i <= files; i++)
   {
     cupsArrayNext(file_array);
-    if (cupsArrayCurrent(file_array)=="error")
+    if (strcmp((char *)cupsArrayCurrent(file_array), "-") == 0)
     {
     
     // Read from stdin...
      
   
       ppd = ppdOpenWithLocalization(cupsFileStdin(), PPD_LOCALIZATION_ALL);
-  
+      file = NULL;
+
       if (verbose >= 0)
       {
         snprintf(str_format, sizeof(str_format) - 1, "%s:", (ppd && ppd->pcfilename) ? ppd->pcfilename : "(stdin)");
@@ -391,7 +404,7 @@ int ppdTest(int ignore,          // Which errors to ignore
                 break;
           }
 
-          check_basics(file, report);
+          check_basics(file, report, log, ld);
         }
       }
 
@@ -425,7 +438,7 @@ int ppdTest(int ignore,          // Which errors to ignore
       {
         if (strstr(attr->value, "application/vnd.cups-raster"))
         {
-          if (!test_raster(ppd, verbose, report))
+          if (!test_raster(ppd, verbose, report, log, ld))
             errors++;
           break;
         }
@@ -437,7 +450,7 @@ int ppdTest(int ignore,          // Which errors to ignore
       for (j = 0; j < ppd->num_filters; j++)
         if (strstr(ppd->filters[j], "application/vnd.cups-raster"))
         {
-          if (!test_raster(ppd, verbose, report))
+          if (!test_raster(ppd, verbose, report, log, ld))
             errors++;
           break;
         }
@@ -448,7 +461,7 @@ int ppdTest(int ignore,          // Which errors to ignore
      
 
     if (!(warn & PPD_TEST_WARN_DEFAULTS))
-      errors = check_defaults(ppd, errors, verbose, 0, report);
+      errors = check_defaults(ppd, errors, verbose, 0, report, log, ld);
 
     if ((attr = ppdFindAttr(ppd, "DefaultImageableArea", NULL)) == NULL)
     {
@@ -628,7 +641,7 @@ int ppdTest(int ignore,          // Which errors to ignore
         }
       }
 
-      if ((attr = ppdFindAttr(ppd, "FileVersion", NULL)) != NULL)
+    if ((attr = ppdFindAttr(ppd, "FileVersion", NULL)) != NULL)
       {
         for (ptr = attr->value; *ptr; ptr++)
           if (!isdigit(*ptr & 255) && *ptr != '.')
@@ -1192,7 +1205,7 @@ int ppdTest(int ignore,          // Which errors to ignore
           snprintf(str_format, sizeof(str_format)-1,  "        PASS    PSVersion");
           if (*report)
             cupsArrayAdd(*report, (void *)str_format);
-            if (log) log(ld, CF_LOGLEVEL_DEBUG, "ppdTest: %s", str_format);
+	  if (log) log(ld, CF_LOGLEVEL_DEBUG, "ppdTest: %s", str_format);
         }
       }
       else
@@ -1489,25 +1502,25 @@ int ppdTest(int ignore,          // Which errors to ignore
         errors++;
       }
 
-      errors = check_case(ppd, errors, verbose, report);
+      errors = check_case(ppd, errors, verbose, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_CONSTRAINTS))
-        errors = check_constraints(ppd, errors, verbose, 0, report);
+        errors = check_constraints(ppd, errors, verbose, 0, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_FILTERS) && !(ignore & PPD_TEST_WARN_FILTERS))
-        errors = check_filters(ppd, root, errors, verbose, 0, report);
+        errors = check_filters(ppd, root, errors, verbose, 0, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_PROFILES) && !(ignore & PPD_TEST_WARN_PROFILES))
-        errors = check_profiles(ppd, root, errors, verbose, 0, report);
+        errors = check_profiles(ppd, root, errors, verbose, 0, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_SIZES))
-        errors = check_sizes(ppd, errors, verbose, 0, report);
+        errors = check_sizes(ppd, errors, verbose, 0, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_TRANSLATIONS))
-        errors = check_translations(ppd, errors, verbose, 0, report);
+        errors = check_translations(ppd, errors, verbose, 0, report, log, ld);
 
       if (!(warn & PPD_TEST_WARN_DUPLEX))
-        errors = check_duplex(ppd, errors, verbose, 0, report);
+        errors = check_duplex(ppd, errors, verbose, 0, report, log, ld);
 
       if ((attr = ppdFindAttr(ppd, "cupsLanguages", NULL)) != NULL &&
               attr->value)
@@ -1665,29 +1678,31 @@ int ppdTest(int ignore,          // Which errors to ignore
       }
       if (verbose >= 0)
       {
-        check_basics(file, report);
+        check_basics(file, report, log, ld);
 
         if (warn & PPD_TEST_WARN_DEFAULTS)
-          errors = check_defaults(ppd, errors, verbose, 1, report);
+          errors = check_defaults(ppd, errors, verbose, 1, report, log, ld);
 
         if (warn & PPD_TEST_WARN_CONSTRAINTS)
-          errors = check_constraints(ppd, errors, verbose, 1, report);
+          errors = check_constraints(ppd, errors, verbose, 1, report, log, ld);
 
         if ((warn & PPD_TEST_WARN_FILTERS) && !(ignore & PPD_TEST_WARN_FILTERS))
-          errors = check_filters(ppd, root, errors, verbose, 1, report);
+          errors = check_filters(ppd, root, errors, verbose, 1, report,
+				 log, ld);
 
         if ((warn & PPD_TEST_WARN_PROFILES) && !(ignore & PPD_TEST_WARN_PROFILES))
-          errors = check_profiles(ppd, root, errors, verbose, 1, report);
+          errors = check_profiles(ppd, root, errors, verbose, 1, report,
+				  log, ld);
 
         if (warn & PPD_TEST_WARN_SIZES)
-          errors = check_sizes(ppd, errors, verbose, 1, report);
+          errors = check_sizes(ppd, errors, verbose, 1, report, log, ld);
         else
-         errors = check_sizes(ppd, errors, verbose, 2, report);
+         errors = check_sizes(ppd, errors, verbose, 2, report, log, ld);
 
         if (warn & PPD_TEST_WARN_TRANSLATIONS)
-          errors = check_translations(ppd, errors, verbose, 1, report);
+          errors = check_translations(ppd, errors, verbose, 1, report, log, ld);
         if (warn & PPD_TEST_WARN_DUPLEX)
-          errors = check_duplex(ppd, errors, verbose, 1, report);
+          errors = check_duplex(ppd, errors, verbose, 1, report, log, ld);
 
           
         // Look for legacy duplex keywords...
@@ -2199,9 +2214,8 @@ int ppdTest(int ignore,          // Which errors to ignore
   }
 
   if (!files && !help)
-    usage(report);
+    usage(report, log, ld);
 
-  if (log) log(ld, CF_LOGLEVEL_INFO,status);
   return (!status);
 }
 
@@ -2212,7 +2226,10 @@ int ppdTest(int ignore,          // Which errors to ignore
  
 
 static void
-check_basics(const char *filename, cups_array_t **report) // I - PPD file to check 
+check_basics(const char *filename, // I - PPD file to check
+	     cups_array_t **report,// I - Report text
+	     cf_logfunc_t log,     // I - Log function
+	     void *ld)             // I - Log function data
 {
   cups_file_t *fp; // File pointer 
   int ch;             // Current character 
@@ -2221,9 +2238,7 @@ check_basics(const char *filename, cups_array_t **report) // I - PPD file to che
   int eol;         // Line endings 
   int linenum;     // Line number 
   int mixed;         // Mixed line endings? 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
 
   if ((fp = cupsFileOpen(filename, "r")) == NULL)
     return;
@@ -2280,7 +2295,7 @@ check_basics(const char *filename, cups_array_t **report) // I - PPD file to che
     {
       if (ch != ' ' && ch != '\t')
         whitespace = 0;
-        col++;
+      col++;
     }
   }
 
@@ -2311,12 +2326,14 @@ check_basics(const char *filename, cups_array_t **report) // I - PPD file to che
 // 'check_constraints()' - Check UIConstraints in the PPD file.
  
 
-static int                           // O - Errors found 
-check_constraints(ppd_file_t *ppd, // I - PPD file 
-                  int errors,       // I - Errors found 
-                  int verbose,       // I - Verbosity level 
-                  int warn,           // I - Warnings only? 
-                  cups_array_t **report)
+static int                              // O - Errors found 
+check_constraints(ppd_file_t *ppd,      // I - PPD file 
+                  int errors,           // I - Errors found 
+                  int verbose,          // I - Verbosity level 
+                  int warn,             // I - Warnings only? 
+                  cups_array_t **report,// I - Report text
+		  cf_logfunc_t log,     // I - Log function
+		  void *ld)             // I - Log function data
 {
   int i;                   // Looping var 
   const char *prefix;       // WARN/FAIL prefix 
@@ -2331,9 +2348,8 @@ check_constraints(ppd_file_t *ppd, // I - PPD file
   int num_options;        // Number of options 
   cups_option_t *options; // Options 
   ppd_option_t *o;        // PPD option 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -2402,7 +2418,7 @@ check_constraints(ppd_file_t *ppd, // I - PPD file
         continue;
       }
 
-      cupsArraySave(ppd->sorted_attrs);
+    cupsArraySave(ppd->sorted_attrs);
 
       if (constattr->spec[0] &&
           !ppdFindAttr(ppd, "cupsUIResolver", constattr->spec))
@@ -2724,11 +2740,13 @@ check_constraints(ppd_file_t *ppd, // I - PPD file
 //                or choices that differ only by case.
  
 
-static int                    // O - Errors found 
-check_case(ppd_file_t *ppd, // I - PPD file 
-           int errors,        // I - Errors found 
-           int verbose,        // I - Verbosity level 
-           cups_array_t **report)
+static int                       // O - Errors found 
+check_case(ppd_file_t *ppd,      // I - PPD file 
+           int errors,           // I - Errors found 
+           int verbose,          // I - Verbosity level 
+           cups_array_t **report,// I - Report text
+	   cf_logfunc_t log,     // I - Log function
+	   void *ld)             // I - Log function data
 {
   int i, j;               // Looping vars 
   ppd_group_t *groupa,   // First group 
@@ -2737,9 +2755,7 @@ check_case(ppd_file_t *ppd, // I - PPD file
         *optionb;           // Second option 
   ppd_choice_t *choicea, // First choice 
         *choiceb;           // Second choice 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
 
   
   // Check that the groups do not have any duplicate names...
@@ -2775,7 +2791,7 @@ check_case(ppd_file_t *ppd, // I - PPD file
       // Check that the options do not have any duplicate names...
          
 
-      for (optiona = ppdFirstOption(ppd); optiona; optiona = ppdNextOption(ppd))
+  for (optiona = ppdFirstOption(ppd); optiona; optiona = ppdNextOption(ppd))
       {
         cupsArraySave(ppd->options);
         for (optionb = ppdNextOption(ppd); optionb; optionb = ppdNextOption(ppd))
@@ -2802,7 +2818,7 @@ check_case(ppd_file_t *ppd, // I - PPD file
 
             errors++;
           }
-          cupsArrayRestore(ppd->options);
+        cupsArrayRestore(ppd->options);
 
             
           // Then the choices...
@@ -2875,20 +2891,20 @@ check_case(ppd_file_t *ppd, // I - PPD file
 // 'check_defaults()' - Check default option keywords in the PPD file.
  
 
-static int                        // O - Errors found 
-check_defaults(ppd_file_t *ppd, // I - PPD file 
-               int errors,        // I - Errors found 
-               int verbose,        // I - Verbosity level 
-               int warn,        // I - Warnings only? 
-               cups_array_t **report)
+static int                           // O - Errors found 
+check_defaults(ppd_file_t *ppd,      // I - PPD file 
+               int errors,           // I - Errors found 
+               int verbose,          // I - Verbosity level 
+               int warn,             // I - Warnings only? 
+               cups_array_t **report,// I - Report text
+	       cf_logfunc_t log,     // I - Log function
+	       void *ld)             // I - Log function data
 {
   int j, k;              // Looping vars 
   ppd_attr_t *attr;      // PPD attribute 
   ppd_option_t *option; // Standard UI option 
   const char *prefix;      // WARN/FAIL prefix 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -2912,7 +2928,7 @@ check_defaults(ppd_file_t *ppd, // I - PPD file
       if (log) log(ld, CF_LOGLEVEL_DEBUG, "ppdTest: %s", str_format);
     }
 
-    show_conflicts(ppd, prefix, report);
+    show_conflicts(ppd, prefix, report, log, ld);
 
     if (!warn)
       errors++;
@@ -2980,20 +2996,21 @@ check_defaults(ppd_file_t *ppd, // I - PPD file
 // 'check_duplex()' - Check duplex keywords in the PPD file.
  
 
-static int                      // O - Errors found 
-check_duplex(ppd_file_t *ppd, // I - PPD file 
-             int errors,      // I - Error found 
-             int verbose,      // I - Verbosity level 
-             int warn,          // I - Warnings only? 
-             cups_array_t **report)
+static int                         // O - Errors found 
+check_duplex(ppd_file_t *ppd,      // I - PPD file 
+             int errors,           // I - Error found 
+             int verbose,          // I - Verbosity level 
+             int warn,             // I - Warnings only? 
+             cups_array_t **report,// I - Report text
+	     cf_logfunc_t log,     // I - Log function
+	     void *ld)             // I - Log function data
 {
   int i;                  // Looping var 
   ppd_option_t *option; // PPD option 
   ppd_choice_t *choice; // Current choice 
   const char *prefix;      // Message prefix 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -3069,13 +3086,15 @@ check_duplex(ppd_file_t *ppd, // I - PPD file
 // 'check_filters()' - Check filters in the PPD file.
  
 
-static int                        // O - Errors found 
-check_filters(ppd_file_t *ppd,    // I - PPD file 
-              const char *root, // I - Root directory 
-              int errors,        // I - Errors found 
-              int verbose,        // I - Verbosity level 
-              int warn,            // I - Warnings only? 
-              cups_array_t **report)
+static int                          // O - Errors found 
+check_filters(ppd_file_t *ppd,      // I - PPD file 
+              const char *root,     // I - Root directory 
+              int errors,           // I - Errors found 
+              int verbose,          // I - Verbosity level 
+              int warn,             // I - Warnings only? 
+              cups_array_t **report,// I - Report text
+	      cf_logfunc_t log,     // I - Log function
+	      void *ld)             // I - Log function data
 {
   ppd_attr_t *attr;      // PPD attribute 
   const char *ptr;      // Pointer into string 
@@ -3083,14 +3102,13 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     type[256],          // Type for filter 
     dstsuper[16],      // Destination super-type for filter 
     dsttype[256],      // Destination type for filter 
-    program[1024],      // Program/filter name 
+    program[128],      // Program/filter name 
     pathprog[1024];      // Complete path to program/filter 
   int cost;              // Cost of filter 
   const char *prefix;      // WARN/FAIL prefix 
   struct stat fileinfo; // File information 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -3258,7 +3276,8 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
           errors++;
       }
       else
-        errors = valid_path("cupsFilter", pathprog, errors, verbose, warn, report);
+        errors = valid_path("cupsFilter", pathprog, errors, verbose, warn,
+			    report, log, ld);
     }
   }
 
@@ -3436,7 +3455,8 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
           errors++;
       }
       else
-        errors = valid_path("cupsFilter2", pathprog, errors, verbose, warn, report);
+        errors = valid_path("cupsFilter2", pathprog, errors, verbose, warn,
+			    report, log, ld);
     }
   }
 
@@ -3566,7 +3586,8 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
           errors++;
       }
       else
-        errors = valid_path("cupsPreFilter", pathprog, errors, verbose, warn, report);
+        errors = valid_path("cupsPreFilter", pathprog, errors, verbose, warn,
+			    report, log, ld);
     }
   }
 
@@ -3658,7 +3679,7 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     }
     else
       errors = valid_path("APDialogExtension", pathprog, errors, verbose,
-                          warn, report);
+                          warn, report, log, ld);
   }
 
   
@@ -3746,7 +3767,7 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     }
     else
       errors = valid_path("APPrinterIconPath", pathprog, errors, verbose,
-                          warn, report);
+                          warn, report, log, ld);
   }
 
   
@@ -3834,7 +3855,7 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     }
     else
       errors = valid_path("APPrinterLowInkTool", pathprog, errors, verbose,
-                          warn, report);
+                          warn, report, log, ld);
   }
 
   
@@ -3919,7 +3940,7 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     }
     else
       errors = valid_path("APPrinterUtilityPath", pathprog, errors, verbose,
-                          warn, report);
+                          warn, report, log, ld);
   }
 
   
@@ -4002,7 +4023,7 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
     }
     else
       errors = valid_path("APScanAppPath", attr->value, errors, verbose,
-                          warn, report);
+                          warn, report, log, ld);
 
     if (ppdFindAttr(ppd, "APScanAppBundleID", NULL))
     {
@@ -4034,16 +4055,19 @@ check_filters(ppd_file_t *ppd,    // I - PPD file
 }
 
 
+//
 // 'check_profiles()' - Check ICC color profiles in the PPD file.
- 
+//
 
-static int                         // O - Errors found 
-check_profiles(ppd_file_t *ppd,     // I - PPD file 
-               const char *root, // I - Root directory 
-               int errors,         // I - Errors found 
-               int verbose,         // I - Verbosity level 
-               int warn,         // I - Warnings only? 
-               cups_array_t **report)
+static int                           // O - Errors found 
+check_profiles(ppd_file_t *ppd,      // I - PPD file 
+               const char *root,     // I - Root directory 
+               int errors,           // I - Errors found 
+               int verbose,          // I - Verbosity level 
+               int warn,             // I - Warnings only? 
+               cups_array_t **report,// I - Report text
+	       cf_logfunc_t log,     // I - Log function
+	       void *ld)             // I - Log function data
 {
   int i;                     // Looping var 
   ppd_attr_t *attr;         // PPD attribute 
@@ -4055,9 +4079,8 @@ check_profiles(ppd_file_t *ppd,     // I - PPD file
   unsigned hash,             // Current hash value 
       hashes[1000];         // Hash values of profile names 
   const char *specs[1000]; // Specifiers for profiles 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -4165,7 +4188,8 @@ check_profiles(ppd_file_t *ppd,     // I - PPD file
         errors++;
     }
     else
-      errors = valid_path("cupsICCProfile", filename, errors, verbose, warn, report);
+      errors = valid_path("cupsICCProfile", filename, errors, verbose, warn,
+			  report, log, ld);
 
     
     // Check for hash collisions...
@@ -4225,12 +4249,14 @@ check_profiles(ppd_file_t *ppd,     // I - PPD file
 // 'check_sizes()' - Check media sizes in the PPD file.
  
 
-static int                     // O - Errors found 
-check_sizes(ppd_file_t *ppd, // I - PPD file 
-            int errors,         // I - Errors found 
-            int verbose,     // I - Verbosity level 
-            int warn,         // I - Warnings only? 
-            cups_array_t **report)
+static int                        // O - Errors found 
+check_sizes(ppd_file_t *ppd,      // I - PPD file 
+            int errors,           // I - Errors found 
+            int verbose,          // I - Verbosity level 
+            int warn,             // I - Warnings only? 
+            cups_array_t **report,// I - Report text
+	    cf_logfunc_t log,     // I - Log function
+	    void *ld)             // I - Log function data
 {
   int i;                     // Looping var 
   ppd_size_t *size;         // Current size 
@@ -4251,9 +4277,8 @@ check_sizes(ppd_file_t *ppd, // I - PPD file
       length_inch,         // Length in inches 
       width_mm,             // Width in millimeters 
       length_mm;             // Length in millimeters 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -4580,12 +4605,14 @@ check_sizes(ppd_file_t *ppd, // I - PPD file
 // 'check_translations()' - Check translations in the PPD file.
  
 
-static int                            // O - Errors found 
-check_translations(ppd_file_t *ppd, // I - PPD file 
-                   int errors,        // I - Errors found 
-                   int verbose,        // I - Verbosity level 
-                   int warn,        // I - Warnings only? 
-                   cups_array_t **report)
+static int                               // O - Errors found 
+check_translations(ppd_file_t *ppd,      // I - PPD file 
+                   int errors,           // I - Errors found 
+                   int verbose,          // I - Verbosity level 
+                   int warn,             // I - Warnings only?
+                   cups_array_t **report,// I - Report text
+		   cf_logfunc_t log,     // I - Log function
+		   void *ld)             // I - Log function data
 {
   int j;                         // Looping var 
   ppd_attr_t *attr;             // PPD attribute 
@@ -4603,9 +4630,8 @@ check_translations(ppd_file_t *ppd, // I - PPD file
   char ll[3];                // Base language 
   const char *prefix;        // WARN/FAIL prefix 
   const char *text;        // Pointer into UI text 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 
@@ -4715,9 +4741,9 @@ check_translations(ppd_file_t *ppd, // I - PPD file
           errors++;
       }
 
-      snprintf(keyword, sizeof(keyword), "%s.%s", language,
+      snprintf(keyword, sizeof(keyword), "%s.%.37s", language,
              option->keyword);
-      snprintf(llkeyword, sizeof(llkeyword), "%s.%s", ll,
+      snprintf(llkeyword, sizeof(llkeyword), "%s.%.37s", ll,
              option->keyword);
 
       for (j = 0; j < option->num_choices; j++)
@@ -4742,7 +4768,7 @@ check_translations(ppd_file_t *ppd, // I - PPD file
               (coption = ppdFindCustomOption(ppd,
                                      option->keyword)) != NULL)
         {
-          snprintf(ckeyword, sizeof(ckeyword), "%s.Custom%s",
+          snprintf(ckeyword, sizeof(ckeyword), "%s.Custom%.33s",
                  language, option->keyword);
 
           if ((attr = ppdFindAttr(ppd, ckeyword, "True")) != NULL &&
@@ -4780,9 +4806,9 @@ check_translations(ppd_file_t *ppd, // I - PPD file
                  cparam;
                  cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
             {
-              snprintf(ckeyword, sizeof(ckeyword), "%s.ParamCustom%s",
+              snprintf(ckeyword, sizeof(ckeyword), "%s.ParamCustom%.28s",
                          language, option->keyword);
-              snprintf(cllkeyword, sizeof(cllkeyword), "%s.ParamCustom%s",
+              snprintf(cllkeyword, sizeof(cllkeyword), "%s.ParamCustom%.26s",
                              ll, option->keyword);
 
               if ((attr = ppdFindAttr(ppd, ckeyword,
@@ -4953,7 +4979,7 @@ check_translations(ppd_file_t *ppd, // I - PPD file
     // Free memory used for the languages...
        
 
-    ppdFreeLanguages(languages);
+  ppdFreeLanguages(languages);
   }
 
   return (errors);
@@ -4964,17 +4990,17 @@ check_translations(ppd_file_t *ppd, // I - PPD file
  
 
 static void
-show_conflicts(ppd_file_t *ppd,       // I - PPD to check 
-               const char *prefix, // I - Prefix string 
-               cups_array_t **report)
+show_conflicts(ppd_file_t *ppd,      // I - PPD to check 
+               const char *prefix,   // I - Prefix string 
+               cups_array_t **report,// I - Report text
+	       cf_logfunc_t log,     // I - Log function
+	       void *ld)             // I - Log function data
 {
   int i, j;               // Looping variables 
   ppd_const_t *c;           // Current constraint 
   ppd_option_t *o1, *o2; // Options 
   ppd_choice_t *c1, *c2; // Choices 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
 
   
   // Loop through all of the UI constraints and report any options
@@ -5071,16 +5097,16 @@ show_conflicts(ppd_file_t *ppd,       // I - PPD to check
 // 'test_raster()' - Test PostScript commands for raster printers.
  
 
-static int                     // O - 1 on success, 0 on failure 
-test_raster(ppd_file_t *ppd, // I - PPD file 
-            int verbose,     // I - Verbosity 
-            cups_array_t **report)
+static int                        // O - 1 on success, 0 on failure 
+test_raster(ppd_file_t *ppd,      // I - PPD file 
+            int verbose,          // I - Verbosity 
+            cups_array_t **report,// I - Report text
+	    cf_logfunc_t log,     // I - Log function
+	    void *ld)             // I - Log function data
 {
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
-
+  char str_format[2048];    // Formatted string
   cups_page_header2_t header; // Page header 
+
 
   ppdMarkDefaults(ppd);
   if (ppdRasterInterpretPPD(&header, ppd, 0, NULL, 0))
@@ -5148,11 +5174,12 @@ test_raster(ppd_file_t *ppd, // I - PPD file
  
 
 static int
-usage(cups_array_t **report)
+usage(cups_array_t **report,// I - Report text
+      cf_logfunc_t log,     // I - Log function
+      void *ld)             // I - Log function data
 {
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data
+  char str_format[2048];    // Formatted string
+
 
   snprintf(str_format, sizeof(str_format)-1, "Usage: testppdfile [options] filename1.ppd[.gz] [... filenameN.ppd[.gz]]\n"
                   "       program | testppdfile [options] -");
@@ -5201,22 +5228,23 @@ usage(cups_array_t **report)
 // 'valid_path()' - Check whether a path has the correct capitalization.
  
 
-static int                        // O - Errors found 
-valid_path(const char *keyword, // I - Keyword using path 
-           const char *path,    // I - Path to check 
-           int errors,            // I - Errors found 
-           int verbose,            // I - Verbosity level 
-           int warn,            // I - Warnings only? 
-           cups_array_t **report)
+static int                       // O - Errors found 
+valid_path(const char *keyword,  // I - Keyword using path 
+           const char *path,     // I - Path to check 
+           int errors,           // I - Errors found 
+           int verbose,          // I - Verbosity level 
+           int warn,             // I - Warnings only? 
+           cups_array_t **report,// I - Report text
+	   cf_logfunc_t log,     // I - Log function
+	   void *ld)             // I - Log function data
 {
   cups_dir_t *dir;         // Current directory 
   cups_dentry_t *dentry; // Current directory entry 
   char temp[1024],         // Temporary path 
       *ptr;                 // Pointer into temporary path 
   const char *prefix;     // WARN/FAIL prefix 
-  char str_format[256];    // Formatted string
-  cf_logfunc_t log;        // I - Log function
-  void         *ld;        // I - Log function data  
+  char str_format[2048];    // Formatted string
+
 
   prefix = warn ? "  WARN  " : "**FAIL**";
 

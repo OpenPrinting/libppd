@@ -98,7 +98,6 @@ libppd_la_SOURCES = \
 	ppd/string.c \
 	ppd/snprintf.c \
 	ppd/string-private.h \
-	ppd/testppdfile.c \
 	ppd/thread.c \
 	ppd/thread-private.h \
 	ppd/ppdc-array.cxx \
@@ -137,21 +136,29 @@ testppd_SOURCES = ppd/testppd.c
 testppd_LDADD = libppd.la \
 		-lcups
 
-testppdfile_SOURCES = ppd/testppdfile.c
-testppdfile_LDADD = libppd.la \
-		$(CUPS_LIBS) \
-		$(CUPS-FILTERS_LIBS)
-testppdfile_CFLAGS = \
-	-I$(srcdir)/ppd/ \
-	$(CUPS_CFLAGS) \
-	$(CUPS-FILTERS_CFLAGS)
-
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \
 	$(pkgppddefs_DATA) \
 	ppd/test.ppd \
 	ppd/test2.ppd \
 	ppd/README.md
+
+# ================
+# PPD test utility
+# ================
+
+pkgutils_PROGRAMS += \
+	testppdfile
+
+testppdfile_SOURCES = ppd/testppdfile.c
+testppdfile_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS) \
+	$(CUPS-FILTERS_LIBS)
+testppdfile_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS) \
+	$(CUPS-FILTERS_CFLAGS)
 
 # ===========================
 # ppdc PPD compiler utilities

@@ -110,7 +110,6 @@ int ppdTest(int ignore,          // Which errors to ignore
             int verbose,         // Want verbose output?
             int relaxed,         // If relaxed mode is to be used
             int root_present,    // Whether root directory is specified
-            int files,           // Number of files
             cups_array_t *file_array, // Array consisting of filenames of the
 	                         // ppd files to be checked
             cups_array_t **report, // Report array
@@ -178,11 +177,11 @@ int ppdTest(int ignore,          // Which errors to ignore
   // Open the PPD file...
   //
 
-  cupsArrayFirst(file_array);
-  for (i = 1; i <= files; i++)
+  for (i = 0, file = (char *)cupsArrayFirst(file_array);
+       file;
+       i ++, file = (char *)cupsArrayNext(file_array))
   {
-    cupsArrayNext(file_array);
-    if (strcmp((char *)cupsArrayCurrent(file_array), "-") == 0)
+    if (strcmp(file, "-") == 0)
     {
       //
       // Read from stdin...
@@ -202,8 +201,6 @@ int ppdTest(int ignore,          // Which errors to ignore
     }
     else
     {
-      file = cupsArrayCurrent(file_array);
-
       // Read from a file...
       if (verbose >= 0)
       {
@@ -2175,7 +2172,7 @@ int ppdTest(int ignore,          // Which errors to ignore
     ppdClose(ppd);
   }
 
-  if (!files)
+  if (!i)
   {
     if (log) log(ld, CF_LOGLEVEL_ERROR,
 		 "ppdTest: No PPD file to be tested supplied.");

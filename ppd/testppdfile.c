@@ -65,8 +65,7 @@ int main(int argc,     // I - Number of command-line args
   int result;                      // Whether PPD pased or not
 
 
-  file_array = cupsArrayNew(NULL,"");
-  cupsArrayAdd(file_array," ");
+  file_array = cupsArrayNew(NULL, "");
 
   for (i = 1; i < argc; i ++)
     if (!strcmp(argv[i], "--help"))
@@ -167,7 +166,7 @@ int main(int argc,     // I - Number of command-line args
     return (0);
   }
 
-  result = ppdTest(ignore, warn, rootdir, verbose, relaxed, root_present, files,
+  result = ppdTest(ignore, warn, rootdir, verbose, relaxed, root_present,
 		   file_array, &report, NULL, NULL);
 
   if (result == 1 && files > 0) puts("PPD PASSED");

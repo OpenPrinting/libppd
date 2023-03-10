@@ -3168,18 +3168,47 @@ check_filters(ppd_file_t *ppd,       // I - PPD file
     if (strcmp(program, "-"))
     {
       if (program[0] == '/')
-        snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+      {
+        if (root == NULL)
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s", program);
+        }
+        else
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+        }
+      }
       else
       {
         if ((ptr = getenv("CUPS_SERVERBIN")) == NULL)
           ptr = CUPS_SERVERBIN;
 
         if (*ptr == '/' || !*root)
-          snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
         else
-          snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "/%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
       }
 
       if (stat(pathprog, &fileinfo))
@@ -3346,20 +3375,48 @@ check_filters(ppd_file_t *ppd,       // I - PPD file
 
         _ppd_strcpy(program, ptr);
       }
-
       if (program[0] == '/')
-        snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+      {
+        if (root == NULL)
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s", program);
+        }
+        else
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+        }
+      }
       else
       {
         if ((ptr = getenv("CUPS_SERVERBIN")) == NULL)
           ptr = CUPS_SERVERBIN;
 
         if (*ptr == '/' || !*root)
-          snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
         else
-          snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "/%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
       }
 
       if (stat(pathprog, &fileinfo))
@@ -3476,18 +3533,47 @@ check_filters(ppd_file_t *ppd,       // I - PPD file
     else if (strcmp(program, "-"))
     {
       if (program[0] == '/')
-        snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+      {
+        if (root == NULL)
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s", program);
+        }
+        else
+        {
+          snprintf(pathprog, sizeof(pathprog), "%s%s", root, program);
+        }
+      }
       else
       {
         if ((ptr = getenv("CUPS_SERVERBIN")) == NULL)
           ptr = CUPS_SERVERBIN;
 
         if (*ptr == '/' || !*root)
-          snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
         else
-          snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+        {
+          if (root == NULL)
+          {
+            snprintf(pathprog, sizeof(pathprog), "/%s/filter/%s", ptr,
 		   program);
+          }
+          else
+          {
+            snprintf(pathprog, sizeof(pathprog), "%s/%s/filter/%s", root, ptr,
+		   program);
+          }
+        }
       }
 
       if (stat(pathprog, &fileinfo))
@@ -4076,18 +4162,47 @@ check_profiles(ppd_file_t *ppd,       // I - PPD file
     //
 
     if (attr->value[0] == '/')
-      snprintf(filename, sizeof(filename), "%s%s", root, attr->value);
+    {
+      if (root == NULL)
+      {
+        snprintf(filename, sizeof(filename), "%s", attr->value);
+      }
+      else
+      {
+        snprintf(filename, sizeof(filename), "%s%s", root, attr->value);
+      }
+    }
     else
     {
       if ((ptr = getenv("CUPS_DATADIR")) == NULL)
         ptr = CUPS_DATADIR;
 
       if (*ptr == '/' || !*root)
-        snprintf(filename, sizeof(filename), "%s%s/profiles/%s", root, ptr,
-		 attr->value);
+      {
+        if (root == NULL)
+        {
+          snprintf(filename, sizeof(filename), "%s/profiles/%s", ptr,
+		   attr->value);
+        }
+        else
+        {
+          snprintf(filename, sizeof(filename), "%s%s/profiles/%s", root, ptr,
+		   attr->value);
+        }
+      }
       else
-        snprintf(filename, sizeof(filename), "%s/%s/profiles/%s", root, ptr,
-		 attr->value);
+      {
+        if (root == NULL)
+        {
+          snprintf(filename, sizeof(filename), "/%s/profiles/%s", ptr,
+		   attr->value);
+        }
+        else
+        {
+          snprintf(filename, sizeof(filename), "%s/%s/profiles/%s", root, ptr,
+		   attr->value);
+        }
+      }
     }
 
     if (stat(filename, &fileinfo))

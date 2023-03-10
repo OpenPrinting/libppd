@@ -156,6 +156,8 @@ int ppdTest(int ignore,          // Which errors to ignore
   ppd = NULL;
   status = ERROR_NONE;
   root = rootdir;
+  if (root == NULL)
+    root = "";
 
   if (report && *report == NULL)
   {

@@ -207,6 +207,7 @@ int ppdTest(int ignore,          // Which errors to ignore
       if (verbose >= 0)
       {
         snprintf(str_format, sizeof(str_format) - 1, "\n              %s:", file);
+
         if (*report)
           cupsArrayAdd(*report, (void *)str_format);
         if (log) log(ld, CF_LOGLEVEL_DEBUG, "ppdTest: %s", str_format);

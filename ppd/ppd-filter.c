@@ -739,9 +739,8 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
 
   page_size = cupsGetOption("PageSize", data->num_options, data->options);
   media = cupsGetOption("media", data->num_options, data->options);
-  if ((page_size || media) &&
-      (attr = ippFindAttribute(data->printer_attrs, "media-col-default",
-			       IPP_TAG_ZERO)) != NULL)
+  if ((attr = ippFindAttribute(data->printer_attrs, "media-col-default",
+			IPP_TAG_ZERO)) != NULL)
   {
     // We have already applied the settings of these options to the
     // PPD file and converted the PPD option settings into the printer

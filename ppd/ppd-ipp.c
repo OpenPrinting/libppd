@@ -21,6 +21,13 @@
 
 
 //
+// Macro to test for two almost-equal PWG measurements.
+//
+
+#define _PPD_PWG_EQUIVALENT(x, y)	(abs((x)-(y)) < 2)
+
+
+//
 // Local functions...
 //
 
@@ -433,12 +440,28 @@ ppdLoadAttributes(
     }
   }
 
-  if (!default_size)
-  {
-    //
-    // Default to A4 or Letter...
-    //
+  //
+  // Try to find one with the same size...
+  //
 
+  if (!default_size)
+    for (i = 0, pwg_size = pc->sizes; i < pc->num_sizes; i ++, pwg_size ++)
+    {
+      if (_PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->width),
+			      pwg_size->width) &&
+	  _PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->length),
+			      pwg_size->length))
+      {
+        default_size = pwg_size;
+        break;
+      }
+    }
+
+  //
+  // Default to A4 or Letter...
+  //
+
+  if (!default_size)
     for (i = 0, pwg_size = pc->sizes; i < pc->num_sizes; i ++, pwg_size ++)
     {
       if (!strcmp(pwg_size->map.ppd, "Letter") ||
@@ -449,9 +472,12 @@ ppdLoadAttributes(
       }
     }
 
-    if (!default_size)
-      default_size = pc->sizes;		// Last resort: first size
-  }
+  //
+  // Last resort: First size in the list
+  //
+
+  if (!default_size)
+    default_size = pc->sizes;
 
   if ((ppd_choice = ppdFindMarkedChoice(ppd, "InputSlot")) != NULL)
     default_source = ppdCacheGetSource(pc, ppd_choice->choice);

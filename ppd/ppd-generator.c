@@ -1370,6 +1370,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   if (attr && ippGetCount(attr) > 0)
   {
     const char *default_color = NULL;	// Default
+    int default_color_set = 0;
     int first_choice = 1;
 
     if ((keyword = ippGetString(defattr, 0, NULL)) != NULL &&
@@ -1387,6 +1388,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         default_color = "ProcessGray";
       else
         default_color = "RGB";
+      default_color_set = 1;
     }
 
     cupsFilePrintf(fp, "*%% ColorModel from %s\n", ippGetName(attr));
@@ -1411,7 +1413,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         cupsFilePrintf(fp, "*ColorModel FastGray/%s: \"\"\n",
 		       (human_readable2 ? human_readable2 : "Text"));
 
-        if (!default_color)
+        if (!default_color_set && !default_color)
 	  default_color = "FastGray";
       }
       else if (!strcmp(keyword, "process-bi-level"))
@@ -1465,7 +1467,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         cupsFilePrintf(fp, "*ColorModel Gray/%s: \"\"\n",
 		       (human_readable2 ? human_readable2 : "Monochrome"));
 
-        if (!default_color || (!defattr && !strcmp(default_color, "FastGray")))
+        if (!default_color_set &&
+	    (!default_color || !strcmp(default_color, "FastGray")))
 	  default_color = "Gray";
       }
       else if (!strcmp(keyword, "process-monochrome"))
@@ -1502,7 +1505,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         cupsFilePrintf(fp, "*ColorModel RGB/%s: \"\"\n",
 		       (human_readable2 ? human_readable2 : "Color"));
 
-        if (!defattr)
+        if (!default_color_set)
 	  default_color = "RGB";
 
 	// Apparently some printers only advertise color support, so make sure

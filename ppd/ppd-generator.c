@@ -388,6 +388,16 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   else
     cupsFilePuts(fp, "*ColorDevice: False\n");
 
+  if ((attr = ippFindAttribute(response,
+			       "landscape-orientation-requested-preferred",
+			       IPP_TAG_ZERO)) != NULL)
+  {
+    if (ippGetInteger(attr, 0) == 4)
+      cupsFilePuts(fp, "*LandscapeOrientation: Plus90\n");
+    else if (ippGetInteger(attr, 0) == 5)
+      cupsFilePuts(fp, "*LandscapeOrientation: Minus90\n");
+  }
+
   cupsFilePrintf(fp, "*cupsVersion: %d.%d\n", CUPS_VERSION_MAJOR,
 		 CUPS_VERSION_MINOR);
   cupsFilePuts(fp, "*cupsSNMPSupplies: False\n");

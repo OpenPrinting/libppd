@@ -154,11 +154,11 @@ testppdfile_SOURCES = ppd/testppdfile.c
 testppdfile_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS) \
-	$(CUPS-FILTERS_LIBS)
+	$(LIBCUPSFILTERS_LIBS)
 testppdfile_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS) \
-	$(CUPS-FILTERS_CFLAGS)
+	$(LIBCUPSFILTERS_CFLAGS)
 
 # ===========================
 # ppdc PPD compiler utilities

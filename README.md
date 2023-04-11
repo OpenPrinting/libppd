@@ -1,4 +1,4 @@
-# OpenPrinting libppd v2.0b4 - 2023-02-22
+# OpenPrinting libppd v2.0rc1 - 2023-04-11
 
 Looking for compile instructions? Read the file "INSTALL"
 instead...

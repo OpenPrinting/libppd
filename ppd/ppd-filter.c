@@ -369,9 +369,9 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
   // Let the PDF filter do mirrored printing
   if ((choice = ppdFindMarkedChoice(ppd, "MirrorPrint")) != NULL)
   {
-    choice->marked = 0;
-    data->num_options = cupsAddOption("mirror", "true",
-				      data->num_options, &(data->options));
+    if (!strcasecmp(choice->choice, "True"))
+      data->num_options = cupsAddOption("mirror", "true",
+					data->num_options, &(data->options));
   }
 
   //

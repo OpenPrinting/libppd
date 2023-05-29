@@ -677,35 +677,38 @@ ppdLoadAttributes(
   // Resolution
   //
 
-  if (xres == 0 && yres == 0)
+  // Ignore error exits of ppdRasterInterpretPPD(), if it found a resolution
+  // setting before erroring it is OK for us
+  ppdRasterInterpretPPD(&header, ppd, 0, NULL, NULL);
+  // 100 dpi is default, this means that if we have 100 dpi here this
+  // method failed to find the printing resolution
+  buf[0] = '\0';
+  if (header.HWResolution[0] != 100 || header.HWResolution[1] != 100)
   {
-    // Ignore error exits of ppdRasterInterpretPPD(), if it found a resolution
-    // setting before erroring it is OK for us
-    ppdRasterInterpretPPD(&header, ppd, 0, NULL, NULL);
-    // 100 dpi is default, this means that if we have 100 dpi here this
-    // method failed to find the printing resolution
-    buf[0] = '\0';
-    if (header.HWResolution[0] != 100 || header.HWResolution[1] != 100)
+    xres = header.HWResolution[0];
+    yres = header.HWResolution[1];
+  }
+  else if ((ppd_choice = ppdFindMarkedChoice(ppd, "Resolution")) != NULL)
+    strncpy(buf, ppd_choice->choice, sizeof(buf) - 1);
+  else if ((ppd_attr = ppdFindAttr(ppd, "DefaultResolution", NULL)) != NULL)
+    strncpy(buf, ppd_attr->value, sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = '\0';
+  if (buf[0])
+  {
+    int x, y;
+    // Use the marked resolution or the default resolution in the PPD...
+    if ((i = sscanf(buf, "%dx%d", &x, &y)) == 1)
+      y = x;
+    if (i > 0)
     {
-      xres = header.HWResolution[0];
-      yres = header.HWResolution[1];
+      xres = x;
+      yres = y;
     }
-    else if ((ppd_choice = ppdFindMarkedChoice(ppd, "Resolution")) != NULL)
-      strncpy(buf, ppd_choice->choice, sizeof(buf) - 1);
-    else if ((ppd_attr = ppdFindAttr(ppd, "DefaultResolution", NULL)) != NULL)
-      strncpy(buf, ppd_attr->value, sizeof(buf) - 1);
-    else
-      // Use default of 300dpi...
-      xres = yres = 300;
-    buf[sizeof(buf) - 1] = '\0';
-    if (buf[0])
-    {
-      // Use the marked resolution or the default resolution in the PPD...
-      if ((i = sscanf(buf, "%dx%d", &xres, &yres)) == 1)
-	yres = xres;
-      else if (i <= 0)
-	xres = yres = 300;
-    }
+  }
+  if (xres == 0 || yres == 0)
+  {
+    // Use default of 300dpi...
+    xres = yres = 300;
   }
 
   // Fax out PPD?

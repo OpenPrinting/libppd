@@ -213,7 +213,6 @@ static ssize_t		skip_page(pstops_doc_t *doc,
 				  char *line, ssize_t linelen, size_t linesize);
 static void		start_nup(pstops_doc_t *doc, int number,
 				  int show_border, const int *bounding_box);
-static void		write_common(pstops_doc_t *doc);
 static void		write_label_prolog(pstops_doc_t *doc, const char *label,
 			                   float bottom, float top,
 					   float width);
@@ -428,7 +427,7 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
   // Start with a DSC header...
   //
 
-  doc_puts(&doc, "%!PS-Adobe-3.0\n");
+  fputs("%!PS-Adobe-3.0\n", outputfp);
 
   //
   // Skip leading PJL in the document...
@@ -485,7 +484,7 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
   //
 
   if (!doc.saw_eof)
-    doc_puts(&doc, "%%EOF\n");
+    fputs("%%EOF\n", outputfp);
 
   //
   // End the job with the appropriate JCL command or CTRL-D...
@@ -497,7 +496,7 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 	filter_data_ext->ppd->jcl_end)
       ppdEmitJCLEnd(filter_data_ext->ppd, doc.outputfp);
     else
-      doc_putc(&doc, 0x04);
+      fputc(0x04, outputfp);
   }
 
   //
@@ -1491,29 +1490,29 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
   curtime = time(NULL);
   curtm   = localtime(&curtime);
 
-  doc_puts(&doc, "%!PS-Adobe-3.0\n");
-  doc_printf(&doc, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
-	     doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
-  doc_printf(&doc, "%%%%LanguageLevel: %d\n", doc.LanguageLevel);
-  doc_printf(&doc, "%%%%Pages: %d\n", xpages * ypages * Copies);
-  doc_puts(&doc, "%%DocumentData: Clean7Bit\n");
-  doc_puts(&doc, "%%DocumentNeededResources: font Helvetica-Bold\n");
-  doc_puts(&doc, "%%Creator: imagetops\n");
+  fputs("%!PS-Adobe-3.0\n", doc.outputfp);
+  fprintf(doc.outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+	  doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
+  fprintf(doc.outputfp, "%%%%LanguageLevel: %d\n", doc.LanguageLevel);
+  fprintf(doc.outputfp, "%%%%Pages: %d\n", xpages * ypages * Copies);
+  fputs("%%DocumentData: Clean7Bit\n", doc.outputfp);
+  fputs("%%DocumentNeededResources: font Helvetica-Bold\n", doc.outputfp);
+  fputs("%%Creator: imagetops\n", doc.outputfp);
   strftime(curdate, sizeof(curdate), "%c", curtm);
-  doc_printf(&doc, "%%%%CreationDate: %s\n", curdate);
+  fprintf(doc.outputfp, "%%%%CreationDate: %s\n", curdate);
   write_text_comment(&doc, "Title", data->job_title);
   write_text_comment(&doc, "For", data->job_user);
   if (doc.Orientation & 1)
-    doc_puts(&doc, "%%Orientation: Landscape\n");
+    fputs("%%Orientation: Landscape\n", doc.outputfp);
   else
-    doc_puts(&doc, "%%Orientation: Portrait\n");
-  doc_puts(&doc, "%%EndComments\n");
-  doc_puts(&doc, "%%BeginProlog\n");
+    fputs("%%Orientation: Portrait\n", doc.outputfp);
+  fputs("%%EndComments\n", doc.outputfp);
+  fputs("%%BeginProlog\n", doc.outputfp);
 
   if (ppd != NULL && ppd->patches != NULL)
   {
-    doc_puts(&doc, ppd->patches);
-    doc_putc(&doc, '\n');
+    fputs(ppd->patches, doc.outputfp);
+    fputc('\n', doc.outputfp);
   }
 
   ppdEmit(ppd, doc.outputfp, PPD_ORDER_DOCUMENT);
@@ -1521,11 +1520,24 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
   ppdEmit(ppd, doc.outputfp, PPD_ORDER_PROLOG);
 
   if (g != 1.0 || b != 1.0)
-    doc_printf(&doc,
-	       "{ neg 1 add dup 0 lt { pop 1 } { %.3f exp neg 1 add } "
-	       "ifelse %.3f mul } bind settransfer\n", g, b);
+    fprintf(doc.outputfp,
+	    "{ neg 1 add dup 0 lt { pop 1 } { %.3f exp neg 1 add } "
+	    "ifelse %.3f mul } bind settransfer\n", g, b);
 
-  write_common(&doc);
+  fputs("% x y w h ESPrc - Clip to a rectangle.\n"
+	"userdict/ESPrc/rectclip where{pop/rectclip load}\n"
+	"{{newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	"neg 0 rlineto closepath clip newpath}bind}ifelse put\n", doc.outputfp);
+  fputs("% x y w h ESPrf - Fill a rectangle.\n"
+	"userdict/ESPrf/rectfill where{pop/rectfill load}\n"
+	"{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	"neg 0 rlineto closepath fill grestore}bind}ifelse put\n", doc.outputfp);
+  fputs("% x y w h ESPrs - Stroke a rectangle.\n"
+	"userdict/ESPrs/rectstroke where{pop/rectstroke load}\n"
+	"{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	"neg 0 rlineto closepath stroke grestore}bind}ifelse put\n",
+	doc.outputfp);
+
   switch (doc.Orientation)
   {
     case 0 :
@@ -1560,12 +1572,12 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
   if (realcopies > 1)
   {
     if (ppd == NULL || ppd->language_level == 1)
-      doc_printf(&doc, "/#copies %d def\n", realcopies);
+      fprintf(doc.outputfp, "/#copies %d def\n", realcopies);
     else
-      doc_printf(&doc, "<</NumCopies %d>>setpagedevice\n", realcopies);
+      fprintf(doc.outputfp, "<</NumCopies %d>>setpagedevice\n", realcopies);
   }
 
-  doc_puts(&doc, "%%EndProlog\n");
+  fputs("%%EndProlog\n", doc.outputfp);
 
   //
   // Output the pages...
@@ -1731,58 +1743,59 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
 	if (log) log(ld, CF_LOGLEVEL_INFO,
 		     "ppdFilterImageToPS: Printing page %d.", page);
 
-        doc_printf(&doc, "%%%%Page: %d %d\n", page, page);
+        fprintf(doc.outputfp, "%%%%Page: %d %d\n", page, page);
 
         ppdEmit(ppd, doc.outputfp, PPD_ORDER_PAGE);
 
-	doc_puts(&doc, "gsave\n");
+	fputs("gsave\n", doc.outputfp);
 
 	if (Flip)
-	  doc_printf(&doc, "%.0f 0 translate -1 1 scale\n", doc.PageWidth);
+	  fprintf(doc.outputfp, "%.0f 0 translate -1 1 scale\n", doc.PageWidth);
 
 	switch (doc.Orientation)
 	{
 	  case 1 : // Landscape
-	      doc_printf(&doc, "%.0f 0 translate 90 rotate\n",
-			 doc.PageWidth);
+	      fprintf(doc.outputfp, "%.0f 0 translate 90 rotate\n",
+		      doc.PageWidth);
               break;
 	  case 2 : // Reverse Portrait
-	      doc_printf(&doc, "%.0f %.0f translate 180 rotate\n",
-			 doc.PageWidth, doc.PageLength);
+	      fprintf(doc.outputfp, "%.0f %.0f translate 180 rotate\n",
+		      doc.PageWidth, doc.PageLength);
 	      break;
 	  case 3 : // Reverse Landscape
-	      doc_printf(&doc, "0 %.0f translate -90 rotate\n",
-			 doc.PageLength);
+	      fprintf(doc.outputfp, "0 %.0f translate -90 rotate\n",
+		      doc.PageLength);
               break;
 	}
 
-        doc_puts(&doc, "gsave\n");
+        fputs("gsave\n", doc.outputfp);
 
 	xc0 = cfImageGetWidth(img) * xpage / xpages;
 	xc1 = cfImageGetWidth(img) * (xpage + 1) / xpages - 1;
 	yc0 = cfImageGetHeight(img) * ypage / ypages;
 	yc1 = cfImageGetHeight(img) * (ypage + 1) / ypages - 1;
 
-        doc_printf(&doc, "%.1f %.1f translate\n", left, top);
+        fprintf(doc.outputfp, "%.1f %.1f translate\n", left, top);
 
-	doc_printf(&doc, "%.3f %.3f scale\n\n",
-		   xprint * 72.0 / (xc1 - xc0 + 1),
-		   yprint * 72.0 / (yc1 - yc0 + 1));
+	fprintf(doc.outputfp, "%.3f %.3f scale\n\n",
+		xprint * 72.0 / (xc1 - xc0 + 1),
+		yprint * 72.0 / (yc1 - yc0 + 1));
 
 	if (doc.LanguageLevel == 1)
 	{
-	  doc_printf(&doc, "/picture %d string def\n",
-		     (xc1 - xc0 + 1) * abs(colorspace));
-	  doc_printf(&doc, "%d %d 8[1 0 0 -1 0 1]",
-		     (xc1 - xc0 + 1), (yc1 - yc0 + 1));
+	  fprintf(doc.outputfp, "/picture %d string def\n",
+		  (xc1 - xc0 + 1) * abs(colorspace));
+	  fprintf(doc.outputfp, "%d %d 8[1 0 0 -1 0 1]",
+		  (xc1 - xc0 + 1), (yc1 - yc0 + 1));
 
           if (colorspace == CF_IMAGE_WHITE)
-            doc_puts(&doc, "{currentfile picture readhexstring pop} image\n");
+            fputs("{currentfile picture readhexstring pop} image\n",
+		  doc.outputfp);
           else
-            doc_printf(&doc,
-		       "{currentfile picture readhexstring pop} false %d "
-		       "colorimage\n",
-		       abs(colorspace));
+            fprintf(doc.outputfp,
+		    "{currentfile picture readhexstring pop} false %d "
+		    "colorimage\n",
+		    abs(colorspace));
 
           for (y = yc0; y <= yc1; y ++)
           {
@@ -1796,43 +1809,43 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
           switch (colorspace)
 	  {
 	    case CF_IMAGE_WHITE :
-	        doc_puts(&doc, "/DeviceGray setcolorspace\n");
+		fputs("/DeviceGray setcolorspace\n", doc.outputfp);
 		break;
             case CF_IMAGE_RGB :
-	        doc_puts(&doc, "/DeviceRGB setcolorspace\n");
+		fputs("/DeviceRGB setcolorspace\n", doc.outputfp);
 		break;
             case CF_IMAGE_CMYK :
-	        doc_puts(&doc, "/DeviceCMYK setcolorspace\n");
+		fputs("/DeviceCMYK setcolorspace\n", doc.outputfp);
 		break;
           }
 
-          doc_printf(&doc,
-		     "<<"
-		     "/ImageType 1"
-		     "/Width %d"
-		     "/Height %d"
-		     "/BitsPerComponent 8",
-		     xc1 - xc0 + 1, yc1 - yc0 + 1);
+          fprintf(doc.outputfp,
+		  "<<"
+		  "/ImageType 1"
+		  "/Width %d"
+		  "/Height %d"
+		  "/BitsPerComponent 8",
+		  xc1 - xc0 + 1, yc1 - yc0 + 1);
 
           switch (colorspace)
 	  {
 	    case CF_IMAGE_WHITE :
-                doc_puts(&doc, "/Decode[0 1]");
+                fputs("/Decode[0 1]", doc.outputfp);
 		break;
             case CF_IMAGE_RGB :
-                doc_puts(&doc, "/Decode[0 1 0 1 0 1]");
+                fputs("/Decode[0 1 0 1 0 1]", doc.outputfp);
 		break;
             case CF_IMAGE_CMYK :
-                doc_puts(&doc, "/Decode[0 1 0 1 0 1 0 1]");
+                fputs("/Decode[0 1 0 1 0 1 0 1]", doc.outputfp);
 		break;
           }
 
-          doc_puts(&doc, "\n/DataSource currentfile/ASCII85Decode filter");
+          fputs("\n/DataSource currentfile/ASCII85Decode filter", doc.outputfp);
 
           if (((xc1 - xc0 + 1) / xprint) < 100.0)
-            doc_puts(&doc, "/Interpolate true");
+            fputs("/Interpolate true", doc.outputfp);
 
-          doc_puts(&doc, "/ImageMatrix[1 0 0 -1 0 1]>>image\n");
+          fputs("/ImageMatrix[1 0 0 -1 0 1]>>image\n", doc.outputfp);
 
           for (y = yc0, out_offset = 0; y <= yc1; y ++)
           {
@@ -1848,14 +1861,14 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
           }
 	}
 
-	doc_puts(&doc, "grestore\n");
+	fputs("grestore\n", doc.outputfp);
 	write_labels(&doc, 0);
-	doc_puts(&doc, "grestore\n");
-	doc_puts(&doc, "showpage\n");
+	fputs("grestore\n", doc.outputfp);
+	fputs("showpage\n", doc.outputfp);
       }
 
  canceled:
-  doc_puts(&doc, "%%EOF\n");
+  fputs("%%EOF\n", doc.outputfp);
 
   free(row);
 
@@ -1868,7 +1881,7 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
     if (ppd && ppd->jcl_end)
       ppdEmitJCLEnd(ppd, doc.outputfp);
     else
-      doc_putc(&doc, 0x04);
+      fputc(0x04, doc.outputfp);
   }
 
   if (log) log(ld, CF_LOGLEVEL_DEBUG,
@@ -2032,7 +2045,7 @@ copy_bytes(pstops_doc_t *doc,		// I - Document info
 
     nleft -= (size_t)nbytes;
 
-    doc_write(doc, buffer, (size_t)nbytes);
+    fwrite(buffer, 1, (size_t)nbytes, doc->outputfp);
   }
 }
 
@@ -2413,7 +2426,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 	    "PAGE: %d %d", doc->page,
 	    doc->slow_collate ? 1 : doc->copies);
 
-      doc_printf(doc, "%%%%Page: (filler) %d\n", doc->page);
+      fprintf(doc->outputfp, "%%%%Page: (filler) %d\n", doc->page);
     }
 
     start_nup(doc, doc->number_up, 0, doc->bounding_box);
@@ -2472,17 +2485,17 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
         // Send the trailer...
 	//
 
-        doc_puts(doc, "%%Trailer\n");
-	doc_printf(doc, "%%%%Pages: %d\n", cupsArrayCount(doc->pages));
+        fputs("%%Trailer\n", doc->outputfp);
+	fprintf(doc->outputfp, "%%%%Pages: %d\n", cupsArrayCount(doc->pages));
 	if (doc->number_up > 1 || doc->fit_to_page)
-	  doc_printf(doc, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
-		     doc->PageLeft, doc->PageBottom,
-		     doc->PageRight, doc->PageTop);
+	  fprintf(doc->outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+		  doc->PageLeft, doc->PageBottom,
+		  doc->PageRight, doc->PageTop);
 	else
-	  doc_printf(doc, "%%%%BoundingBox: %d %d %d %d\n",
-		     doc->new_bounding_box[0], doc->new_bounding_box[1],
-		     doc->new_bounding_box[2], doc->new_bounding_box[3]);
-        doc_puts(doc, "%%EOF\n");
+	  fprintf(doc->outputfp, "%%%%BoundingBox: %d %d %d %d\n",
+		  doc->new_bounding_box[0], doc->new_bounding_box[1],
+		  doc->new_bounding_box[2], doc->new_bounding_box[3]);
+        fputs("%%EOF\n", doc->outputfp);
 
 	//
 	// Start a new document...
@@ -2491,7 +2504,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
         ppdEmitJCLEnd(ppd, doc->outputfp);
         ppdEmitJCL(ppd, doc->outputfp, doc->job_id, doc->user, doc->title);
 
-	doc_puts(doc, "%!PS-Adobe-3.0\n");
+	fputs("%!PS-Adobe-3.0\n", doc->outputfp);
 
 	number = 0;
       }
@@ -2532,17 +2545,17 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 
 	if (doc->number_up > 1)
 	{
-	  doc_printf(doc, "%%%%Page: (%d) %d\n", number, number);
-	  doc_printf(doc, "%%%%PageBoundingBox: %.0f %.0f %.0f %.0f\n",
-		     doc->PageLeft, doc->PageBottom,
-		     doc->PageRight, doc->PageTop);
+	  fprintf(doc->outputfp, "%%%%Page: (%d) %d\n", number, number);
+	  fprintf(doc->outputfp, "%%%%PageBoundingBox: %.0f %.0f %.0f %.0f\n",
+		  doc->PageLeft, doc->PageBottom,
+		  doc->PageRight, doc->PageTop);
 	}
 	else
 	{
-          doc_printf(doc, "%%%%Page: %s %d\n", pageinfo->label, number);
-	  doc_printf(doc, "%%%%PageBoundingBox: %d %d %d %d\n",
-		     pageinfo->bounding_box[0], pageinfo->bounding_box[1],
-		     pageinfo->bounding_box[2], pageinfo->bounding_box[3]);
+          fprintf(doc->outputfp, "%%%%Page: %s %d\n", pageinfo->label, number);
+	  fprintf(doc->outputfp, "%%%%PageBoundingBox: %d %d %d %d\n",
+		  pageinfo->bounding_box[0], pageinfo->bounding_box[1],
+		  pageinfo->bounding_box[2], pageinfo->bounding_box[3]);
 	}
 
 	copy_bytes(doc, pageinfo->offset, (size_t)pageinfo->length);
@@ -2559,7 +2572,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
   //
 
   if (doc->use_ESPshowpage)
-    doc_puts(doc, "userdict/showpage/ESPshowpage load put\n");
+    fputs("userdict/showpage/ESPshowpage load put\n", doc->outputfp);
 
   //
   // Write/copy the trailer...
@@ -2607,13 +2620,13 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
   // Then write a standard DSC comment section...
   //
 
-  doc_printf(doc, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
-	     doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
+  fprintf(doc->outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+	  doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
 
   if (doc->slow_collate && doc->copies > 1)
-    doc_printf(doc, "%%%%Pages: %d\n", doc->copies);
+    fprintf(doc->outputfp, "%%%%Pages: %d\n", doc->copies);
   else
-    doc_puts(doc, "%%Pages: 1\n");
+    fputs("%%Pages: 1\n", doc->outputfp);
 
   write_text_comment(doc, "For", doc->user);
   write_text_comment(doc, "Title", doc->title);
@@ -2625,15 +2638,15 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
     // that are required...
     //
 
-    doc_printf(doc, "%%%%Requirements: numcopies(%d)%s%s\n", doc->copies,
-	       doc->collate ? " collate" : "",
-	       doc->Duplex ? " duplex" : "");
+    fprintf(doc->outputfp, "%%%%Requirements: numcopies(%d)%s%s\n", doc->copies,
+	    doc->collate ? " collate" : "",
+	    doc->Duplex ? " duplex" : "");
 
     //
     // Apple uses RBI comments for various non-PPD options...
     //
 
-    doc_printf(doc, "%%RBINumCopies: %d\n", doc->copies);
+    fprintf(doc->outputfp, "%%RBINumCopies: %d\n", doc->copies);
   }
   else
   {
@@ -2642,36 +2655,36 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
     //
 
     if (doc->Duplex)
-      doc_puts(doc, "%%Requirements: duplex\n");
+      fputs("%%Requirements: duplex\n", doc->outputfp);
 
     //
     // Apple uses RBI comments for various non-PPD options...
     //
 
-    doc_puts(doc, "%RBINumCopies: 1\n");
+    fputs("%RBINumCopies: 1\n", doc->outputfp);
   }
 
-  doc_puts(doc, "%%EndComments\n");
+  fputs("%%EndComments\n", doc->outputfp);
 
   //
   // Then the prolog...
   //
 
-  doc_puts(doc, "%%BeginProlog\n");
+  fputs("%%BeginProlog\n", doc->outputfp);
 
   do_prolog(doc, ppd);
 
-  doc_puts(doc, "%%EndProlog\n");
+  fputs("%%EndProlog\n", doc->outputfp);
 
   //
   // Then the setup section...
   //
 
-  doc_puts(doc, "%%BeginSetup\n");
+  fputs("%%BeginSetup\n", doc->outputfp);
 
   do_setup(doc, ppd);
 
-  doc_puts(doc, "%%EndSetup\n");
+  fputs("%%EndSetup\n", doc->outputfp);
 
   //
   // Finally, embed a copy of the file inside a %%Page...
@@ -2681,31 +2694,31 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
     log(ld, CF_LOGLEVEL_CONTROL,
 	"PAGE: 1 %d", doc->temp ? 1 : doc->copies);
 
-  doc_puts(doc, "%%Page: 1 1\n");
-  doc_puts(doc, "%%BeginPageSetup\n");
+  fputs("%%Page: 1 1\n", doc->outputfp);
+  fputs("%%BeginPageSetup\n", doc->outputfp);
   ppdEmit(ppd, doc->outputfp, PPD_ORDER_PAGE);
-  doc_puts(doc, "%%EndPageSetup\n");
-  doc_puts(doc, "%%BeginDocument: nondsc\n");
+  fputs("%%EndPageSetup\n", doc->outputfp);
+  fputs("%%BeginDocument: nondsc\n", doc->outputfp);
 
-  doc_write(doc, line, (size_t)linelen);
+  fwrite(line, (size_t)linelen, 1, doc->outputfp);
 
   if (doc->temp)
     cupsFileWrite(doc->temp, line, (size_t)linelen);
 
   while ((bytes = cupsFileRead(doc->inputfp, buffer, sizeof(buffer))) > 0)
   {
-    doc_write(doc, buffer, (size_t)bytes);
+    fwrite(buffer, 1, (size_t)bytes, doc->outputfp);
 
     if (doc->temp)
       cupsFileWrite(doc->temp, buffer, (size_t)bytes);
   }
 
-  doc_puts(doc, "%%EndDocument\n");
+  fputs("%%EndDocument\n", doc->outputfp);
 
   if (doc->use_ESPshowpage)
   {
     write_labels_outputfile_only(doc, doc->Orientation);
-    doc_puts(doc, "ESPshowpage\n");
+    fputs("ESPshowpage\n", doc->outputfp);
   }
 
   if (doc->temp && (!iscanceled || !iscanceled(icd)))
@@ -2735,20 +2748,20 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
 	log(ld, CF_LOGLEVEL_CONTROL,
 	    "PAGE: 1 1");
 
-      doc_printf(doc, "%%%%Page: %d %d\n", copy + 1, copy + 1);
-      doc_puts(doc, "%%BeginPageSetup\n");
+      fprintf(doc->outputfp, "%%%%Page: %d %d\n", copy + 1, copy + 1);
+      fputs("%%BeginPageSetup\n", doc->outputfp);
       ppdEmit(ppd, doc->outputfp, PPD_ORDER_PAGE);
-      doc_puts(doc, "%%EndPageSetup\n");
-      doc_puts(doc, "%%BeginDocument: nondsc\n");
+      fputs("%%EndPageSetup\n", doc->outputfp);
+      fputs("%%BeginDocument: nondsc\n", doc->outputfp);
 
       copy_bytes(doc, 0, 0);
 
-      doc_puts(doc, "%%EndDocument\n");
+      fputs("%%EndDocument\n", doc->outputfp);
 
       if (doc->use_ESPshowpage)
       {
 	write_labels_outputfile_only(doc, doc->Orientation);
-        doc_puts(doc, "ESPshowpage\n");
+        fputs("ESPshowpage\n", doc->outputfp);
       }
     }
   }
@@ -2758,7 +2771,7 @@ copy_non_dsc(pstops_doc_t *doc,		// I - Document info
   //
 
   if (doc->use_ESPshowpage)
-    doc_puts(doc, "userdict/showpage/ESPshowpage load put\n");
+    fputs("userdict/showpage/ESPshowpage load put\n", doc->outputfp);
 }
 
 
@@ -3062,16 +3075,16 @@ copy_page(pstops_doc_t *doc,		// I - Document info
 
     if (doc->number_up > 1)
     {
-      doc_printf(doc, "%%%%Page: (%d) %d\n", doc->page, doc->page);
-      doc_printf(doc, "%%%%PageBoundingBox: %.0f %.0f %.0f %.0f\n",
-		 doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
+      fprintf(doc->outputfp, "%%%%Page: (%d) %d\n", doc->page, doc->page);
+      fprintf(doc->outputfp, "%%%%PageBoundingBox: %.0f %.0f %.0f %.0f\n",
+	      doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
     }
     else
     {
-      doc_printf(doc, "%%%%Page: %s %d\n", pageinfo->label, doc->page);
-      doc_printf(doc, "%%%%PageBoundingBox: %d %d %d %d\n",
-		 pageinfo->bounding_box[0], pageinfo->bounding_box[1],
-		 pageinfo->bounding_box[2], pageinfo->bounding_box[3]);
+      fprintf(doc->outputfp, "%%%%Page: %s %d\n", pageinfo->label, doc->page);
+      fprintf(doc->outputfp, "%%%%PageBoundingBox: %d %d %d %d\n",
+	      pageinfo->bounding_box[0], pageinfo->bounding_box[1],
+	      pageinfo->bounding_box[2], pageinfo->bounding_box[3]);
     }
   }
 
@@ -3406,7 +3419,7 @@ copy_trailer(pstops_doc_t *doc,		// I - Document info
 
   (void)ppd;
 
-  doc_puts(doc, "%%Trailer\n");
+  fputs("%%Trailer\n", doc->outputfp);
 
   while (linelen > 0)
   {
@@ -3415,7 +3428,7 @@ copy_trailer(pstops_doc_t *doc,		// I - Document info
     else if (strncmp(line, "%%Trailer", 9) &&
              strncmp(line, "%%Pages:", 8) &&
              strncmp(line, "%%BoundingBox:", 14))
-      doc_write(doc, line, (size_t)linelen);
+      fwrite(line, 1, (size_t)linelen, doc->outputfp);
 
     linelen = (ssize_t)cupsFileGetLine(doc->inputfp, line, linesize);
   }
@@ -3423,14 +3436,14 @@ copy_trailer(pstops_doc_t *doc,		// I - Document info
   if (log) log(ld, CF_LOGLEVEL_DEBUG,
 	       "ppdFilterPSToPS: Wrote %d pages...", number);
 
-  doc_printf(doc, "%%%%Pages: %d\n", number);
+  fprintf(doc->outputfp, "%%%%Pages: %d\n", number);
   if (doc->number_up > 1 || doc->fit_to_page)
-    doc_printf(doc, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
-	       doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
+    fprintf(doc->outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+	    doc->PageLeft, doc->PageBottom, doc->PageRight, doc->PageTop);
   else
-    doc_printf(doc, "%%%%BoundingBox: %d %d %d %d\n",
-	       doc->new_bounding_box[0], doc->new_bounding_box[1],
-	       doc->new_bounding_box[2], doc->new_bounding_box[3]);
+    fprintf(doc->outputfp, "%%%%BoundingBox: %d %d %d %d\n",
+	    doc->new_bounding_box[0], doc->new_bounding_box[1],
+	    doc->new_bounding_box[2], doc->new_bounding_box[3]);
 
   return (linelen);
 }
@@ -3539,7 +3552,21 @@ do_setup(pstops_doc_t *doc,		// I - Document information
   // Make sure we have rectclip and rectstroke procedures of some sort...
   //
 
-  write_common(doc);
+  doc_puts(doc,
+           "% x y w h ESPrc - Clip to a rectangle.\n"
+	   "userdict/ESPrc/rectclip where{pop/rectclip load}\n"
+	   "{{newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	   "neg 0 rlineto closepath clip newpath}bind}ifelse put\n");
+  doc_puts(doc,
+           "% x y w h ESPrf - Fill a rectangle.\n"
+	   "userdict/ESPrf/rectfill where{pop/rectfill load}\n"
+	   "{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	   "neg 0 rlineto closepath fill grestore}bind}ifelse put\n");
+  doc_puts(doc,
+           "% x y w h ESPrs - Stroke a rectangle.\n"
+	   "userdict/ESPrs/rectstroke where{pop/rectstroke load}\n"
+	   "{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
+	   "neg 0 rlineto closepath stroke grestore}bind}ifelse put\n");
 
   //
   // Write the page and label prologs...
@@ -3878,7 +3905,7 @@ parse_text(const char *start,		// I - Start of text value
 
 static void
 ps_hex(pstops_doc_t *doc,
-       cf_ib_t *data,			// I - Data to print
+       cf_ib_t   *data,			// I - Data to print
        int       length,		// I - Number of bytes to print
        int       last_line)		// I - Last line of raster data?
 {
@@ -3894,8 +3921,8 @@ ps_hex(pstops_doc_t *doc,
     // for speed reasons...
     //
 
-    doc_putc(doc, hex[*data >> 4]);
-    doc_putc(doc, hex[*data & 15]);
+    fputc(hex[*data >> 4], doc->outputfp);
+    fputc(hex[*data & 15], doc->outputfp);
 
     data ++;
     length --;
@@ -3903,14 +3930,14 @@ ps_hex(pstops_doc_t *doc,
     col += 2;
     if (col > 78)
     {
-      doc_putc(doc, '\n');
+      fputc('\n', doc->outputfp);
       col = 0;
     }
   }
 
   if (last_line && col)
   {
-    doc_putc(doc, '\n');
+    fputc('\n', doc->outputfp);
     col = 0;
   }
 }
@@ -3937,7 +3964,7 @@ ps_ascii85(pstops_doc_t *doc,
 
     if (b == 0)
     {
-      doc_putc(doc, 'z');
+      fputc('z', doc->outputfp);
       col ++;
     }
     else
@@ -3952,7 +3979,7 @@ ps_ascii85(pstops_doc_t *doc,
       b /= 85;
       c[0] = b + '!';
 
-      doc_write(doc, (const char *)c, 5);
+      fwrite((const char *)c, 5, 1, doc->outputfp);
       col += 5;
     }
 
@@ -3961,7 +3988,7 @@ ps_ascii85(pstops_doc_t *doc,
 
     if (col >= 75)
     {
-      doc_putc(doc, '\n');
+      fputc('\n', doc->outputfp);
       col = 0;
     }
   }
@@ -3983,7 +4010,7 @@ ps_ascii85(pstops_doc_t *doc,
       b /= 85;
       c[0] = b + '!';
 
-      doc_write(doc, (const char *)c, length + 1);
+      fwrite((const char *)c, length + 1, 1, doc->outputfp);
     }
 
     doc_puts(doc, "~>\n");
@@ -4932,31 +4959,6 @@ start_nup(pstops_doc_t *doc,		// I - Document information
 
 
 //
-// 'write_common()' - Write common procedures...
-//
-
-static void
-write_common(pstops_doc_t *doc)
-{
-  doc_puts(doc,
-           "% x y w h ESPrc - Clip to a rectangle.\n"
-	   "userdict/ESPrc/rectclip where{pop/rectclip load}\n"
-	   "{{newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
-	   "neg 0 rlineto closepath clip newpath}bind}ifelse put\n");
-  doc_puts(doc,
-           "% x y w h ESPrf - Fill a rectangle.\n"
-	   "userdict/ESPrf/rectfill where{pop/rectfill load}\n"
-	   "{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
-	   "neg 0 rlineto closepath fill grestore}bind}ifelse put\n");
-  doc_puts(doc,
-           "% x y w h ESPrs - Stroke a rectangle.\n"
-	   "userdict/ESPrs/rectstroke where{pop/rectstroke load}\n"
-	   "{{gsave newpath 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto\n"
-	   "neg 0 rlineto closepath stroke grestore}bind}ifelse put\n");
-}
-
-
-//
 // 'write_label_prolog()' - Write the prolog with the classification
 //                          and page label.
 
@@ -5136,7 +5138,7 @@ write_labels_outputfile_only(pstops_doc_t *doc,// I - Document information
 	length;				// Length of page
 
 
-  doc_puts(doc, "gsave\n");
+  fputs("gsave\n", doc->outputfp);
 
   if ((orient ^ doc->Orientation) & 1)
   {
@@ -5152,19 +5154,19 @@ write_labels_outputfile_only(pstops_doc_t *doc,// I - Document information
   switch (orient & 3)
   {
     case 1 : // Landscape
-        doc_printf(doc, "%.1f 0.0 translate 90 rotate\n", length);
+        fprintf(doc->outputfp, "%.1f 0.0 translate 90 rotate\n", length);
         break;
     case 2 : // Reverse Portrait
-        doc_printf(doc, "%.1f %.1f translate 180 rotate\n",
+      fprintf(doc->outputfp, "%.1f %.1f translate 180 rotate\n",
 		width, length);
         break;
     case 3 : // Reverse Landscape
-        doc_printf(doc, "0.0 %.1f translate -90 rotate\n", width);
+        fprintf(doc->outputfp, "0.0 %.1f translate -90 rotate\n", width);
         break;
   }
 
-  doc_puts(doc, "ESPwl\n");
-  doc_puts(doc, "grestore\n");
+  fputs("ESPwl\n", doc->outputfp);
+  fputs("grestore\n", doc->outputfp);
 }
 
 
@@ -5267,7 +5269,7 @@ write_text_comment(pstops_doc_t *doc,	// I - Document
   // in the Adobe Document Structuring Conventions specification.
   //
 
-  doc_printf(doc, "%%%%%s: (", name);
+  fprintf(doc->outputfp, "%%%%%s: (", name);
   len = 5 + strlen(name);
 
   while (*value)
@@ -5281,7 +5283,7 @@ write_text_comment(pstops_doc_t *doc,	// I - Document
       if (len >= 251)			// Keep line < 254 chars
         break;
 
-      doc_printf(doc, "\\%03o", *value & 255);
+      fprintf(doc->outputfp, "\\%03o", *value & 255);
       len += 4;
     }
     else if (*value == '\\')
@@ -5293,8 +5295,8 @@ write_text_comment(pstops_doc_t *doc,	// I - Document
       if (len >= 253)			// Keep line < 254 chars
         break;
 
-      doc_putc(doc, '\\');
-      doc_putc(doc, '\\');
+      fputc('\\', doc->outputfp);
+      fputc('\\', doc->outputfp);
       len += 2;
     }
     else
@@ -5306,12 +5308,12 @@ write_text_comment(pstops_doc_t *doc,	// I - Document
       if (len >= 254)			// Keep line < 254 chars
         break;
 
-      doc_putc(doc, *value);
+      fputc(*value, doc->outputfp);
       len ++;
     }
 
     value ++;
   }
 
-  doc_puts(doc, ")\n");
+  fputs(")\n", doc->outputfp);
 }

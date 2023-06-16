@@ -186,7 +186,6 @@ static ssize_t		copy_trailer(pstops_doc_t *doc,
 static void		do_prolog(pstops_doc_t *doc, ppd_file_t *ppd);
 static void 		do_setup(pstops_doc_t *doc, ppd_file_t *ppd);
 static void		doc_printf(pstops_doc_t *doc, const char *format, ...);
-static void		doc_putc(pstops_doc_t *doc, const char c);
 static void		doc_puts(pstops_doc_t *doc, const char *s);
 static void		doc_write(pstops_doc_t *doc, const char *s, size_t len);
 static void		end_nup(pstops_doc_t *doc, int number);
@@ -2979,7 +2978,7 @@ copy_page(pstops_doc_t *doc,		// I - Document info
              !strncmp(line, "%%PageMedia:", 12) ||
 	     !strncmp(line, "%%PageOrientation:", 18) ||
 	     !strncmp(line, "%%PageProcessColors:", 20) ||
-	     !strncmp(line, "%%PageRequirements:", 18) ||
+	     !strncmp(line, "%%PageRequirements:", 19) ||
 	     !strncmp(line, "%%PageResources:", 16))
     {
       //
@@ -3011,7 +3010,7 @@ copy_page(pstops_doc_t *doc,		// I - Document info
       // %%PageProcessColors: ...
       //
     }
-    else if (!strncmp(line, "%%PageRequirements:", 18))
+    else if (!strncmp(line, "%%PageRequirements:", 19))
     {
       //
       // %%PageRequirements: ...
@@ -3625,22 +3624,6 @@ doc_printf(pstops_doc_t *doc,		// I - Document information
   }
 
   doc_write(doc, buffer, (size_t)bytes);
-}
-
-
-//
-// 'doc_putc()' - Send a single character to the output file and/or the
-//                temp file.
-//
-// This function should be used for all page-level output that is affected
-// by ordering, collation, etc.
-//
-
-static void
-doc_putc(pstops_doc_t *doc,		// I - Document information
-         const char   c)		// I - Character to send
-{
-  doc_write(doc, &c, 1);
 }
 
 

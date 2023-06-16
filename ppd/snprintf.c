@@ -80,7 +80,9 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
 	format ++;
 	width = va_arg(ap, int);
 
-	snprintf(tptr, sizeof(tformat) - (tptr - tformat), "%d", width);
+	// Note: Can't use snprintf here since we are implementing this
+	// function...
+	sprintf(tptr, "%d", width);
 	tptr += strlen(tptr);
       }
       else
@@ -112,7 +114,9 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
 	  format ++;
 	  prec = va_arg(ap, int);
 
-	  snprintf(tptr, sizeof(tformat) - (tptr - tformat), "%d", prec);
+	  // Note: Can't use snprintf here since we are implementing this
+	  // function...
+	  sprintf(tptr, "%d", prec);
 	  tptr += strlen(tptr);
 	}
 	else
@@ -166,6 +170,8 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
 	    if ((width + 2) > sizeof(temp))
 	      break;
 
+	    // Note: Can't use snprintf here since we are implementing this
+	    // function...
 	    sprintf(temp, tformat, va_arg(ap, double));
 	    templen = strlen(temp);
 
@@ -197,6 +203,8 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
 	    if ((width + 2) > sizeof(temp))
 	      break;
 
+	    // Note: Can't use snprintf here since we are implementing this
+	    // function...
 	    sprintf(temp, tformat, va_arg(ap, int));
 	    templen = strlen(temp);
 
@@ -221,6 +229,8 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
 	    if ((width + 2) > sizeof(temp))
 	      break;
 
+	    // Note: Can't use snprintf here since we are implementing this
+	    // function...
 	    sprintf(temp, tformat, va_arg(ap, void *));
 	    templen = strlen(temp);
 
@@ -312,7 +322,8 @@ _ppd_vsnprintf(char       *buffer,	// O - Output buffer
   // Nul-terminate the string and return the number of characters needed.
   //
 
-  *bufptr = '\0';
+  if (bufptr && bufptr < bufend)
+    *bufptr = '\0';
 
   return (bytes);
 }

@@ -491,7 +491,7 @@ _ppdStrScand(const char   *buf,		// I - Pointer to number
 
   *tempptr = '\0';
 
-  return (strtod(temp, NULL));
+  return (atof(temp));
 }
 
 
@@ -706,6 +706,9 @@ _ppd_strlcpy(char       *dst,		// O - Destination string
 {
   size_t	srclen;			// Length of source string
 
+
+  if (size == 0)
+    return (0);
 
   //
   // Figure out how much room is needed...

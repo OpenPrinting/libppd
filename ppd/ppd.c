@@ -1529,6 +1529,29 @@ ppdOpenWithLocalization(
 	goto error;
       }
 
+      if (option && (!_ppd_strcasecmp(option->defchoice, "custom") ||
+		     !_ppd_strncasecmp(option->defchoice, "custom.", 7)))
+      {
+       /*
+	* "*DefaultOption: Custom..." may set the default to a custom value
+	* or (for a very small number of incompatible PPD files) select a
+	* standard choice for the option, which CUPS renames to "_Custom..."
+	* to avoid compatibility issues.  See which this is...
+	*/
+
+	char tchoice[PPD_MAX_NAME];    /* Temporary choice name */
+
+	snprintf(tchoice, sizeof(tchoice), "_%.39s", option->defchoice);
+
+	if (ppdFindChoice(option, tchoice))
+	{
+	  strlcpy(option->defchoice, tchoice, sizeof(option->defchoice));
+
+	  DEBUG_printf(("2ppdOpenWithLocalization: Reset Default%s to %s...",
+			option->keyword, tchoice));
+	}
+      }
+
       option = NULL;
 
       free(string);
@@ -1542,6 +1565,29 @@ ppdOpenWithLocalization(
         pg->ppd_status = PPD_BAD_CLOSE_UI;
 
 	goto error;
+      }
+
+      if (option && (!_ppd_strcasecmp(option->defchoice, "custom") ||
+		     !_ppd_strncasecmp(option->defchoice, "custom.", 7)))
+      {
+       /*
+	* "*DefaultOption: Custom..." may set the default to a custom value
+	* or (for a very small number of incompatible PPD files) select a
+	* standard choice for the option, which CUPS renames to "_Custom..."
+	* to avoid compatibility issues.  See which this is...
+	*/
+
+	char tchoice[PPD_MAX_NAME];    /* Temporary choice name */
+
+	snprintf(tchoice, sizeof(tchoice), "_%.39s", option->defchoice);
+
+	if (ppdFindChoice(option, tchoice))
+	{
+	  strlcpy(option->defchoice, tchoice, sizeof(option->defchoice));
+
+	  DEBUG_printf(("2ppdOpenWithLocalization: Reset Default%s to %s...",
+			option->keyword, tchoice));
+	}
       }
 
       option = NULL;
@@ -1702,12 +1748,9 @@ ppdOpenWithLocalization(
         // Set the default as part of the current option...
 	//
 
-        DEBUG_printf(("2ppdOpenWithLocalization: Setting %s to %s...",
-		      keyword, string));
-
         strlcpy(option->defchoice, string, sizeof(option->defchoice));
 
-        DEBUG_printf(("2ppdOpenWithLocalization: %s is now %s...",
+	DEBUG_printf(("2ppdOpenWithLocalization: Set %s to %s...",
 		      keyword, option->defchoice));
       }
       else
@@ -1724,6 +1767,28 @@ ppdOpenWithLocalization(
 	  DEBUG_printf(("2ppdOpenWithLocalization: Setting %s to %s...",
 			keyword, string));
 	  strlcpy(toption->defchoice, string, sizeof(toption->defchoice));
+	  if (!_ppd_strcasecmp(string, "custom") ||
+	      !_ppd_strncasecmp(string, "custom.", 7))
+	  {
+	   /*
+	    * "*DefaultOption: Custom..." may set the default to a custom value
+	    * or (for a very small number of incompatible PPD files) select a
+	    * standard choice for the option, which CUPS renames to "_Custom..."
+	    * to avoid compatibility issues.  See which this is...
+	    */
+
+	    snprintf(toption->defchoice, sizeof(toption->defchoice), "_%s",
+		     string);
+	    if (!ppdFindChoice(toption, toption->defchoice))
+	      strlcpy(toption->defchoice, string, sizeof(toption->defchoice));
+	  }
+	  else
+	  {
+	    strlcpy(toption->defchoice, string, sizeof(toption->defchoice));
+	  }
+
+	  DEBUG_printf(("2ppdOpenWithLocalization: Set %s to %s...",
+			keyword, toption->defchoice));
 	}
       }
     }
@@ -2381,8 +2446,15 @@ ppd_add_attr(ppd_file_t *ppd,		// I - PPD file data
   // Copy data over...
   //
 
+  if (!_ppd_strcasecmp(spec, "custom") || !_ppd_strncasecmp(spec, "custom.", 7))
+  {
+    temp->spec[0] = '_';
+    strlcpy(temp->spec + 1, spec, sizeof(temp->spec) - 1);
+  }
+  else
+    strlcpy(temp->spec, spec, sizeof(temp->spec));
+
   strlcpy(temp->name, name, sizeof(temp->name));
-  strlcpy(temp->spec, spec, sizeof(temp->spec));
   strlcpy(temp->text, text, sizeof(temp->text));
   temp->value = (char *)value;
 
@@ -2890,7 +2962,7 @@ ppd_hash_option(ppd_option_t *option)	// I - Option
 
 
   for (hash = option->keyword[0], k = option->keyword + 1; *k;)
-    hash = 33 * hash + *k++;
+    hash = (int)(33U * (unsigned)hash) + *k++;
 
   return (hash & 511);
 }
@@ -3367,7 +3439,7 @@ ppd_read(cups_file_t    *fp,		// I - File to read from
     if (*lineptr == ':')
     {
       //
-      // Get string after triming leading and trailing whitespace...
+      // Get string after trimming leading and trailing whitespace...
       //
 
       lineptr ++;

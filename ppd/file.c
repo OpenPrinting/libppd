@@ -78,18 +78,13 @@ _ppdFileCheck(
 
   result = _PPD_FILE_CHECK_OK;
 
-  switch (filetype)
+  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
   {
-    case _PPD_FILE_CHECK_DIRECTORY :
-        if (!S_ISDIR(fileinfo.st_mode))
-	  result = _PPD_FILE_CHECK_WRONG_TYPE;
-        break;
-
-    default :
-        if (!S_ISREG(fileinfo.st_mode))
-	  result = _PPD_FILE_CHECK_WRONG_TYPE;
-        break;
+    if (!S_ISDIR(fileinfo.st_mode))
+      result = _PPD_FILE_CHECK_WRONG_TYPE;
   }
+  else if (!S_ISREG(fileinfo.st_mode))
+    result = _PPD_FILE_CHECK_WRONG_TYPE;
 
   if (result)
     goto finishup;

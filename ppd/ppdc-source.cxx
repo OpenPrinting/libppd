@@ -1767,7 +1767,7 @@ ppdcSource::get_resolution(ppdcFile *fp)// I - File to read
 		_("ppdc: Bad resolution name \"%s\" on line %d of "
 		  "%s.\n"), name, fp->line, fp->filename);
         break;
-}
+  }
 
   // Create the necessary PS commands...
   snprintf(command, sizeof(command),
@@ -3493,7 +3493,7 @@ ppdcSource::write_file(const char *f)	// I - File to write
                    d->model_name->value);
     cupsFilePuts(fp, "{\n");
 
-    // Write the copyright stings...
+    // Write the copyright strings...
     for (st = (ppdcString *)d->copyright->first();
          st;
 	 st = (ppdcString *)d->copyright->next())

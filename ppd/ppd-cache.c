@@ -42,9 +42,15 @@
 // Local functions...
 //
 
-static void	ppd_pwg_add_finishing(cups_array_t *finishings, ipp_finishings_t template, const char *name, const char *value);
-static void	ppd_pwg_add_message(cups_array_t *a, const char *msg, const char *str);
-static int	ppd_pwg_compare_finishings(ppd_pwg_finishings_t *a, ppd_pwg_finishings_t *b);
+static const char *ppd_inputslot_for_keyword(ppd_cache_t *pc,
+					     const char *keyword);
+static void	ppd_pwg_add_finishing(cups_array_t *finishings,
+				      ipp_finishings_t template,
+				      const char *name, const char *value);
+static void	ppd_pwg_add_message(cups_array_t *a, const char *msg,
+				    const char *str);
+static int	ppd_pwg_compare_finishings(ppd_pwg_finishings_t *a,
+					   ppd_pwg_finishings_t *b);
 static void	ppd_pwg_free_finishings(ppd_pwg_finishings_t *f);
 
 char            *ppd_cache_status_message = NULL; // Last PPD cache error
@@ -129,8 +135,11 @@ ppdConvertOptions(
   int		num_finishings = 0,	// Number of finishing values
 		finishings[10];		// Finishing enum values
   ppd_choice_t	*choice;		// Marked choice
-  int           finishings_copies = copies;
+  int           finishings_copies = copies,
                                         // Number of copies for finishings
+		job_pages = 0,		// job-pages value
+		number_up = 1;		// number-up value
+  const char	*value;			// Option value
 
 
   //
@@ -340,16 +349,50 @@ ppdConvertOptions(
 
   color_attr_name = print_color_mode_sup ? "print-color-mode" : "output-mode";
 
-  if ((keyword = cupsGetOption("print-color-mode",
-			       num_options, options)) == NULL)
+  //
+  // If we use PPD with standardized PPD option for color support - ColorModel,
+  // prefer it to don't break color/grayscale support for PPDs, either classic
+  // or the ones generated from IPP Get-Printer-Attributes response.
+  //
+
+  if ((keyword = cupsGetOption("ColorModel", num_options, options)) == NULL)
   {
+    //
+    // No ColorModel in options...
+    //
+
     if ((choice = ppdFindMarkedChoice(ppd, "ColorModel")) != NULL)
     {
-      if (!_ppd_strcasecmp(choice->choice, "Gray"))
-	keyword = "monochrome";
+      //
+      // ColorModel is taken from PPD as its default option.
+      //
+
+      if (!strcmp(choice->choice, "Gray") ||
+	  !strcmp(choice->choice, "FastGray") ||
+	  !strcmp(choice->choice, "DeviceGray"))
+        keyword = "monochrome";
       else
-	keyword = "color";
+        keyword = "color";
     }
+    else
+      //
+      // print-color-mode is a default option since 2.4.1, use it as a
+      // fallback if there is no ColorModel in options or PPD...
+      //
+
+      keyword = cupsGetOption("print-color-mode", num_options, options);
+  }
+  else
+  {
+    //
+    // ColorModel found in options...
+    //
+
+    if (!strcmp(keyword, "Gray") || !strcmp(keyword, "FastGray") ||
+	!strcmp(keyword, "DeviceGray"))
+      keyword = "monochrome";
+    else
+      keyword = "color";
   }
 
   if (keyword && !strcmp(keyword, "monochrome"))
@@ -466,6 +509,34 @@ ppdConvertOptions(
   // Map finishing options...
   //
 
+  if (copies != finishings_copies)
+  {
+    // Figure out the proper job-pages-per-set value...
+    if ((value = cupsGetOption("job-pages", num_options, options)) == NULL)
+      value = cupsGetOption("com.apple.print.PrintSettings.PMTotalBeginPages..n.", num_options, options);
+
+    if (value)
+    {
+      if ((job_pages = atoi(value)) < 1)
+	job_pages = 1;
+    }
+
+    // Adjust for number-up
+    if ((value = cupsGetOption("number-up", num_options, options)) != NULL)
+    {
+      if ((number_up = atoi(value)) < 1)
+        number_up = 1;
+    }
+
+    job_pages = (job_pages + number_up - 1) / number_up;
+
+    // When duplex printing, raster data will include an extra (blank) page to
+    // make the total number of pages even.  Make sure this is reflected in the
+    // page count...
+    if ((job_pages & 1) && (keyword = cupsGetOption("sides", num_options, options)) != NULL && strcmp(keyword, "one-sided"))
+      job_pages ++;
+  }
+
   if ((finishing_template = cupsGetOption("cupsFinishingTemplate",
 					  num_options, options)) == NULL)
     finishing_template = cupsGetOption("finishing-template",
@@ -480,16 +551,14 @@ ppdConvertOptions(
     ippAddCollection(request, IPP_TAG_JOB, "finishings-col", fin_col);
     ippDelete(fin_col);
 
-    if (copies != finishings_copies &&
-	(keyword = cupsGetOption("job-impressions",
-				 num_options, options)) != NULL)
+    if (copies != finishings_copies && job_pages > 0)
     {
       //
       // Send job-pages-per-set attribute to apply finishings correctly...
       //
 
       ippAddInteger(request, IPP_TAG_JOB, IPP_TAG_INTEGER, "job-pages-per-set",
-		    atoi(keyword) / finishings_copies);
+		    job_pages);
     }
   }
   else
@@ -503,16 +572,14 @@ ppdConvertOptions(
       ippAddIntegers(request, IPP_TAG_JOB, IPP_TAG_ENUM, "finishings",
 		     num_finishings, finishings);
 
-      if (copies != finishings_copies &&
-	  (keyword = cupsGetOption("job-impressions",
-				   num_options, options)) != NULL)
+      if (copies != finishings_copies && job_pages > 0)
       {
 	//
 	// Send job-pages-per-set attribute to apply finishings correctly...
 	//
 
 	ippAddInteger(request, IPP_TAG_JOB, IPP_TAG_INTEGER,
-		      "job-pages-per-set", atoi(keyword) / finishings_copies);
+		      "job-pages-per-set", job_pages);
       }
     }
   }
@@ -1479,6 +1546,36 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 
   if ((media_type = ppdFindOption(ppd, "MediaType")) != NULL)
   {
+    static const struct
+    {
+      const char *ppd_name;		// PPD MediaType name or prefix to match
+      int        match_length;		// Length of prefix, or -1 to match
+                                        // entire string
+      const char *pwg_name;		// Registered PWG media-type name to use
+    } standard_types[] = {
+      {"Auto", 4, "auto"},
+      {"Any", -1, "auto"},
+      {"Default", -1, "auto"},
+      {"Card", 4, "cardstock"},
+      {"Env", 3, "envelope"},
+      {"Gloss", 5, "photographic-glossy"},
+      {"HighGloss", -1, "photographic-high-gloss"},
+      {"Matte", -1, "photographic-matte"},
+      {"Plain", 5, "stationery"},
+      {"Coated", 6, "stationery-coated"},
+      {"Inkjet", -1, "stationery-inkjet"},
+      {"Letterhead", -1, "stationery-letterhead"},
+      {"Preprint", 8, "stationery-preprinted"},
+      {"Recycled", -1, "stationery-recycled"},
+      {"Transparen", 10, "transparency"},
+    };
+    const size_t num_standard_types =
+      sizeof(standard_types) / sizeof(standard_types[0]);
+					// Length of the standard_types array
+    int match_counts[sizeof(standard_types) / sizeof(standard_types[0])] = {0};
+					// Number of matches for each standard
+                                        // type
+
     if ((pc->types = calloc((size_t)media_type->num_choices,
 			    sizeof(pwg_map_t))) == NULL)
     {
@@ -1494,35 +1591,27 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 	 i > 0;
 	 i --, choice ++, map ++)
     {
-      if (!_ppd_strncasecmp(choice->choice, "Auto", 4) ||
-          !_ppd_strcasecmp(choice->choice, "Any") ||
-          !_ppd_strcasecmp(choice->choice, "Default"))
-        pwg_name = "auto";
-      else if (!_ppd_strncasecmp(choice->choice, "Card", 4))
-        pwg_name = "cardstock";
-      else if (!_ppd_strncasecmp(choice->choice, "Env", 3))
-        pwg_name = "envelope";
-      else if (!_ppd_strncasecmp(choice->choice, "Gloss", 5))
-        pwg_name = "photographic-glossy";
-      else if (!_ppd_strcasecmp(choice->choice, "HighGloss"))
-        pwg_name = "photographic-high-gloss";
-      else if (!_ppd_strcasecmp(choice->choice, "Matte"))
-        pwg_name = "photographic-matte";
-      else if (!_ppd_strncasecmp(choice->choice, "Plain", 5))
-        pwg_name = "stationery";
-      else if (!_ppd_strncasecmp(choice->choice, "Coated", 6))
-        pwg_name = "stationery-coated";
-      else if (!_ppd_strcasecmp(choice->choice, "Inkjet"))
-        pwg_name = "stationery-inkjet";
-      else if (!_ppd_strcasecmp(choice->choice, "Letterhead"))
-        pwg_name = "stationery-letterhead";
-      else if (!_ppd_strncasecmp(choice->choice, "Preprint", 8))
-        pwg_name = "stationery-preprinted";
-      else if (!_ppd_strcasecmp(choice->choice, "Recycled"))
-        pwg_name = "stationery-recycled";
-      else if (!_ppd_strncasecmp(choice->choice, "Transparen", 10))
-        pwg_name = "transparency";
-      else
+      pwg_name = NULL;
+
+      for (j = 0; j < num_standard_types; j ++)
+      {
+        if (standard_types[j].match_length <= 0)
+        {
+          if (!_ppd_strcasecmp(choice->choice, standard_types[j].ppd_name))
+          {
+            pwg_name = standard_types[j].pwg_name;
+            match_counts[j] ++;
+          }
+        }
+        else if (!_ppd_strncasecmp(choice->choice, standard_types[j].ppd_name,
+				    standard_types[j].match_length))
+        {
+          pwg_name = standard_types[j].pwg_name;
+          match_counts[j] ++;
+        }
+      }
+
+      if (!pwg_name)
       {
 	//
         // Convert PPD name to lowercase...
@@ -1535,12 +1624,41 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 
       map->pwg = strdup(pwg_name);
       map->ppd = strdup(choice->choice);
+    }
+
+    //
+    // Since three PPD name patterns can map to "auto", their match counts
+    // should each be the count of all three combined.
+    //
+
+    i = match_counts[0] + match_counts[1] + match_counts[2];
+    match_counts[0] = match_counts[1] = match_counts[2] = i;
+
+    for (i = 0, choice = media_type->choices, map = pc->types;
+	 i < media_type->num_choices;
+	 i ++, choice ++, map ++)
+    {
+      //
+      // If there are two matches for any standard PWG media type, don't give
+      // the PWG name to either one.
+      //
+
+      for (j = 0; j < num_standard_types; j ++)
+      {
+        if (match_counts[j] > 1 && !strcmp(map->pwg, standard_types[j].pwg_name))
+        {
+          free(map->pwg);
+          ppdPwgUnppdizeName(choice->choice, pwg_keyword,
+			     sizeof(pwg_keyword), "_");
+          map->pwg = strdup(pwg_keyword);
+        }
+      }
 
       //
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "media-type.%s", pwg_name);
+      snprintf(msg_id, sizeof(msg_id), "media-type.%s", map->pwg);
       ppd_pwg_add_message(pc->strings, msg_id, choice->text);
     }
   }
@@ -3473,6 +3591,29 @@ ppdCacheGetFinishingValues(
 
 
 //
+// 'ppd_inputslot_for_keyword()' - Return the PPD InputSlot associated
+//                                 a keyword string, or NULL if no mapping
+//                                 exists.
+//
+
+static const char *			// O - PPD InputSlot or NULL
+ppd_inputslot_for_keyword(
+    ppd_cache_t  *pc,			// I - PPD cache and mapping data
+    const char   *keyword)		// I - Keyword string
+{
+  int	i;				// Looping var
+
+  if (!pc || !keyword)
+    return (NULL);
+
+  for (i = 0; i < pc->num_sources; i ++)
+    if (!_ppd_strcasecmp(keyword, pc->sources[i].pwg))
+      return (pc->sources[i].ppd);
+
+  return (NULL);
+}
+
+//
 // 'ppdCacheGetInputSlot()' - Get the PPD InputSlot associated with the job
 //                            attributes or a keyword string.
 //
@@ -3516,24 +3657,22 @@ ppdCacheGetInputSlot(
     else if (pwgInitSize(&size, job, &margins_set))
     {
       //
-      // For media <= 5x7, look for a photo tray...
+      // For media <= 5x7, try to ask for automatic selection so the printer can
+      // pick the photo tray.  If auto isn't available, fall back to explicitly
+      // asking for the photo tray.
       //
 
       if (size.width <= (5 * 2540) && size.length <= (7 * 2540))
+      {
+        const char *match;
+        if ((match = ppd_inputslot_for_keyword(pc, "auto")) != NULL)
+          return (match);
         keyword = "photo";
+      }
     }
   }
 
-  if (keyword)
-  {
-    int	i;				// Looping var
-
-    for (i = 0; i < pc->num_sources; i ++)
-      if (!_ppd_strcasecmp(keyword, pc->sources[i].pwg))
-        return (pc->sources[i].ppd);
-  }
-
-  return (NULL);
+  return (ppd_inputslot_for_keyword(pc, keyword));
 }
 
 

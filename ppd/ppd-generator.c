@@ -605,6 +605,16 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   }
 
   //
+  // Add cupsSingleFile to support multiple files printing on printers
+  // which don't support multiple files in its firmware...
+  //
+  // Adding the keyword degrades printing performance (there is 1-2 seconds
+  // pause between files).
+  //
+
+  cupsFilePuts(fp, "*cupsSingleFile: True\n");
+
+  //
   // PDLs and common resolutions ...
   //
 

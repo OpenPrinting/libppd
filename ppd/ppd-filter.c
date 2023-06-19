@@ -700,9 +700,9 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
   {
     if (!strncasecmp(ppd->filters[i], "application/vnd.cups-raster", 27) ||
 	(!strncasecmp(ppd->filters[i], "image/urf", 9) &&
-	 !ppdFindAttr(ppd, "cupsUrfSupported", NULL)) ||
+	 ppdFindAttr(ppd, "cupsUrfSupported", NULL)) ||
 	(!strncasecmp(ppd->filters[i], "image/pwg-raster", 16) &&
-	 !ppdFindAttr(ppd, "cupsPwgRasterDocumentTypeSupported", NULL)))
+	 ppdFindAttr(ppd, "cupsPwgRasterDocumentTypeSupported", NULL)))
     {
       // We have a CUPS Raster driver PPD file
       data->header =

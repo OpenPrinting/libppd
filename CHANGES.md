@@ -4,7 +4,7 @@
 
 - PPD file generator: Set default color mode when printer attrs say "auto"
   Actual printer default color mode did not get set and the often "Gray"
-  gots set for color printers. No we always choode the "best" mode.
+  gots set for color printers. Now we always choose the "best" mode.
 
       https://bugs.launchpad.net/bugs/2014976
 

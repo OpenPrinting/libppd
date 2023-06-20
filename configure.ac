@@ -5,7 +5,7 @@ AC_PREREQ([2.65])
 # ====================
 # Version informations
 # ====================
-AC_INIT([libppd], [2.0rc1], [https://github.com/OpenPrinting/libppd/issues], [libppd], [https://github.com/OpenPrinting/libppd/])
+AC_INIT([libppd], [2.0rc2], [https://github.com/OpenPrinting/libppd/issues], [libppd], [https://github.com/OpenPrinting/libppd/])
 libppd_version="AC_PACKAGE_VERSION"
 libppd_version_major="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"
 libppd_version_major="`echo AC_PACKAGE_VERSION | awk -F. '{printf("%d\n",$2);}'`"

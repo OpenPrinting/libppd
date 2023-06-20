@@ -1,4 +1,71 @@
-# CHANGES - libppd v2.0rc1 - 2023-04-11
+# CHANGES - libppd v2.0rc2 - 2023-06-20
+
+## CHANGES IN V2.0rc2 (20th June 2023)
+
+- `ppdFilterPSToPS()`: Fixed reverse output order.
+  When converting the former `pstops` CUPS filter into the filter
+  function, some function calls got wrongly replaced by new ones,
+  resulting in no output at all when the input should be re-arranged
+  into reverse order. This broke printing with all PostScript printers
+  (and proprietary CUPS drivers needing PostScript as input) which do
+  reverse-order by default (Issue #20, Ubuntu bug #2022943).
+
+- Fixed resolution handling when converting PPDs to printer IPP
+  attributes
+  For PWG/Apple Raster or PCLm output resolutions in job options or
+  pseudo-PostScript code in the PPD get ignored and instead, the
+  lowest resolution of the description of the Raster format used in
+  the PPD file gets always used, which reduced output quality
+  (Ubuntu bug #2022929).
+
+- All PPD files with "MirrorPrint" option cuased mirrored printout
+  If a PPD contains an option "MirrorPrint", the `ppdFilterLoadPPD()`
+  sent the option `mirror=true` to the filter functions, regardless of
+  the actual setting of "MirrorPrint" (which is usually "False" by
+  default), making all jobs coming out with mirrored pages (Ubuntu bug
+  #2018538).
+
+- PPD file generator: Put `*cupsSingleFile: True` into generated PPD
+  as some driverless IPP printers do not support multi-file jobs (CUPS
+  issue #643).
+
+- Add CUPS PPD attributes `*cupsLanguages: ...` and `*cupsStringsURI
+  ...` to generated PPDs so that CUPS loads printer-specific option
+  names and translations from the printer and uses them without need
+  of static translations in the PPD file.
+
+- CUPS renames the PPD option choice name "Custom" to "_Custom" when a
+  fixed choice is named as such, to distinguish from CUPS' facility
+  for custom option values. We do now the same when loading PPD files.
+
+- Prevent duplicate PPD->IPP media-type name mappings, now we do not
+  have dropping of some media types in the Printer Applications any
+  more.
+
+- When not specifying a media source and the page size is small
+  (5x7" or smaller) do not request the photo tray but `auto` instead.
+
+- Do not override color settings from print dialog ("ColorModel") with
+  `print-color-mode` setting.
+
+- Make `ppdFilterPSToPS()` recognize `%%PageRequirements:` DSC
+  comment.
+
+- Correctly display "Xprinter" instead of Xerox for Xprinter devices
+
+- Fix the `job-pages-per-set` value (used to apply finishings correctly)
+  for duplex and N-up printing.
+
+- `ppdFilterLoadPPD()`: Actually create sample Raster header also for
+  Apple/PWG Raster
+
+- Make the `testppd` build test program also work if it is started
+  from an environment with non-English locale.
+
+- Minor bug fixes, silencing warnings (especially of clang), fixing
+  typos in comments, coding style, ..., and also some fixes for memory
+  leaks.
+
 
 ## CHANGES IN V2.0rc1 (11th April 2023)
 

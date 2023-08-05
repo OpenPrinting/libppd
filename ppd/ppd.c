@@ -70,7 +70,6 @@ static int		ppd_compare_choices(ppd_choice_t *a, ppd_choice_t *b);
 static int		ppd_compare_coptions(ppd_coption_t *a,
 			                     ppd_coption_t *b);
 static int		ppd_compare_options(ppd_option_t *a, ppd_option_t *b);
-static int		ppd_decode(char *string);
 static void		ppd_free_filters(ppd_file_t *ppd);
 static void		ppd_free_group(ppd_group_t *group);
 static void		ppd_free_option(ppd_option_t *option);
@@ -872,23 +871,23 @@ ppdOpenWithLocalization(
     else if (!strcmp(keyword, "JCLBegin"))
     {
       ppd->jcl_begin = strdup(string);
-      ppd_decode(ppd->jcl_begin);	// Decode quoted string
+      ppdDecode(ppd->jcl_begin);	// Decode quoted string
     }
     else if (!strcmp(keyword, "JCLEnd"))
     {
       ppd->jcl_end = strdup(string);
-      ppd_decode(ppd->jcl_end);		// Decode quoted string
+      ppdDecode(ppd->jcl_end);		// Decode quoted string
     }
     else if (!strcmp(keyword, "JCLToPSInterpreter"))
     {
       ppd->jcl_ps = strdup(string);
-      ppd_decode(ppd->jcl_ps);		// Decode quoted string
+      ppdDecode(ppd->jcl_ps);		// Decode quoted string
     }
 #if HAVE_CUPS_3_X
     else if (!strcmp(keyword, "JCLToPDFInterpreter"))
     {
       ppd->jcl_pdf = strdup(string);
-      ppd_decode(ppd->jcl_pdf);		// Decode quoted string
+      ppdDecode(ppd->jcl_pdf);		// Decode quoted string
     }
 #endif
     else if (!strcmp(keyword, "AccurateScreensSupport"))
@@ -1164,7 +1163,7 @@ ppdOpenWithLocalization(
 	choice->code = strdup(string);
 
 	if (custom_option->section == PPD_ORDER_JCL)
-	  ppd_decode(choice->code);
+	  ppdDecode(choice->code);
       }
 
       //
@@ -1628,7 +1627,7 @@ ppdOpenWithLocalization(
       // Fix up the text...
       //
 
-      ppd_decode(sptr);
+      ppdDecode(sptr);
 
       //
       // Find/add the group...
@@ -2079,7 +2078,7 @@ ppdOpenWithLocalization(
         strlcpy(choice->text, name, sizeof(choice->text));
 
       if (option->section == PPD_ORDER_JCL)
-        ppd_decode(string);		// Decode quoted string
+        ppdDecode(string);		// Decode quoted string
 
       choice->code = string;
       string       = NULL;		// Don't add as an attribute below
@@ -2583,11 +2582,11 @@ ppd_compare_options(ppd_option_t *a,	// I - First option
 
 
 //
-// 'ppd_decode()' - Decode a string value...
+// 'ppdDecode()' - Decode a string value with hex-encoded characters
 //
 
-static int				// O - Length of decoded string
-ppd_decode(char *string)		// I - String to decode
+int				// O - Length of decoded string
+ppdDecode(char *string)		// I - String to decode
 {
   char	*inptr,				// Input pointer
 	*outptr;			// Output pointer
@@ -3415,7 +3414,7 @@ ppd_read(cups_file_t    *fp,		// I - File to read from
         }
 
 	*textptr = '\0';
-	textlen  = ppd_decode(text);
+	textlen  = ppdDecode(text);
 
 	if (textlen > PPD_MAX_TEXT && pg->ppd_conform == PPD_CONFORM_STRICT)
 	{

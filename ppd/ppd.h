@@ -721,6 +721,7 @@ extern int		ppdResolveConflicts(ppd_file_t *ppd,
 					    cups_option_t **options);
 
 // **** New in libppd 2.0.0: Formerly CUPS-private functions ****
+extern int		ppdDecode(char *string);
 extern int		ppdConvertOptions(ipp_t *request,
 					  ppd_file_t *ppd,
 					  ppd_cache_t *pc,

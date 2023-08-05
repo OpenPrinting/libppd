@@ -386,7 +386,7 @@ ppdEmitJCLPDF(ppd_file_t *ppd,		// I - PPD file record
 					//     collate?
 {
   ppd_attr_t    *attr;                  // PPD attribute
-  const char    *jcl_pdf = NULL;
+  char		*jcl_pdf = NULL;
   char		*ptr;			// Pointer into JCL string
   char		temp[65],		// Local title string
 		displaymsg[33];		// Local display string
@@ -403,7 +403,10 @@ ppdEmitJCLPDF(ppd_file_t *ppd,		// I - PPD file record
   jcl_pdf = ppd->jcl_pdf;
 #else
   if ((attr = ppdFindAttr(ppd, "JCLToPDFInterpreter", NULL)) != NULL)
+  {
     jcl_pdf = attr->value;
+    ppdDecode(jcl_pdf);		// Decode quoted string
+  }
 #endif
   
   if ((!ppd->jcl_ps && hw_copies < 0) ||

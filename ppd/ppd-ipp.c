@@ -1384,8 +1384,11 @@ ppdLoadAttributes(
   }
 
   // printer-make-andXS-model
+  char	make_model[128];		// Manufacturer and Model value
+
+  snprintf(make_model, sizeof(make_model), "%s %s", ppd->manufacturer, ppd->nickname);
   ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_TEXT, "printer-make-and-model",
-	       NULL, ppd->nickname);
+	       NULL, make_model);
 
   // printer-resolution-default
   ippAddResolution(attrs, IPP_TAG_PRINTER, "printer-resolution-default",

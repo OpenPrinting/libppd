@@ -25,6 +25,7 @@
 #  include <cups/raster.h>
 #  include <cupsfilters/log.h>
 #  include <cupsfilters/driver.h>
+#  include <cupsfilters/ieee1284.h>
 
 
 //

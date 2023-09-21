@@ -1383,10 +1383,13 @@ ppdLoadAttributes(
 		      printer_input_tray, (int)strlen(printer_input_tray));
   }
 
-  // printer-make-andXS-model
-  char	make_model[128];		// Manufacturer and Model value
-
-  snprintf(make_model, sizeof(make_model), "%s %s", ppd->manufacturer, ppd->nickname);
+  // printer-make-and-model
+  char	make_model[256];		// Manufacturer and Model value
+  if (cfIEEE1284NormalizeMakeModel(ppd->nickname, ppd->manufacturer,
+				   CF_IEEE1284_NORMALIZE_HUMAN,
+				   NULL, make_model, sizeof(make_model),
+				   NULL, NULL, NULL) == NULL)
+    snprintf(make_model, sizeof(make_model), "%s", ppd->nickname);
   ippAddString(attrs, IPP_TAG_PRINTER, IPP_TAG_TEXT, "printer-make-and-model",
 	       NULL, make_model);
 

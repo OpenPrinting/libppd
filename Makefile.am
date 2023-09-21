@@ -33,10 +33,6 @@ EXTRA_DIST += \
 pkgutilsdir = $(bindir)
 pkgutils_PROGRAMS =
 
-if ENABLE_TESTPPDFILE
-pkgutils_PROGRAMS += testppdfile
-endif
-
 # ==========================
 # PPD legacy support library
 # ==========================
@@ -147,6 +143,7 @@ EXTRA_DIST += \
 # PPD test utility
 # ================
 
+if ENABLE_TESTPPDFILE
 pkgutils_PROGRAMS += \
 	testppdfile
 
@@ -159,6 +156,7 @@ testppdfile_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS) \
 	$(LIBCUPSFILTERS_CFLAGS)
+endif
 
 # ===========================
 # ppdc PPD compiler utilities

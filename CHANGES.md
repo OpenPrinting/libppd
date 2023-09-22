@@ -1,4 +1,29 @@
-# CHANGES - libppd v2.0rc2 - 2023-06-20
+# CHANGES - libppd v2.0.0 - 2023-09-22
+
+## CHANGES IN V2.0.0 (22th September 2023)
+
+- `ppd_scan_ps()`: Fix CVE-2023-4504
+  Added check for end of buffer/string when reading escaped character
+  after backslash, return NULL (invalid string) if no character
+  follows.
+
+- Promoted the static function "ppd_decode()" of ppd/ppd.c into the
+  API function "ppdDecode()".
+
+- `ppdEmitJCLPDF()`: Decode "JCLToPDFInterpreter" value in ppdEmitJCLPDF()
+  Fixes "classic" (non-driverless) PDF printing (Issue #24).
+
+- `ppdLoadAttributes()`: Apply `cfIEEE1284NormalizeMakeModel()` to NickName
+  Make and model for the printer IPP attributes are extracted from the
+  PPD's NickName, which sometimes misses the manufacturer's
+  name. Extract it from the PPD's Manufacturer field or derive it from
+  the model name if possible. Enhanced alternative for pull request
+  #21.
+
+- `Makefile.am`: Fix disabling `testppdfile`
+  Missing conditionals made the binary built when disabled (Pull
+  request #18).
+
 
 ## CHANGES IN V2.0rc2 (20th June 2023)
 

@@ -66,7 +66,7 @@ int main(int argc,     // I - Number of command-line args
   int result;                      // Whether PPD pased or not
 
 
-  file_array = cupsArrayNew(NULL, "");
+  file_array = cupsArrayNew(NULL, "", NULL, 0, NULL, NULL);
 
   for (i = 1; i < argc; i ++)
     if (!strcmp(argv[i], "--help"))

@@ -130,7 +130,7 @@ _ppdArrayNewStrings(const char *s,	// I - Delimited strings or NULL
   cups_array_t	*a;			// Array
 
 
-  if ((a = cupsArrayNew3((cups_array_cb_t)strcmp, NULL, NULL, 0,
+  if ((a = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0,
                          (cups_acopy_cb_t)_ppdStrAlloc,
 			 (cups_afree_cb_t )_ppdStrFree)) != NULL)
     _ppdArrayAddStrings(a, s, delim);

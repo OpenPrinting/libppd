@@ -463,7 +463,7 @@ _ppdMessageLookup(cups_array_t *a,	// I - Message array
 cups_array_t *				// O - Array
 _ppdMessageNew(void *context)		// I - User data
 {
-  return (cupsArrayNew3((cups_array_cb_t )ppd_message_compare, context,
+  return (cupsArrayNew((cups_array_cb_t )ppd_message_compare, context,
                         (cups_ahash_func_t)NULL, 0,
 			(cups_acopy_cb_t)NULL,
 			(cups_afree_cb_t)ppd_message_free));

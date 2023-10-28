@@ -65,7 +65,7 @@ _ppdStrAlloc(const char *s)		// I - String
   _ppdMutexLock(&sp_mutex);
 
   if (!stringpool)
-    stringpool = cupsArrayNew((cups_array_cb_t)ppd_compare_sp_items, NULL);
+    stringpool = cupsArrayNew((cups_array_cb_t)ppd_compare_sp_items, NULL, NULL, 0, NULL, NULL);
 
   if (!stringpool)
   {

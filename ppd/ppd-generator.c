@@ -1863,7 +1863,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     count = ippGetCount(attr);
     names = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0,
 			  (cups_acopy_cb_t)strdup, (cups_afree_cb_t)free);
-    fin_options = cupsArrayNew((cups_array_cb_t)strcmp, NULL);
+    fin_options = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL);
 
     //
     // Staple/Bind/Stitch
@@ -2276,7 +2276,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*cupsFinishingTemplate None/%s: \"\"\n",
 		   (human_readable ? human_readable : "None"));
 
-    templates = cupsArrayNew((cups_array_cb_t)strcmp, NULL);
+    templates = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL);
     count     = ippGetCount(attr);
 
     for (i = 0; i < count; i ++)

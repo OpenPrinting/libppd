@@ -1667,7 +1667,7 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
     universal_filter.function = cfFilterUniversal;
     universal_filter.parameters = &universal_parameters;
     universal_filter.name = "universal";
-    filter_chain = cupsArrayNew(NULL, NULL);
+    filter_chain = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
     cupsArrayAdd(filter_chain, &universal_filter);
     cupsArrayAdd(filter_chain, &extra_filter);
     ret = cfFilterChain(inputfd, outputfd, inputseekable, data,

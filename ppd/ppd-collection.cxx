@@ -22,7 +22,7 @@
 #include <ppd/ppdc.h>
 #include <ppd/file-private.h>
 #include <ppd/array-private.h>
-#include <ppd/lib
+#include <ppd/libcups2-private.h>
 #include <regex.h>
 #include <sys/wait.h>
 
@@ -228,9 +228,9 @@ ppdCollectionListPPDs(
   //
 
   ppdlist.PPDsByName      = cupsArrayNew((cups_array_cb_t)compare_names,
-					  NULL);
+					  NULL, NULL, 0, NULL, NULL);
   ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_cb_t)compare_ppds,
-					  NULL);
+					  NULL, NULL, 0, NULL, NULL);
   ppdlist.ChangedPPD      = 0;
 
 
@@ -250,7 +250,7 @@ ppdCollectionListPPDs(
   // Load all PPDs in the specified directories and below...
   //
 
-  ppdlist.Inodes = cupsArrayNew((cups_array_cb_t)compare_inodes, NULL);
+  ppdlist.Inodes = cupsArrayNew((cups_array_cb_t)compare_inodes, NULL, NULL, 0, NULL, NULL);
 
   for (col = (ppd_collection_t *)cupsArrayGetFirst(ppd_collections);
        col;
@@ -398,7 +398,7 @@ ppdCollectionListPPDs(
   if (device_id || language || make || make_and_model || model_number_str ||
       product)
   {
-    matches = cupsArrayNew((cups_array_cb_t)compare_matches, NULL);
+    matches = cupsArrayNew((cups_array_cb_t)compare_matches, NULL, NULL, 0, NULL, NULL);
     matches_array_created = 1;
 
     if (device_id)
@@ -532,7 +532,7 @@ ppdCollectionListPPDs(
   }
   else if (include || exclude)
   {
-    matches = cupsArrayNew((cups_array_cb_t)compare_ppds, NULL);
+    matches = cupsArrayNew((cups_array_cb_t)compare_ppds, NULL, NULL, 0, NULL, NULL);
     matches_array_created = 1;
 
     for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByMakeModel);
@@ -557,7 +557,7 @@ ppdCollectionListPPDs(
   else
     matches = ppdlist.PPDsByMakeModel;
 
-  result = cupsArrayNew(NULL, NULL);
+  result = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByMakeModel), i = 0;
        count > 0 && ppd;
@@ -826,9 +826,9 @@ ppdCollectionDumpCache(const char *filename,	// I - Filename
 
   ppdlist.Inodes = NULL;
   ppdlist.PPDsByName      = cupsArrayNew((cups_array_cb_t)compare_names,
-					  NULL);
+					  NULL, NULL, 0, NULL, NULL);
   ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_cb_t)compare_ppds,
-					  NULL);
+					  NULL, NULL, 0, NULL, NULL);
   ppdlist.ChangedPPD      = 0;
 
 
@@ -1678,9 +1678,9 @@ load_ppd(const char  *filename,		// I - Real filename
   // Now read until we get the required fields...
   //
 
-  cups_languages = cupsArrayNew(NULL, NULL);
-  products       = cupsArrayNew(NULL, NULL);
-  psversions     = cupsArrayNew(NULL, NULL);
+  cups_languages = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
+  products       = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
+  psversions     = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   model_name[0]    = '\0';
   nick_name[0]     = '\0';

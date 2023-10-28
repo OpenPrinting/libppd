@@ -519,7 +519,7 @@ ppdGetLanguages(ppd_file_t *ppd)	// I - PPD file
   // Yes, load the list...
   //
 
-  if ((languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL)) == NULL)
+  if ((languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL)) == NULL)
     return (NULL);
 
   if ((value = strdup(attr->value)) == NULL)

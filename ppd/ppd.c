@@ -644,7 +644,7 @@ ppdOpenWithLocalization(
   ppd->colorspace     = PPD_CS_N;
   ppd->landscape      = -90;
   ppd->coptions       = cupsArrayNew((cups_array_cb_t)ppd_compare_coptions,
-				     NULL);
+				     NULL, NULL, 0, NULL, NULL);
 
   //
   // Read lines from the PPD file and add them to the file record...
@@ -2184,7 +2184,7 @@ ppdOpenWithLocalization(
   // Create an array to track the marked choices...
   //
 
-  ppd->marked = cupsArrayNew((cups_array_cb_t)ppd_compare_choices, NULL);
+  ppd->marked = cupsArrayNew((cups_array_cb_t)ppd_compare_choices, NULL, NULL, 0, NULL, NULL);
 
   //
   // Return the PPD file structure...
@@ -2417,7 +2417,7 @@ ppd_add_attr(ppd_file_t *ppd,		// I - PPD file data
 
   if (!ppd->sorted_attrs)
     ppd->sorted_attrs = cupsArrayNew((cups_array_cb_t)ppd_compare_attrs,
-                                     NULL);
+                                     NULL, NULL, 0, NULL, NULL);
 
   //
   // Allocate memory for the new attribute...
@@ -2749,7 +2749,7 @@ ppd_get_coption(ppd_file_t *ppd,	// I - PPD file
 
   strlcpy(copt->keyword, name, sizeof(copt->keyword));
 
-  copt->params = cupsArrayNew((cups_array_cb_t)NULL, NULL);
+  copt->params = cupsArrayNew((cups_array_cb_t)NULL, NULL, NULL, 0, NULL, NULL);
 
   cupsArrayAdd(ppd->coptions, copt);
 

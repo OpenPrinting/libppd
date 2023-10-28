@@ -1210,7 +1210,7 @@ main(int  argc,				// I - Number of command-line arguments
     // PPD directory list -> See whether we have valid PPD collection
 
     cups_array_t *dirlist = _ppdArrayNewStrings(argv[1], ',');
-    cups_array_t *ppd_collections = cupsArrayNew(NULL, NULL);
+    cups_array_t *ppd_collections = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
     ppd_collection_t *col;
     cups_option_t *options = NULL;
     int num_options = 0;

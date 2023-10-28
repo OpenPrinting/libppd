@@ -2477,7 +2477,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       }
 
       // Array for properties of the choices
-      choice_properties = cupsArrayNew(NULL, NULL);
+      choice_properties = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
       //
       // Gather the data for each choice

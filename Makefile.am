@@ -123,7 +123,7 @@ libppd_la_LIBADD = \
 	$(LIBCUPSFILTERS_LIBS) \
 	$(CUPS_LIBS)
 libppd_la_CFLAGS = \
-	$(LIBCUPSFILTERS_la_CFLAGS) \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 libppd_la_LDFLAGS = \
 	-no-undefined \

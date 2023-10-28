@@ -222,7 +222,7 @@ ppdResolveConflicts(
   cupsArraySave(ppd->sorted_attrs);
 
   resolvers = NULL;
-  pass      = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL);
+  pass      = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL, NULL, 0, NULL, NULL);
   tries     = 0;
 
   while (tries < 100 &&
@@ -232,7 +232,7 @@ ppdResolveConflicts(
     tries ++;
 
     if (!resolvers)
-      resolvers = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL);
+      resolvers = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL, NULL, 0, NULL, NULL);
 
     for (consts = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(active), changed = 0;
          consts;
@@ -721,7 +721,7 @@ ppd_load_constraints(ppd_file_t *ppd)	// I - PPD file
   // Create an array to hold the constraint data...
   //
 
-  ppd->cups_uiconstraints = cupsArrayNew(NULL, NULL);
+  ppd->cups_uiconstraints = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   //
   // Find the installable options group if it exists...
@@ -1181,7 +1181,7 @@ ppd_test_constraints(
     if (i <= 0)
     {
       if (!active)
-        active = cupsArrayNew(NULL, NULL);
+        active = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
       cupsArrayAdd(active, consts);
       DEBUG_puts("9ppd_test_constraints: Added...");

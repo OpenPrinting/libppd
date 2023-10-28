@@ -54,7 +54,7 @@ main(int  argc,				// I - Number of command-line arguments
   outname   = NULL;
   outfile   = NULL;
   languages = NULL;
-  ppds      = cupsArrayNew(NULL, NULL);
+  ppds      = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   for (i = 1; i < argc; i ++)
     if (argv[i][0] == '-')
@@ -175,7 +175,7 @@ main(int  argc,				// I - Number of command-line arguments
 
   // Loop through the PPD files we loaded to generate a new language list...
   if (!languages)
-    languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL);
+    languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL);
 
   for (ppd = (ppd_file_t *)cupsArrayGetFirst(ppds);
        ppd;

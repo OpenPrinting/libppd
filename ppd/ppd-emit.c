@@ -1068,7 +1068,7 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	                                // order
 
 
-        params = cupsArrayNew((cups_array_cb_t)ppd_compare_cparams, NULL);
+        params = cupsArrayNew((cups_array_cb_t)ppd_compare_cparams, NULL, NULL, 0, NULL, NULL);
 
         for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	     cparam;

@@ -77,7 +77,7 @@ main(int  argc,				// I - Number of command-line arguments
   src             = new ppdcSource();
   use_model_name  = 0;
   verbose         = 0;
-  filenames       = cupsArrayNew((cups_array_cb_t)strcasecmp, NULL);
+  filenames       = cupsArrayNew((cups_array_cb_t)strcasecmp, NULL, NULL, 0, NULL, NULL);
 
   progname        = strrchr(argv[0], '/');
   if (progname)

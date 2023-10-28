@@ -29,6 +29,15 @@
 
 
 //
+// Renamed CUPS type in API
+//
+
+#if CUPS_VERSION_MAJOR < 3
+#  define cups_page_header_t cups_page_header2_t
+#endif
+
+
+//
 // C++ magic...
 //
 
@@ -84,7 +93,7 @@ extern "C" {
 // Types and structures...
 //
 
-typedef int (*cups_interpret_cb_t)(cups_page_header2_t *header, int preferred_bits);
+typedef int (*cups_interpret_cb_t)(cups_page_header_t *header, int preferred_bits);
 					// **** cupsRasterInterpretPPD callback
 					//      function ****
 					//
@@ -641,7 +650,7 @@ extern void		ppdSetConformance(ppd_conform_t c);
 
 // **** New in CUPS 1.2 ****
 // cupsRasterInterpretPPD replaced by ppdRasterInterpretPPD in libppd
-// extern int		cupsRasterInterpretPPD(cups_page_header2_t *h,
+// extern int		cupsRasterInterpretPPD(cups_page_header_t *h,
 //			                       ppd_file_t *ppd,
 //					       int num_options,
 //					       cups_option_t *options,
@@ -707,7 +716,7 @@ extern int		ppdPageSizeLimits(ppd_file_t *ppd,
 extern int		ppdMarkOptions(ppd_file_t *ppd,
 				       int num_options,
 				       cups_option_t *options);
-extern int		ppdRasterInterpretPPD(cups_page_header2_t *h,
+extern int		ppdRasterInterpretPPD(cups_page_header_t *h,
 					      ppd_file_t *ppd,
 					      int num_options,
 					      cups_option_t *options,
@@ -734,10 +743,10 @@ extern int		ppdConvertOptions(ipp_t *request,
 					  int copies,
 					  int num_options,
 					  cups_option_t *options);
-extern int		ppdRasterExecPS(cups_page_header2_t *h,
+extern int		ppdRasterExecPS(cups_page_header_t *h,
 					int *preferred_bits,
 					const char *code);
-extern int		ppdRasterInterpretPPD(cups_page_header2_t *h,
+extern int		ppdRasterInterpretPPD(cups_page_header_t *h,
 					      ppd_file_t *ppd,
 					      int num_options,
 					      cups_option_t *options,
@@ -817,7 +826,7 @@ extern int		ppdGetOptions(cups_option_t **options,
 				      ppd_file_t *ppd);
 
 // **** New in libppd 2.0.0: Added for pclmtoraster filter ****
-extern int		ppdRasterMatchPPDSize(cups_page_header2_t *header,
+extern int		ppdRasterMatchPPDSize(cups_page_header_t *header,
 					      ppd_file_t *ppd,
 					      double margins[4],
 					      double dimensions[2],

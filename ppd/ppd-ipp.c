@@ -14,8 +14,9 @@
 // Include necessary headers.
 //
 
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <ctype.h>
 #include <errno.h>
 
@@ -339,7 +340,7 @@ ppdLoadAttributes(
                 order,
                 face_up,
                 have_custom_size = 0;
-  cups_page_header2_t header;
+  cups_page_header_t header;
   static const char * const pdls[][2] =
   {                                     // MIME media type to command set
 					// mapping
@@ -507,17 +508,17 @@ ppdLoadAttributes(
   // of the driver, as this is what our filter need to produce.
   //
 
-  docformats = cupsArrayNew3((cups_array_func_t)strcmp, NULL, NULL, 0, NULL,
-			     (cups_afree_func_t)free);
+  docformats = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL,
+			     (cups_afree_cb_t)free);
   is_texttotext = 0;
   strcpy(cmd, "CMD:");
   cmdptr = cmd + 4;
   if (ppd->num_filters)
   {
     char *filter;
-    for (filter = (char *)cupsArrayFirst(pc->filters);
+    for (filter = (char *)cupsArrayGetFirst(pc->filters);
 	 filter;
-	 filter = (char *)cupsArrayNext(pc->filters))
+	 filter = (char *)cupsArrayGetNext(pc->filters))
     {
       // String of the "*cupsfilter:" or "*cupsfilter2:" line
       strncpy(buf, filter, sizeof(buf) - 1);
@@ -742,23 +743,23 @@ ppdLoadAttributes(
   // document-format-supported
   attr = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
 		       "document-format-supported",
-		       cupsArrayCount(docformats), NULL, NULL);
-  for (ptr = (char *)cupsArrayFirst(docformats), i = 0; ptr;
-       ptr = (char *)cupsArrayNext(docformats), i ++)
+		       cupsArrayGetCount(docformats), NULL, NULL);
+  for (ptr = (char *)cupsArrayGetFirst(docformats), i = 0; ptr;
+       ptr = (char *)cupsArrayGetNext(docformats), i ++)
     ippSetString(attrs, &attr, i, ptr);
 
   // finishing-template-supported
   attr = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
 		       "finishing-template-supported",
-		       cupsArrayCount(pc->templates) + 1, NULL, NULL);
+		       cupsArrayGetCount(pc->templates) + 1, NULL, NULL);
   ippSetString(attrs, &attr, 0, "none");
-  for (i = 1, template = (const char *)cupsArrayFirst(pc->templates);
-       template; i ++, template = (const char *)cupsArrayNext(pc->templates))
+  for (i = 1, template = (const char *)cupsArrayGetFirst(pc->templates);
+       template; i ++, template = (const char *)cupsArrayGetNext(pc->templates))
     ippSetString(attrs, &attr, i, template);
 
   // finishings-col-database
   attr = ippAddCollections(attrs, IPP_TAG_PRINTER, "finishings-col-database",
-			   cupsArrayCount(pc->templates) + 1, NULL);
+			   cupsArrayGetCount(pc->templates) + 1, NULL);
 
   col = ippNew();
   ippAddString(col, IPP_TAG_PRINTER, IPP_TAG_KEYWORD, "finishing-template",
@@ -766,8 +767,8 @@ ppdLoadAttributes(
   ippSetCollection(attrs, &attr, 0, col);
   ippDelete(col);
 
-  for (i = 1, template = (const char *)cupsArrayFirst(pc->templates);
-       template; i ++, template = (const char *)cupsArrayNext(pc->templates))
+  for (i = 1, template = (const char *)cupsArrayGetFirst(pc->templates);
+       template; i ++, template = (const char *)cupsArrayGetNext(pc->templates))
   {
     col = ippNew();
     ippAddString(col, IPP_TAG_PRINTER, IPP_TAG_KEYWORD, "finishing-template",
@@ -785,7 +786,7 @@ ppdLoadAttributes(
 
   // finishings-col-ready
   attr = ippAddCollections(attrs, IPP_TAG_PRINTER, "finishings-col-ready",
-			   cupsArrayCount(pc->templates) + 1, NULL);
+			   cupsArrayGetCount(pc->templates) + 1, NULL);
 
   col = ippNew();
   ippAddString(col, IPP_TAG_PRINTER, IPP_TAG_KEYWORD, "finishing-template",
@@ -793,8 +794,8 @@ ppdLoadAttributes(
   ippSetCollection(attrs, &attr, 0, col);
   ippDelete(col);
 
-  for (i = 1, template = (const char *)cupsArrayFirst(pc->templates); template;
-       i ++, template = (const char *)cupsArrayNext(pc->templates))
+  for (i = 1, template = (const char *)cupsArrayGetFirst(pc->templates); template;
+       i ++, template = (const char *)cupsArrayGetNext(pc->templates))
   {
     col = ippNew();
     ippAddString(col, IPP_TAG_PRINTER, IPP_TAG_KEYWORD, "finishing-template",
@@ -814,25 +815,25 @@ ppdLoadAttributes(
   // finishings-ready
   attr = ippAddIntegers(attrs, IPP_TAG_PRINTER, IPP_TAG_ENUM,
 			"finishings-ready",
-			cupsArrayCount(pc->finishings) + 1, NULL);
+			cupsArrayGetCount(pc->finishings) + 1, NULL);
   ippSetInteger(attrs, &attr, 0, IPP_FINISHINGS_NONE);
   for (i = 1,
-	 finishings = (ppd_pwg_finishings_t *)cupsArrayFirst(pc->finishings);
+	 finishings = (ppd_pwg_finishings_t *)cupsArrayGetFirst(pc->finishings);
        finishings;
        i ++,
-	 finishings = (ppd_pwg_finishings_t *)cupsArrayNext(pc->finishings))
+	 finishings = (ppd_pwg_finishings_t *)cupsArrayGetNext(pc->finishings))
     ippSetInteger(attrs, &attr, i, (int)finishings->value);
 
   // finishings-supported
   attr = ippAddIntegers(attrs, IPP_TAG_PRINTER, IPP_TAG_ENUM,
 			"finishings-supported",
-			cupsArrayCount(pc->finishings) + 1, NULL);
+			cupsArrayGetCount(pc->finishings) + 1, NULL);
   ippSetInteger(attrs, &attr, 0, IPP_FINISHINGS_NONE);
   for (i = 1,
-	 finishings = (ppd_pwg_finishings_t *)cupsArrayFirst(pc->finishings);
+	 finishings = (ppd_pwg_finishings_t *)cupsArrayGetFirst(pc->finishings);
        finishings;
        i ++,
-	 finishings = (ppd_pwg_finishings_t *)cupsArrayNext(pc->finishings))
+	 finishings = (ppd_pwg_finishings_t *)cupsArrayGetNext(pc->finishings))
     ippSetInteger(attrs, &attr, i, (int)finishings->value);
 
   // media-bottom-margin-supported

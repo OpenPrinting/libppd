@@ -13,7 +13,8 @@
 //
 
 #include <ppd/ppdc-private.h>
-#include "ppd.h"
+#include <ppd/libcups2-private.h>
+#include <ppd/ppd.h>
 #include <cups/array.h>
 //#include <errno.h>
 
@@ -174,11 +175,11 @@ main(int  argc,				// I - Number of command-line arguments
 
   // Loop through the PPD files we loaded to generate a new language list...
   if (!languages)
-    languages = cupsArrayNew((cups_array_func_t)strcmp, NULL);
+    languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL);
 
-  for (ppd = (ppd_file_t *)cupsArrayFirst(ppds);
+  for (ppd = (ppd_file_t *)cupsArrayGetFirst(ppds);
        ppd;
-       ppd = (ppd_file_t *)cupsArrayNext(ppds))
+       ppd = (ppd_file_t *)cupsArrayGetNext(ppds))
   {
     locale = ppd_locale(ppd);
 
@@ -208,10 +209,10 @@ main(int  argc,				// I - Number of command-line arguments
 
   cupsFileGets(infile, line, sizeof(line));
   cupsFilePrintf(outfile, "%s\n", line);
-  if ((locale = (char *)cupsArrayFirst(languages)) != NULL)
+  if ((locale = (char *)cupsArrayGetFirst(languages)) != NULL)
   {
     cupsFilePrintf(outfile, "*cupsLanguages: \"%s", locale);
-    while ((locale = (char *)cupsArrayNext(languages)) != NULL)
+    while ((locale = (char *)cupsArrayGetNext(languages)) != NULL)
       cupsFilePrintf(outfile, " %s", locale);
     cupsFilePuts(outfile, "\"\n");
   }
@@ -223,9 +224,9 @@ main(int  argc,				// I - Number of command-line arguments
   }
 
   // Loop through the other PPD files we loaded to provide the translations...
-  for (ppd = (ppd_file_t *)cupsArrayFirst(ppds);
+  for (ppd = (ppd_file_t *)cupsArrayGetFirst(ppds);
        ppd;
-       ppd = (ppd_file_t *)cupsArrayNext(ppds))
+       ppd = (ppd_file_t *)cupsArrayGetNext(ppds))
   {
     // Output all of the UI text for this language...
     int			j, k, l;	// Looping vars

@@ -14,9 +14,10 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -512,9 +513,9 @@ ppdMarkDefaults(ppd_file_t *ppd)	// I - PPD file record
   // Clean out the marked array...
   //
 
-  for (c = (ppd_choice_t *)cupsArrayFirst(ppd->marked);
+  for (c = (ppd_choice_t *)cupsArrayGetFirst(ppd->marked);
        c;
-       c = (ppd_choice_t *)cupsArrayNext(ppd->marked))
+       c = (ppd_choice_t *)cupsArrayGetNext(ppd->marked))
   {
     cupsArrayRemove(ppd->marked, c);
     c->marked = 0;
@@ -583,7 +584,7 @@ ppdFirstOption(ppd_file_t *ppd)		// I - PPD file
   if (!ppd)
     return (NULL);
   else
-    return ((ppd_option_t *)cupsArrayFirst(ppd->options));
+    return ((ppd_option_t *)cupsArrayGetFirst(ppd->options));
 }
 
 
@@ -601,7 +602,7 @@ ppdNextOption(ppd_file_t *ppd)		// I - PPD file
   if (!ppd)
     return (NULL);
   else
-    return ((ppd_option_t *)cupsArrayNext(ppd->options));
+    return ((ppd_option_t *)cupsArrayGetNext(ppd->options));
 }
 
 
@@ -705,9 +706,9 @@ ppd_debug_marked(ppd_file_t *ppd,	// I - PPD file data
 
   DEBUG_printf(("2ppdMarkOptions: %s", title));
 
-  for (c = (ppd_choice_t *)cupsArrayFirst(ppd->marked);
+  for (c = (ppd_choice_t *)cupsArrayGetFirst(ppd->marked);
        c;
-       c = (ppd_choice_t *)cupsArrayNext(ppd->marked))
+       c = (ppd_choice_t *)cupsArrayGetNext(ppd->marked))
     DEBUG_printf(("2ppdMarkOptions: %s=%s", c->option->keyword, c->choice));
 }
 #endif // DEBUG
@@ -849,7 +850,7 @@ ppd_mark_option(ppd_file_t *ppd,	// I - PPD file
 
       if ((coption = ppdFindCustomOption(ppd, option)) != NULL)
       {
-        if ((cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params)) == NULL)
+        if ((cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params)) == NULL)
 	  return;
 
         switch (cparam->type)

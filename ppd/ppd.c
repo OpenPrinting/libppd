@@ -14,11 +14,12 @@
 // Include necessary headers.
 //
 
-#include "string-private.h"
-#include "language-private.h"
-#include "thread-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/language-private.h>
+#include <ppd/thread-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -209,13 +210,13 @@ ppdClose(ppd_file_t *ppd)		// I - PPD file record
   // Free custom options...
   //
 
-  for (coption = (ppd_coption_t *)cupsArrayFirst(ppd->coptions);
+  for (coption = (ppd_coption_t *)cupsArrayGetFirst(ppd->coptions);
        coption;
-       coption = (ppd_coption_t *)cupsArrayNext(ppd->coptions))
+       coption = (ppd_coption_t *)cupsArrayGetNext(ppd->coptions))
   {
-    for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+    for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
          cparam;
-	 cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	 cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
     {
       switch (cparam->type)
       {
@@ -248,9 +249,9 @@ ppdClose(ppd_file_t *ppd)		// I - PPD file record
     ppd_cups_uiconsts_t *consts;	// Current constraints
 
 
-    for (consts = (ppd_cups_uiconsts_t *)cupsArrayFirst(ppd->cups_uiconstraints);
+    for (consts = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(ppd->cups_uiconstraints);
          consts;
-	 consts = (ppd_cups_uiconsts_t *)cupsArrayNext(ppd->cups_uiconstraints))
+	 consts = (ppd_cups_uiconsts_t *)cupsArrayGetNext(ppd->cups_uiconstraints))
     {
       free(consts->constraints);
       free(consts);
@@ -642,7 +643,7 @@ ppdOpenWithLocalization(
   ppd->color_device   = 0;
   ppd->colorspace     = PPD_CS_N;
   ppd->landscape      = -90;
-  ppd->coptions       = cupsArrayNew((cups_array_func_t)ppd_compare_coptions,
+  ppd->coptions       = cupsArrayNew((cups_array_cb_t)ppd_compare_coptions,
 				     NULL);
 
   //
@@ -2154,8 +2155,8 @@ ppdOpenWithLocalization(
   // each choice and custom option...
   //
 
-  ppd->options = cupsArrayNew2((cups_array_func_t)ppd_compare_options, NULL,
-                               (cups_ahash_func_t)ppd_hash_option,
+  ppd->options = cupsArrayNew2((cups_array_cb_t)ppd_compare_options, NULL,
+                               (cups_ahash_cb_t)ppd_hash_option,
 			       PPD_HASHSIZE);
 
   for (i = ppd->num_groups, group = ppd->groups;
@@ -2183,7 +2184,7 @@ ppdOpenWithLocalization(
   // Create an array to track the marked choices...
   //
 
-  ppd->marked = cupsArrayNew((cups_array_func_t)ppd_compare_choices, NULL);
+  ppd->marked = cupsArrayNew((cups_array_cb_t)ppd_compare_choices, NULL);
 
   //
   // Return the PPD file structure...
@@ -2415,7 +2416,7 @@ ppd_add_attr(ppd_file_t *ppd,		// I - PPD file data
   //
 
   if (!ppd->sorted_attrs)
-    ppd->sorted_attrs = cupsArrayNew((cups_array_func_t)ppd_compare_attrs,
+    ppd->sorted_attrs = cupsArrayNew((cups_array_cb_t)ppd_compare_attrs,
                                      NULL);
 
   //
@@ -2748,7 +2749,7 @@ ppd_get_coption(ppd_file_t *ppd,	// I - PPD file
 
   strlcpy(copt->keyword, name, sizeof(copt->keyword));
 
-  copt->params = cupsArrayNew((cups_array_func_t)NULL, NULL);
+  copt->params = cupsArrayNew((cups_array_cb_t)NULL, NULL);
 
   cupsArrayAdd(ppd->coptions, copt);
 

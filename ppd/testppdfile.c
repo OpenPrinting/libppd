@@ -10,6 +10,7 @@
 //
 
 #include <ppd/ppd.h>
+#include <ppd/libcups2-private.h>
 #include <string.h>
 #include <cups/array.h>
 #include <stdio.h>
@@ -175,8 +176,8 @@ int main(int argc,     // I - Number of command-line args
 
   if (report)
   {
-    for (line = (char *)cupsArrayFirst(report); line;
-	 line = (char *)cupsArrayNext(report))
+    for (line = (char *)cupsArrayGetFirst(report); line;
+	 line = (char *)cupsArrayGetNext(report))
       puts(line);
   }
 

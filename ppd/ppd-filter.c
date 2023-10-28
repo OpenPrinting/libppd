@@ -12,8 +12,9 @@
 //
 
 #include "config.h"
-#include "ppd-filter.h"
-#include "ppd.h"
+#include <ppd/ppd-filter.h>
+#include <ppd/ppd.h>
+#include <ppd/libcups2-private.h>
 #include <limits.h>
 #include <math.h>
 #include <errno.h>
@@ -706,7 +707,7 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
     {
       // We have a CUPS Raster driver PPD file
       data->header =
-	(cups_page_header2_t *)calloc(1, sizeof(cups_page_header2_t));
+	(cups_page_header_t *)calloc(1, sizeof(cups_page_header_t));
       if (ppdRasterInterpretPPD(data->header, ppd,
 				data->num_options, data->options, NULL) < 0)
       {
@@ -830,9 +831,9 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
       // Filter(s) specified by filter line(s), determine the one which got
       // actually used via final data MIME type
       bool cupsfilter2 = (ppdFindAttr(ppd, "cupsFilter2", NULL) != NULL);
-      for (lastfilter = (char *)cupsArrayFirst(ppd->cache->filters);
+      for (lastfilter = (char *)cupsArrayGetFirst(ppd->cache->filters);
 	   lastfilter;
-	   lastfilter = (char *)cupsArrayNext(ppd->cache->filters))
+	   lastfilter = (char *)cupsArrayGetNext(ppd->cache->filters))
       {
 	char *p = lastfilter;
 	if (cupsfilter2)
@@ -1517,9 +1518,9 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 	if (log) log(ld, CF_LOGLEVEL_DEBUG,
 		     "ppdFilterUniversal: \"*cupsFilter(2): ...\" lines in the PPD file:");
 
-	for (filter = (char *)cupsArrayFirst(cache->filters);
+	for (filter = (char *)cupsArrayGetFirst(cache->filters);
 	     filter;
-	     filter = (char *)cupsArrayNext(cache->filters))
+	     filter = (char *)cupsArrayGetNext(cache->filters))
 	{
 	  char buf[256];
 	  char *ptr,

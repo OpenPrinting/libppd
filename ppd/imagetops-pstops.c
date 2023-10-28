@@ -20,6 +20,7 @@
 #include <cupsfilters/image.h>
 #include <ppd/ppd.h>
 #include <ppd/ppd-filter.h>
+#include <ppd/libcups2-private.h>
 #include <cups/file.h>
 #include <cups/array.h>
 #include <limits.h>
@@ -510,8 +511,8 @@ ppdFilterPSToPS(int inputfd,		// I - File descriptor input stream
 
   if (doc.pages)
   {
-    for (pageinfo = (pstops_page_t *)cupsArrayFirst(doc.pages);
-         pageinfo; pageinfo = (pstops_page_t *)cupsArrayNext(doc.pages))
+    for (pageinfo = (pstops_page_t *)cupsArrayGetFirst(doc.pages);
+         pageinfo; pageinfo = (pstops_page_t *)cupsArrayGetNext(doc.pages))
     {
       if (pageinfo->label)
 	free(pageinfo->label);
@@ -631,7 +632,7 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
   char		curdate[255];		// Current date string
   int		fillprint = 0;		// print-scaling = fill
   int		cropfit = 0;		// -o crop-to-fit = true
-  cups_page_header2_t h;                // CUPS Raster page header, to
+  cups_page_header_t h;                // CUPS Raster page header, to
                                         // accommodate results of command
                                         // line parsing for PPD-less queue
   int		Flip,			// Flip/mirror pages
@@ -699,7 +700,7 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
   //
 
   if (!inputseekable) {
-    if ((fd = cupsTempFd(tempfile, sizeof(tempfile))) < 0)
+    if ((fd = cupsCreateTempFd(NULL, NULL, tempfile, sizeof(tempfile))) < 0)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR,
 		   "ppdFilterImageToPS: Unable to copy input: %s",
@@ -1912,7 +1913,7 @@ add_page(pstops_doc_t *doc,		// I - Document information
 
 
   if (!doc->pages)
-    doc->pages = cupsArrayNew(NULL, NULL);
+    doc->pages = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   if (!doc->pages)
   {
@@ -2395,11 +2396,11 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
   // Finish up the last page(s)...
   //
 
-  if (number && is_not_last_page(number) && cupsArrayLast(doc->pages) &&
+  if (number && is_not_last_page(number) && cupsArrayGetLast(doc->pages) &&
       check_range((number - 1) / doc->number_up + 1, doc->page_ranges,
 		  doc->page_set))
   {
-    pageinfo = (pstops_page_t *)cupsArrayLast(doc->pages);
+    pageinfo = (pstops_page_t *)cupsArrayGetLast(doc->pages);
 
     start_nup(doc, doc->number_up, 0, doc->bounding_box);
     doc_puts(doc, "showpage\n");
@@ -2442,7 +2443,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
   number = doc->slow_order ? 0 : doc->page;
 
   if (doc->temp && (!iscanceled || !iscanceled(icd)) &&
-      cupsArrayCount(doc->pages) > 0)
+      cupsArrayGetCount(doc->pages) > 0)
   {
     int	copy;				// Current copy
 
@@ -2485,7 +2486,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 	//
 
         fputs("%%Trailer\n", doc->outputfp);
-	fprintf(doc->outputfp, "%%%%Pages: %d\n", cupsArrayCount(doc->pages));
+	fprintf(doc->outputfp, "%%%%Pages: %d\n", cupsArrayGetCount(doc->pages));
 	if (doc->number_up > 1 || doc->fit_to_page)
 	  fprintf(doc->outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
 		  doc->PageLeft, doc->PageBottom,
@@ -2514,7 +2515,7 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 
       if (!number)
       {
-        pageinfo = (pstops_page_t *)cupsArrayFirst(doc->pages);
+        pageinfo = (pstops_page_t *)cupsArrayGetFirst(doc->pages);
 	copy_bytes(doc, 0, (size_t)pageinfo->offset);
       }
 
@@ -2522,8 +2523,8 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
       // Then copy all of the pages...
       //
 
-      pageinfo = doc->slow_order ? (pstops_page_t *)cupsArrayLast(doc->pages) :
-                                   (pstops_page_t *)cupsArrayFirst(doc->pages);
+      pageinfo = doc->slow_order ? (pstops_page_t *)cupsArrayGetLast(doc->pages) :
+                                   (pstops_page_t *)cupsArrayGetFirst(doc->pages);
 
       while (pageinfo)
       {
@@ -2560,8 +2561,8 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 	copy_bytes(doc, pageinfo->offset, (size_t)pageinfo->length);
 
 	pageinfo = doc->slow_order ?
-	  (pstops_page_t *)cupsArrayPrev(doc->pages) :
-	  (pstops_page_t *)cupsArrayNext(doc->pages);
+	  (pstops_page_t *)cupsArrayGetPrev(doc->pages) :
+	  (pstops_page_t *)cupsArrayGetNext(doc->pages);
       }
     }
   }
@@ -2832,7 +2833,7 @@ copy_page(pstops_doc_t *doc,		// I - Document info
       return (0);
   }
   else
-    pageinfo = (pstops_page_t *)cupsArrayLast(doc->pages);
+    pageinfo = (pstops_page_t *)cupsArrayGetLast(doc->pages);
 
   //
   // Handle first page override...
@@ -4395,7 +4396,7 @@ set_pstops_options(
 
   if (doc->slow_order || doc->slow_collate)
   {
-    if ((doc->temp = cupsTempFile2(doc->tempfile,
+    if ((doc->temp = cupsTempFile(doc->tempfile,
                                    sizeof(doc->tempfile))) == NULL)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR,

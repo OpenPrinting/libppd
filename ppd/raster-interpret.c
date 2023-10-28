@@ -12,9 +12,10 @@
 // Include necessary headers...
 //
 
-#include "raster-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/raster-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <math.h>
 
 
@@ -84,7 +85,7 @@ static _ppd_ps_obj_t	*ppd_push_stack(_ppd_ps_stack_t *st,
 static int		ppd_roll_stack(_ppd_ps_stack_t *st, int c, int s);
 static _ppd_ps_obj_t	*ppd_scan_ps(_ppd_ps_stack_t *st, char **ptr);
 static int		ppd_setpagedevice(_ppd_ps_stack_t *st,
-			                cups_page_header2_t *h,
+			                cups_page_header_t *h,
 			                int *preferred_bits);
 #ifdef DEBUG
 static void		ppd_DEBUG_object(const char *prefix, _ppd_ps_obj_t *obj);
@@ -108,7 +109,7 @@ static void		ppd_DEBUG_stack(const char *prefix, _ppd_ps_stack_t *st);
 //
 // The "func" argument specifies an optional callback function that is
 // called prior to the computation of the final raster data.  The function
-// can make changes to the @link cups_page_header2_t@ data as needed to use a
+// can make changes to the @link cups_page_header_t@ data as needed to use a
 // supported raster format and then returns 0 on success and -1 if the
 // requested attributes cannot be supported.
 //
@@ -124,7 +125,7 @@ static void		ppd_DEBUG_stack(const char *prefix, _ppd_ps_stack_t *st);
 
 int					// O - 0 on success, -1 on failure
 ppdRasterInterpretPPD(
-    cups_page_header2_t *h,		// O - Page header to create
+    cups_page_header_t *h,		// O - Page header to create
     ppd_file_t          *ppd,		// I - PPD file
     int                 num_options,	// I - Number of options
     cups_option_t       *options,	// I - Options
@@ -159,7 +160,7 @@ ppdRasterInterpretPPD(
   // Reset the page header to the defaults...
   //
 
-  memset(h, 0, sizeof(cups_page_header2_t));
+  memset(h, 0, sizeof(cups_page_header_t));
 
   h->NumCopies                   = 1;
   h->PageSize[0]                 = 612;
@@ -503,7 +504,7 @@ ppdRasterInterpretPPD(
 
 int     				// O - 0 on success, -1 on failure
 ppdRasterMatchPPDSize(
-    cups_page_header2_t *header,	// I - Page header to match
+    cups_page_header_t *header,	// I - Page header to match
     ppd_file_t  	*ppd,   	// I - PPD file
     double		margins[4],	// O - Margins of media in points
     double		dimensions[2],	// O - Width and Length of media in points
@@ -659,7 +660,7 @@ ppdRasterMatchPPDSize(
 
 int					// O - 0 on success, -1 on error
 ppdRasterExecPS(
-    cups_page_header2_t *h,		// O - Page header
+    cups_page_header_t *h,		// O - Page header
     int                 *preferred_bits,// O - Preferred bits per color
     const char          *code)		// I - PS code to execute
 {
@@ -1552,7 +1553,7 @@ ppd_scan_ps(_ppd_ps_stack_t  *st,	// I  - Stack
 static int				// O - 0 on success, -1 on error
 ppd_setpagedevice(
     _ppd_ps_stack_t     *st,		// I - Stack
-    cups_page_header2_t *h,		// O - Page header
+    cups_page_header_t *h,		// O - Page header
     int                 *preferred_bits)// O - Preferred bits per color
 {
   int			i;		// Index into array

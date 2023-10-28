@@ -23,7 +23,8 @@
 #include <string.h>
 #include <limits.h>
 #include <signal.h>
-#include "debug-internal.h"
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <zlib.h>
 
 //
@@ -229,7 +230,7 @@ convert_pixels(unsigned char *pixdata,      // I - Original pixel data
 
 static int                              // O - Error value
 write_flate(cups_raster_t *ras,	        // I - Image data
-	    cups_page_header2_t	header,	// I - Bytes Per Line
+	    cups_page_header_t	header,	// I - Bytes Per Line
 	    rastertops_doc_t *doc)      // I - Document information
 {
   int            ret,                              // Return value of this
@@ -406,7 +407,7 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
   cups_file_t	       *inputfp;    // Print file
   FILE                 *outputfp;   // Output data stream
   cups_raster_t	       *ras;        // Raster stream for printing
-  cups_page_header2_t  header;      // Page header from file
+  cups_page_header_t  header;      // Page header from file
   int                  empty,       // Is the input empty?
                        Page = 0,    // variable for counting the pages
                        ret;         // Return value of deflate compression
@@ -469,7 +470,7 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
   Page = 0;
   empty = 1;
 
-  while (cupsRasterReadHeader2(ras, &header))
+  while (cupsRasterReadHeader(ras, &header))
   {
     if (iscanceled && iscanceled(icd))
     {

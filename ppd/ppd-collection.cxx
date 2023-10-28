@@ -18,10 +18,11 @@
 
 #include <cups/dir.h>
 #include <cups/transcode.h>
-#include "ppd.h"
-#include "ppdc.h"
-#include "file-private.h"
-#include "array-private.h"
+#include <ppd/ppd.h>
+#include <ppd/ppdc.h>
+#include <ppd/file-private.h>
+#include <ppd/array-private.h>
+#include <ppd/lib
 #include <regex.h>
 #include <sys/wait.h>
 
@@ -86,7 +87,7 @@ typedef struct
   int		ChangedPPD;	// Did we change the PPD database?
 } ppd_list_t;
 
-//typedef int (*cupsd_compare_func_t)(const void *, const void *);
+//typedef int (*cupsd_compare_cb_t)(const void *, const void *);
 
 
 //
@@ -226,9 +227,9 @@ ppdCollectionListPPDs(
   // Initialize PPD list...
   //
 
-  ppdlist.PPDsByName      = cupsArrayNew((cups_array_func_t)compare_names,
+  ppdlist.PPDsByName      = cupsArrayNew((cups_array_cb_t)compare_names,
 					  NULL);
-  ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_func_t)compare_ppds,
+  ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_cb_t)compare_ppds,
 					  NULL);
   ppdlist.ChangedPPD      = 0;
 
@@ -249,11 +250,11 @@ ppdCollectionListPPDs(
   // Load all PPDs in the specified directories and below...
   //
 
-  ppdlist.Inodes = cupsArrayNew((cups_array_func_t)compare_inodes, NULL);
+  ppdlist.Inodes = cupsArrayNew((cups_array_cb_t)compare_inodes, NULL);
 
-  for (col = (ppd_collection_t *)cupsArrayFirst(ppd_collections);
+  for (col = (ppd_collection_t *)cupsArrayGetFirst(ppd_collections);
        col;
-       col = (ppd_collection_t *)cupsArrayNext(ppd_collections))
+       col = (ppd_collection_t *)cupsArrayGetNext(ppd_collections))
     load_ppds(col->path, col->name ? col->name : col->path, 1, &ppdlist,
 	      log, ld);
 
@@ -263,9 +264,9 @@ ppdCollectionListPPDs(
     // Cull PPD files that are no longer present...
     //
 
-    for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByName), i = 0;
+    for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByName), i = 0;
 	 ppd;
-	 ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByName), i ++)
+	 ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByName), i ++)
       if (!ppd->found)
       {
 	//
@@ -299,9 +300,9 @@ ppdCollectionListPPDs(
 
 	cupsFileWrite(fp, (char *)&ppdsync, sizeof(ppdsync));
 
-	for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByName);
+	for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByName);
 	     ppd;
-	     ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByName))
+	     ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByName))
 	  cupsFileWrite(fp, (char *)&(ppd->record), sizeof(ppd_rec_t));
 
 	cupsFileClose(fp);
@@ -315,7 +316,7 @@ ppdCollectionListPPDs(
 	else
 	  if (log) log(ld, CF_LOGLEVEL_INFO,
 		       "libppd: [PPD Collections] Wrote \"%s\", %d PPDs...",
-		       cachename, cupsArrayCount(ppdlist.PPDsByName));
+		       cachename, cupsArrayGetCount(ppdlist.PPDsByName));
       }
       else
 	if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -389,15 +390,15 @@ ppdCollectionListPPDs(
 		 "libppd: [PPD Collections] %s=\"%s\"", options[i].name,
 		 options[i].value);
 
-  if (limit <= 0 || limit > cupsArrayCount(ppdlist.PPDsByMakeModel))
-    count = cupsArrayCount(ppdlist.PPDsByMakeModel);
+  if (limit <= 0 || limit > cupsArrayGetCount(ppdlist.PPDsByMakeModel))
+    count = cupsArrayGetCount(ppdlist.PPDsByMakeModel);
   else
     count = limit;
 
   if (device_id || language || make || make_and_model || model_number_str ||
       product)
   {
-    matches = cupsArrayNew((cups_array_func_t)compare_matches, NULL);
+    matches = cupsArrayNew((cups_array_cb_t)compare_matches, NULL);
     matches_array_created = 1;
 
     if (device_id)
@@ -410,9 +411,9 @@ ppdCollectionListPPDs(
     else
       make_and_model_re = NULL;
 
-    for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByMakeModel);
+    for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByMakeModel);
 	 ppd;
-	 ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByMakeModel))
+	 ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByMakeModel))
     {
       //
       // Filter PPDs based on make, model, product, language, model number,
@@ -531,12 +532,12 @@ ppdCollectionListPPDs(
   }
   else if (include || exclude)
   {
-    matches = cupsArrayNew((cups_array_func_t)compare_ppds, NULL);
+    matches = cupsArrayNew((cups_array_cb_t)compare_ppds, NULL);
     matches_array_created = 1;
 
-    for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByMakeModel);
+    for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByMakeModel);
 	 ppd;
-	 ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByMakeModel))
+	 ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByMakeModel))
     {
       //
       // Filter PPDs based on the include/exclude lists.
@@ -558,9 +559,9 @@ ppdCollectionListPPDs(
 
   result = cupsArrayNew(NULL, NULL);
 
-  for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByMakeModel), i = 0;
+  for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByMakeModel), i = 0;
        count > 0 && ppd;
-       ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByMakeModel), i ++)
+       ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByMakeModel), i ++)
   {
     //
     // Skip invalid PPDs...
@@ -600,13 +601,13 @@ ppdCollectionListPPDs(
 
 
       for (this_make = ppd->record.make,
-               ppd = (ppd_info_t *)cupsArrayNext(matches);
+               ppd = (ppd_info_t *)cupsArrayGetNext(matches);
 	   ppd;
-	   ppd = (ppd_info_t *)cupsArrayNext(matches))
+	   ppd = (ppd_info_t *)cupsArrayGetNext(matches))
 	if (_ppd_strcasecmp(this_make, ppd->record.make))
 	  break;
 
-      cupsArrayPrev(matches);
+      cupsArrayGetPrev(matches);
     }
   }
 
@@ -664,9 +665,9 @@ ppdCollectionGetPPD(
 
   if (ppd_collections)
   {
-    for (col = (ppd_collection_t *)cupsArrayFirst(ppd_collections);
+    for (col = (ppd_collection_t *)cupsArrayGetFirst(ppd_collections);
 	 col;
-	 col = (ppd_collection_t *)cupsArrayNext(ppd_collections))
+	 col = (ppd_collection_t *)cupsArrayGetNext(ppd_collections))
     {
       if (col->name)
       {
@@ -773,7 +774,7 @@ ppdCollectionGetPPD(
 
     if ((fp = PipeCommand(&cpid, &epid, realname, argv, 0, log, ld)) != NULL)
     {
-      if ((fd = cupsTempFd(tempname, sizeof(tempname))) < 0)
+      if ((fd = cupsCreateTempFd(NULL, NULL, tempname, sizeof(tempname))) < 0)
       {
 	if (log) log(ld, CF_LOGLEVEL_ERROR,
 		     "libppd: [PPD Collections] Unable to copy PPD to temp "
@@ -824,9 +825,9 @@ ppdCollectionDumpCache(const char *filename,	// I - Filename
   //
 
   ppdlist.Inodes = NULL;
-  ppdlist.PPDsByName      = cupsArrayNew((cups_array_func_t)compare_names,
+  ppdlist.PPDsByName      = cupsArrayNew((cups_array_cb_t)compare_names,
 					  NULL);
-  ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_func_t)compare_ppds,
+  ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_cb_t)compare_ppds,
 					  NULL);
   ppdlist.ChangedPPD      = 0;
 
@@ -843,9 +844,9 @@ ppdCollectionDumpCache(const char *filename,	// I - Filename
 
   puts("mtime,size,model_number,type,filename,name,languages0,products0,"
        "psversions0,make,make_and_model,device_id,scheme");
-  for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist.PPDsByName);
+  for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByName);
        ppd;
-       ppd = (ppd_info_t *)cupsArrayNext(ppdlist.PPDsByName))
+       ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByName))
     printf("%d,%ld,%d,%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
            "\"%s\",\"%s\"\n",
            (int)ppd->record.mtime, (long)ppd->record.size,
@@ -894,7 +895,7 @@ add_ppd(const char *filename,		// I - PPD filename
     if (log) log(ld, CF_LOGLEVEL_ERROR,
 		 "libppd: [PPD Collections] Ran out of memory for %d PPD "
 		 "files!",
-		 cupsArrayCount(ppdlist->PPDsByName));
+		 cupsArrayGetCount(ppdlist->PPDsByName));
     return (NULL);
   }
 
@@ -985,7 +986,7 @@ cat_drv(const char *filename,		// I - *.drv file name
     ppdcCatalog	*catalog;		// Message catalog in .drv file
 
 
-    if ((fd = cupsTempFd(tempname, sizeof(tempname))) < 0)
+    if ((fd = cupsCreateTempFd(NULL, NULL, tempname, sizeof(tempname))) < 0)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR,
 		   "libppd: [PPD Collections] Unable to copy PPD to temp "
@@ -1104,7 +1105,7 @@ cat_tar(const char *filename,		// I - Archive name
 
     if (!strcmp(ppdname, curname))
     {
-      if ((fd = cupsTempFd(tempname, sizeof(tempname))) < 0)
+      if ((fd = cupsCreateTempFd(NULL, NULL, tempname, sizeof(tempname))) < 0)
       {
 	if (log) log(ld, CF_LOGLEVEL_ERROR,
 		     "libppd: [PPD Collections] Unable to copy PPD to temp "
@@ -1252,9 +1253,9 @@ free_array(cups_array_t *a)		// I - Array to free
   char	*ptr;				// Pointer to string
 
 
-  for (ptr = (char *)cupsArrayFirst(a);
+  for (ptr = (char *)cupsArrayGetFirst(a);
        ptr;
-       ptr = (char *)cupsArrayNext(a))
+       ptr = (char *)cupsArrayGetNext(a))
     free(ptr);
 
   cupsArrayDelete(a);
@@ -1272,15 +1273,15 @@ free_ppdlist(ppd_list_t *ppdlist)	// I - PPD list to free
   ppd_info_t	*ppd;			// Pointer to PPD info
 
 
-  for (dinfoptr = (struct stat *)cupsArrayFirst(ppdlist->Inodes);
+  for (dinfoptr = (struct stat *)cupsArrayGetFirst(ppdlist->Inodes);
        dinfoptr;
-       dinfoptr = (struct stat *)cupsArrayNext(ppdlist->Inodes))
+       dinfoptr = (struct stat *)cupsArrayGetNext(ppdlist->Inodes))
     free(dinfoptr);
   cupsArrayDelete(ppdlist->Inodes);
 
-  for (ppd = (ppd_info_t *)cupsArrayFirst(ppdlist->PPDsByName);
+  for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist->PPDsByName);
        ppd;
-       ppd = (ppd_info_t *)cupsArrayNext(ppdlist->PPDsByName))
+       ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist->PPDsByName))
     free(ppd);
   cupsArrayDelete(ppdlist->PPDsByName);
   cupsArrayDelete(ppdlist->PPDsByMakeModel);
@@ -1798,7 +1799,7 @@ load_ppd(const char  *filename,		// I - Real filename
       //
 
       if (!install_group && (model_name[0] || nick_name[0]) &&
-	  cupsArrayCount(products) > 0 && cupsArrayCount(psversions) > 0)
+	  cupsArrayGetCount(products) > 0 && cupsArrayGetCount(psversions) > 0)
 	break;
     }
   }
@@ -1816,8 +1817,8 @@ load_ppd(const char  *filename,		// I - Real filename
   while (isspace(make_model[0] & 255))
     _ppd_strcpy(make_model, make_model + 1);
 
-  if (!make_model[0] || cupsArrayCount(products) == 0 ||
-      cupsArrayCount(psversions) == 0)
+  if (!make_model[0] || cupsArrayGetCount(products) == 0 ||
+      cupsArrayGetCount(psversions) == 0)
   {
     //
     // We don't have all the info needed, so skip this file...
@@ -1829,12 +1830,12 @@ load_ppd(const char  *filename,		// I - Real filename
 		   "in %s!",
 		   filename);
 
-    if (cupsArrayCount(products) == 0)
+    if (cupsArrayGetCount(products) == 0)
       if (log) log(ld, CF_LOGLEVEL_WARN,
 		   "libppd: [PPD Collections] Missing Product in %s!",
 		   filename);
 
-    if (cupsArrayCount(psversions) == 0)
+    if (cupsArrayGetCount(psversions) == 0)
       if (log) log(ld, CF_LOGLEVEL_WARN,
 		   "libppd: [PPD Collections] Missing PSVersion in %s!",
 		   filename);
@@ -1960,8 +1961,8 @@ load_ppd(const char  *filename,		// I - Real filename
 		 "libppd: [PPD Collections] Adding PPD \"%s\"...", name);
 
     ppd = add_ppd(filename, name, lang_version, manufacturer, make_model,
-		  device_id, (char *)cupsArrayFirst(products),
-		  (char *)cupsArrayFirst(psversions), fileinfo->st_mtime,
+		  device_id, (char *)cupsArrayGetFirst(products),
+		  (char *)cupsArrayGetFirst(psversions), fileinfo->st_mtime,
 		  (size_t)fileinfo->st_size, model_number, type, scheme,
 		  ppdlist, log, ld);
 
@@ -1989,9 +1990,9 @@ load_ppd(const char  *filename,		// I - Real filename
     strlcpy(ppd->record.name, name, sizeof(ppd->record.name));
     strlcpy(ppd->record.languages[0], lang_version,
 	    sizeof(ppd->record.languages[0]));
-    strlcpy(ppd->record.products[0], (char *)cupsArrayFirst(products),
+    strlcpy(ppd->record.products[0], (char *)cupsArrayGetFirst(products),
 	    sizeof(ppd->record.products[0]));
-    strlcpy(ppd->record.psversions[0], (char *)cupsArrayFirst(psversions),
+    strlcpy(ppd->record.psversions[0], (char *)cupsArrayGetFirst(psversions),
 	    sizeof(ppd->record.psversions[0]));
     strlcpy(ppd->record.make, manufacturer, sizeof(ppd->record.make));
     strlcpy(ppd->record.make_and_model, make_model,
@@ -2005,20 +2006,20 @@ load_ppd(const char  *filename,		// I - Real filename
   //
 
   for (i = 1;
-       i < PPD_MAX_PROD && (ptr = (char *)cupsArrayNext(products)) != NULL;
+       i < PPD_MAX_PROD && (ptr = (char *)cupsArrayGetNext(products)) != NULL;
        i ++)
     strlcpy(ppd->record.products[i], ptr,
 	    sizeof(ppd->record.products[0]));
 
   for (i = 1;
-       i < PPD_MAX_VERS && (ptr = (char *)cupsArrayNext(psversions)) != NULL;
+       i < PPD_MAX_VERS && (ptr = (char *)cupsArrayGetNext(psversions)) != NULL;
        i ++)
     strlcpy(ppd->record.psversions[i], ptr,
 	    sizeof(ppd->record.psversions[0]));
 
-  for (i = 1, ptr = (char *)cupsArrayFirst(cups_languages);
+  for (i = 1, ptr = (char *)cupsArrayGetFirst(cups_languages);
        i < PPD_MAX_LANG && ptr;
-       i ++, ptr = (char *)cupsArrayNext(cups_languages))
+       i ++, ptr = (char *)cupsArrayGetNext(cups_languages))
     strlcpy(ppd->record.languages[i], ptr,
 	    sizeof(ppd->record.languages[0]));
 
@@ -2180,14 +2181,14 @@ load_ppds(const char *d,		// I - Actual directory
       // Rewind to the first entry for this file...
       //
 
-      while ((ppd = (ppd_info_t *)cupsArrayPrev(ppdlist->PPDsByName)) != NULL &&
+      while ((ppd = (ppd_info_t *)cupsArrayGetPrev(ppdlist->PPDsByName)) != NULL &&
 	     !strcmp(ppd->record.filename, filename));
 
       //
       // Then mark all of the matches for this file as found...
       //
 
-      while ((ppd = (ppd_info_t *)cupsArrayNext(ppdlist->PPDsByName)) != NULL &&
+      while ((ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist->PPDsByName)) != NULL &&
 	     !strcmp(ppd->record.filename, filename))
         ppd->found = 1;
 
@@ -2322,7 +2323,7 @@ load_ppds_dat(const char *filename,	// I - Filename
       if (verbose)
 	if (log) log(ld, CF_LOGLEVEL_INFO,
 		     "libppd: [PPD Collections] Read \"%s\", %d PPDs...",
-		     filename, cupsArrayCount(ppdlist->PPDsByName));
+		     filename, cupsArrayGetCount(ppdlist->PPDsByName));
     }
 
     cupsFileClose(fp);

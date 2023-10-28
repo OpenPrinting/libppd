@@ -12,10 +12,11 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "language-private.h"
-#include "thread-private.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/language-private.h>
+#include <ppd/thread-private.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>
 #endif // HAVE_LANGINFO_H
@@ -378,7 +379,7 @@ _ppdMessageLoad(const char *filename,	// I - Message catalog to load
   cupsFileClose(fp);
 
   DEBUG_printf(("5_ppdMessageLoad: Returning %d messages...",
-		cupsArrayCount(a)));
+		cupsArrayGetCount(a)));
 
   return (a);
 }
@@ -462,10 +463,10 @@ _ppdMessageLookup(cups_array_t *a,	// I - Message array
 cups_array_t *				// O - Array
 _ppdMessageNew(void *context)		// I - User data
 {
-  return (cupsArrayNew3((cups_array_func_t)ppd_message_compare, context,
+  return (cupsArrayNew3((cups_array_cb_t )ppd_message_compare, context,
                         (cups_ahash_func_t)NULL, 0,
-			(cups_acopy_func_t)NULL,
-			(cups_afree_func_t)ppd_message_free));
+			(cups_acopy_cb_t)NULL,
+			(cups_afree_cb_t)ppd_message_free));
 }
 
 

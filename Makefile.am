@@ -86,6 +86,7 @@ libppd_la_SOURCES = \
 	ppd/ipp-private.h \
 	ppd/language.c \
 	ppd/language-private.h \
+	ppd/libcups2-private.h \
 	ppd/pdftops.c \
 	ppd/raster-interpret.c \
 	ppd/raster-error.c \

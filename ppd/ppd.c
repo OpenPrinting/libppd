@@ -2155,9 +2155,9 @@ ppdOpenWithLocalization(
   // each choice and custom option...
   //
 
-  ppd->options = cupsArrayNew2((cups_array_cb_t)ppd_compare_options, NULL,
+  ppd->options = cupsArrayNew((cups_array_cb_t)ppd_compare_options, NULL,
                                (cups_ahash_cb_t)ppd_hash_option,
-			       PPD_HASHSIZE);
+			       PPD_HASHSIZE, NULL, NULL);
 
   for (i = ppd->num_groups, group = ppd->groups;
        i > 0;

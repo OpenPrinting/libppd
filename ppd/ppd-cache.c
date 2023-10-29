@@ -14,7 +14,6 @@
 #include <ppd/string-private.h>
 #include <ppd/array-private.h>
 #include <ppd/ipp-private.h>
-#include <ppd/language-private.h>
 #include <ppd/ppd.h>
 #include <ppd/debug-internal.h>
 #include <ppd/libcups2-private.h>
@@ -38,18 +37,39 @@
 #define IPP_FINISHINGS_FOLD_ACCORDION IPP_FINISHINGS_FOLD_ACCORDIAN
 #endif
 
+//
+// Macro for localized text...
+//
+
+#  define _(x) x
+
 
 //
-// Local cbtions...
+// Types...
+//
+
+typedef struct _ppd_ui_string_s		// **** UI string list entry ****
+{
+  char	*name,				// Machine-readable option name/
+                                        // PWG name
+	*ui_str;			// Human-readable UI string
+} _ppd_ui_string_t;
+
+
+//
+// Local functions...
 //
 
 static const char *ppd_inputslot_for_keyword(ppd_cache_t *pc,
 					     const char *keyword);
+static void	ppd_ui_string_add(cups_array_t *a, const char *msg,
+				    const char *str);
+static int	ppd_ui_string_compare(_ppd_ui_string_t *m1, _ppd_ui_string_t *m2);
+static void	ppd_ui_string_free(_ppd_ui_string_t *m);
+static cups_array_t *ppd_ui_strings_new(void *context);
 static void	ppd_pwg_add_finishing(cups_array_t *finishings,
 				      ipp_finishings_t template,
 				      const char *name, const char *value);
-static void	ppd_pwg_add_message(cups_array_t *a, const char *msg,
-				    const char *str);
 static int	ppd_pwg_compare_finishings(ppd_pwg_finishings_t *a,
 					   ppd_pwg_finishings_t *b);
 static void	ppd_pwg_free_finishings(ppd_pwg_finishings_t *f);
@@ -58,7 +78,7 @@ char            *ppd_cache_status_message = NULL; // Last PPD cache error
 
 
 //
-// 'set_error()' - Set the last status-message of PPD cache cbtions.
+// 'set_error()' - Set the last status-message of PPD cache functions.
 //
 
 static void
@@ -87,7 +107,7 @@ set_error(const char   *message,	// I - status-message value
      //
 
       ppd_cache_status_message =
-	_ppdStrAlloc(_ppdLangString(cupsLangDefault(),
+	_ppdStrAlloc(cupsLangGetString(cupsLangDefault(),
 				      message));
     }
     else
@@ -101,7 +121,7 @@ set_error(const char   *message,	// I - status-message value
 //
 // 'ppdConvertOptions()' - Convert printer options to standard IPP attributes.
 //
-// This cbtions converts PPD and CUPS-specific options to their standard IPP
+// This functions converts PPD and CUPS-specific options to their standard IPP
 // attributes and values and adds them to the specified IPP request.
 //
 
@@ -593,7 +613,7 @@ ppdConvertOptions(
 // 'ppdCacheCreateWithFile()' - Create PPD cache and mapping data from a
 //                               written file.
 //
-// Use the @link ppdCacheWriteFile@ cbtion to write PWG mapping data to a
+// Use the @link ppdCacheWriteFile@ function to write PWG mapping data to a
 // file.
 //
 
@@ -1241,7 +1261,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   pwg_size_t		*new_size;	// New size to add, if any
   const char		*filter;	// Current filter
   ppd_pwg_finishings_t	*finishings;	// Current finishings value
-  char			msg_id[256];	// Message identifier
+  char			id[256];	// UI string Identifier
 
 
   DEBUG_printf(("ppdCacheCreateWithPPD(ppd=%p)", ppd));
@@ -1263,7 +1283,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     goto create_error;
   }
 
-  pc->strings = _ppdMessageNew(NULL);
+  pc->strings = ppd_ui_strings_new(NULL);
 
   //
   // Copy and convert size data...
@@ -1536,8 +1556,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "media-source.%s", pwg_name);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "media-source.%s", pwg_name);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1659,8 +1679,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "media-type.%s", map->pwg);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "media-type.%s", map->pwg);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1694,8 +1714,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "output-bin.%s", pwg_keyword);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "output-bin.%s", pwg_keyword);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1724,8 +1744,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "preset-name.%s", ppd_attr->spec);
-      ppd_pwg_add_message(pc->strings, msg_id, ppd_attr->text);
+      snprintf(id, sizeof(id), "preset-name.%s", ppd_attr->spec);
+      ppd_ui_string_add(pc->strings, id, ppd_attr->text);
 
       //
       // Get the options for this preset...
@@ -2241,8 +2261,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "finishing-template.%s", choice->choice);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "finishing-template.%s", choice->choice);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -3641,7 +3661,7 @@ ppdCacheGetInputSlot(
     ipp_attribute_t	*media_col,	// media-col attribute
 			*media_source;	// media-source attribute
     pwg_size_t		size;		// Dimensional size
-    int			margins_set;	// Were the margins set?
+    cups_bool_t		margins_set;	// Were the margins set?
 
     media_col = ippFindAttribute(job, "media-col", IPP_TAG_BEGIN_COLLECTION);
     if (media_col &&
@@ -3780,8 +3800,8 @@ ppdCacheGetPageSize(
 		*variant,		// Page size variant
 		*closest,		// Closest size
 		jobsize;		// Size data from job
-  int		margins_set,		// Were the margins set?
-		dwidth,			// Difference in width
+  cups_bool_t	margins_set;		// Were the margins set?
+  int		dwidth,			// Difference in width
 		dlength,		// Difference in length
 		dleft,			// Difference in left margins
 		dright,			// Difference in right margins
@@ -4628,6 +4648,71 @@ ppdPwgPageSizeForMedia(
 
 
 //
+// 'ppd_ui_string_add()' - Add an entry to the PPD-cached UI strings list.
+//
+
+static void
+ppd_ui_string_add(cups_array_t *l,	// I - UI string list
+		  const char   *name,	// I - Machine-readable name
+		  const char   *ui_str) // I - UI string
+{
+  _ppd_ui_string_t	*u;		// New entry
+
+
+  if ((u = calloc(1, sizeof(_ppd_ui_string_t))) != NULL)
+  {
+    u->name = strdup(name);
+    u->ui_str = strdup(ui_str);
+    cupsArrayAdd(l, u);
+  }
+}
+
+
+//
+// 'ppd_ui_string_compare()' - Compare two messages.
+//
+
+static int			// O - Result of comparison
+ppd_ui_string_compare(
+    _ppd_ui_string_t *u1,	// I - First UI-string entry
+    _ppd_ui_string_t *u2)	// I - Second UI-string entry
+{
+  return (strcmp(u1->name, u2->name));
+}
+
+
+//
+// 'ppd_ui_string_free()' - Free a message.
+//
+
+static void
+ppd_ui_string_free(_ppd_ui_string_t *u)	// I - UI-string entry
+{
+  if (u->name)
+    free(u->name);
+
+  if (u->ui_str)
+    free(u->ui_str);
+
+  free(u);
+}
+
+
+//
+// 'ppd_ui_strings_new()' - Make a new message catalog array.
+//
+
+static cups_array_t *			// O - Array
+ppd_ui_strings_new(void *context)	// I - User data
+{
+  return (cupsArrayNew((cups_array_cb_t )ppd_ui_string_compare, context,
+                       (cups_ahash_cb_t)NULL, 0,
+		       (cups_acopy_cb_t)NULL,
+		       (cups_afree_cb_t)ppd_ui_string_free));
+}
+
+
+//
 // 'ppd_pwg_add_finishing()' - Add a finishings value.
 //
 
@@ -4648,27 +4733,6 @@ ppd_pwg_add_finishing(
     f->num_options = cupsAddOption(name, value, 0, &f->options);
 
     cupsArrayAdd(finishings, f);
-  }
-}
-
-
-//
-// 'ppd_pwg_add_message()' - Add a message to the PPD cached strings.
-//
-
-static void
-ppd_pwg_add_message(cups_array_t *a,	// I - Message catalog
-                const char   *msg,	// I - Message identifier
-                const char   *str)	// I - Localized string
-{
-  _ppd_message_t	*m;		// New message
-
-
-  if ((m = calloc(1, sizeof(_ppd_message_t))) != NULL)
-  {
-    m->msg = strdup(msg);
-    m->str = strdup(str);
-    cupsArrayAdd(a, m);
   }
 }
 

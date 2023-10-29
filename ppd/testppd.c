@@ -1250,7 +1250,7 @@ main(int  argc,				// I - Number of command-line arguments
     {
       if (cupsGetOption("only-makes", num_options, options))
       {
-	printf("Found %d manufacturers.\n\n", cupsArrayGetCount(ppds));
+	printf("Found %d manufacturers.\n\n", (int)cupsArrayGetCount(ppds));
 	for (s = (char *)cupsArrayGetFirst(ppds);
 	     s;
 	     s = (char *)cupsArrayGetNext(ppds))
@@ -1259,7 +1259,7 @@ main(int  argc,				// I - Number of command-line arguments
       else
       {
 	ppd_info_t *ppd;
-	printf("Found %d PPD files.\n\n", cupsArrayGetCount(ppds));
+	printf("Found %d PPD files.\n\n", (int)cupsArrayGetCount(ppds));
 	puts("mtime,size,model_number,type,filename,name,languages0,products0,"
 	     "psversions0,make,make_and_model,device_id,scheme");
 	for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppds);

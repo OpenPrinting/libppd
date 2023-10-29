@@ -15,25 +15,23 @@
 //   information.
 //
 
+//
+// Include necessary headers.
+//
+
 #include <config.h>
-#include <limits.h>
 #include <cups/cups.h>
 #include <cups/dir.h>
+#include <cups/pwg.h>
 #include <ppd/ppd.h>
 #include <ppd/string-private.h>
 #include <ppd/libcups2-private.h>
 #include <cupsfilters/ipp.h>
 #include <cupsfilters/catalog.h>
-
-
-//
-// Include necessary headers.
-//
-
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
-#include <cups/pwg.h>
 
 
 //
@@ -44,6 +42,27 @@
 #define IPP_FINISHINGS_CUPS_FOLD_ACCORDION IPP_FINISHINGS_CUPS_FOLD_ACCORDIAN
 #define IPP_FINISHINGS_FOLD_ACCORDION IPP_FINISHINGS_FOLD_ACCORDIAN
 #endif
+
+
+//
+// Types...
+//
+
+typedef struct _ppd_size_s                // **** Media Size (cups_size_t of libcups2) ****
+{
+  char          media[128];             // Media name to use
+  int           width,                  // Width in hundredths of millimeters
+                length,                 // Length in hundredths of
+                                        // millimeters
+                bottom,                 // Bottom margin in hundredths of
+                                        // millimeters
+                left,                   // Left margin in hundredths of
+                                        // millimeters
+                right,                  // Right margin in hundredths of
+                                        // millimeters
+                top;                    // Top margin in hundredths of
+                                        // millimeters
+} _ppd_size_t;
 
 
 //
@@ -190,7 +209,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 {
   cups_file_t		*fp;		// PPD file
   cups_array_t		*printer_sizes;	// Media sizes we've added
-  cups_size_t		*size;		// Current media size
+  _ppd_size_t		*size;		// Current media size
   ipp_attribute_t	*attr,		// xxx-supported
                         *attr2,
 			*lang_supp,	// printer-strings-languages-supported
@@ -244,7 +263,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   char			*defaultoutbin = NULL;
   const char		*outbin;
   char			outbin_properties[1024];
-  int			octet_str_len;
+  cups_len_t		octet_str_len;
   void			*outbin_properties_octet;
   int			outputorderinfofound = 0,
 			faceupdown = 1,
@@ -277,7 +296,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   // Open a temporary file for the PPD...
   //
 
-  if ((fp = cupsTempFile(buffer, (int)bufsize)) == NULL)
+  if ((fp = cupsCreateTempFile(NULL, NULL, buffer, (int)bufsize)) == NULL)
   {
     if (status_msg && status_msg_size)
       snprintf(status_msg, status_msg_size, "%s", strerror(errno));
@@ -1058,8 +1077,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 
     // Find a page size without ".Borderless" suffix
     // (if all are ".Borderless" we drop the suffix in the PPD)
-    for (size = (cups_size_t *)cupsArrayGetFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayGetNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
       if (strcasestr(size->media, ".Borderless") == NULL)
 	break;
     if (size)
@@ -1075,8 +1094,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*OpenUI *PageSize/%s: PickOne\n"
 		   "*OrderDependency: 10 AnySetup *PageSize\n"
 		   "*DefaultPageSize: %s\n", "Media Size", ppdname);
-    for (size = (cups_size_t *)cupsArrayGetFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayGetNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(twidth, twidth + sizeof(twidth),
 		      size->width * 72.0 / 2540.0, loc);
@@ -1124,8 +1143,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*OpenUI *PageRegion/%s: PickOne\n"
 		   "*OrderDependency: 10 AnySetup *PageRegion\n"
 		   "*DefaultPageRegion: %s\n", "Media Size", ppdname);
-    for (size = (cups_size_t *)cupsArrayGetFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayGetNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(twidth, twidth + sizeof(twidth),
 		      size->width * 72.0 / 2540.0, loc);
@@ -1173,8 +1192,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*DefaultImageableArea: %s\n"
 		   "*DefaultPaperDimension: %s\n", ppdname, ppdname);
 
-    for (size = (cups_size_t *)cupsArrayGetFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayGetNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(tleft, tleft + sizeof(tleft),
 		      size->left * 72.0 / 2540.0, loc);
@@ -2810,10 +2829,10 @@ http_connect(http_t     **http,		// IO - Current HTTP connection
   else
     encryption = HTTP_ENCRYPTION_IF_REQUESTED;
 
-  if (!*http || strcasecmp(host, httpGetHostname(*http, curhost, sizeof(curhost))) || httpAddrPort(httpGetAddress(*http)) != port || httpIsEncrypted(*http) != (encryption == HTTP_ENCRYPTION_ALWAYS))
+  if (!*http || strcasecmp(host, httpGetHostname(*http, curhost, sizeof(curhost))) || httpAddrGetPort(httpGetAddress(*http)) != port || httpIsEncrypted(*http) != (encryption == HTTP_ENCRYPTION_ALWAYS))
   {
     httpClose(*http);
-    *http = httpConnect2(host, port, NULL, AF_UNSPEC, encryption, 1, 5000, NULL);
+    *http = httpConnect(host, port, NULL, AF_UNSPEC, encryption, 1, 5000, NULL);
   }
 
   return (*http != NULL);

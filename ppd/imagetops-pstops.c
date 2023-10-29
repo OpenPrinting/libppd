@@ -2486,7 +2486,8 @@ copy_dsc(pstops_doc_t *doc,		// I - Document info
 	//
 
         fputs("%%Trailer\n", doc->outputfp);
-	fprintf(doc->outputfp, "%%%%Pages: %d\n", cupsArrayGetCount(doc->pages));
+	fprintf(doc->outputfp, "%%%%Pages: %d\n",
+		(int)cupsArrayGetCount(doc->pages));
 	if (doc->number_up > 1 || doc->fit_to_page)
 	  fprintf(doc->outputfp, "%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
 		  doc->PageLeft, doc->PageBottom,
@@ -4396,8 +4397,8 @@ set_pstops_options(
 
   if (doc->slow_order || doc->slow_collate)
   {
-    if ((doc->temp = cupsTempFile(doc->tempfile,
-                                   sizeof(doc->tempfile))) == NULL)
+    if ((doc->temp = cupsCreateTempFile(NULL, NULL, doc->tempfile,
+					sizeof(doc->tempfile))) == NULL)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR,
 		   "ppdFilterPSToPS: Unable to create temporary file: %s",

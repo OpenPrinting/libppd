@@ -15,7 +15,6 @@
 //
 
 #include <ppd/string-private.h>
-#include <ppd/language-private.h>
 #include <ppd/ppd.h>
 #include <ppd/debug-internal.h>
 #include <ppd/libcups2-private.h>
@@ -288,11 +287,11 @@ ppdLocalizeIPPReason(
 	   !strcmp(ptr, "-warning")))
         *ptr = '\0';
 
-      message = _ppdLangString(lang, msgid);
+      message = cupsLangGetString(lang, msgid);
 
       if (message && strcmp(message, msgid))
       {
-        strlcpy(buffer, _ppdLangString(lang, message), bufsize);
+        strlcpy(buffer, cupsLangGetString(lang, message), bufsize);
 	return (buffer);
       }
     }
@@ -711,7 +710,7 @@ ppd_ll_CC(char   *ll_CC,		// O - Country-specific locale name
   // Copy the locale name...
   //
 
-  strlcpy(ll_CC, lang->language, ll_CC_size);
+  strlcpy(ll_CC, cupsLangGetName(lang), ll_CC_size);
 
   if (strlen(ll_CC) == 2)
   {
@@ -732,7 +731,7 @@ ppd_ll_CC(char   *ll_CC,		// O - Country-specific locale name
       strlcpy(ll_CC, "zh_CN", ll_CC_size);
   }
 
-  DEBUG_printf(("8ppd_ll_CC: lang->language=\"%s\", ll_CC=\"%s\"...",
-                lang->language, ll_CC));
+  DEBUG_printf(("8ppd_ll_CC: cupsLangGetName(lang)=\"%s\", ll_CC=\"%s\"...",
+                cupsLangGetName(lang), ll_CC));
   return (lang);
 }

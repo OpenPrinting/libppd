@@ -495,11 +495,12 @@ AC_ARG_ENABLE([werror],
 )
 AS_IF([test x"$enable_werror" = "xyes"], [
 	CFLAGS="$CFLAGS -Werror"
+	CXXFLAGS="$CXXFLAGS -Werror"
 ])
 AS_IF([test x"$GCC" = "xyes"], [
 	# Be tough with warnings and produce less careless code
 	CFLAGS="$CFLAGS -Wall -std=gnu11"
-	CXXFLAGS="$CXXFLAGS -Wall " # -Weffc++" # TODO: enable when it does not print 1MB of warnings
+	CXXFLAGS="$CXXFLAGS -Wall -std=c++17" # -Weffc++" # TODO: enable when it does not print 1MB of warnings
 ])
 CFLAGS="$CFLAGS -D_GNU_SOURCE"
 CXXFLAGS="$CXXFLAGS -D_GNU_SOURCE"
@@ -543,7 +544,7 @@ Environment settings:
 	CXXFLAGS:                                  ${CXXFLAGS}
 	LDFLAGS:                                   ${LDFLAGS}
 Build configuration:
-    libcups:         ${CUPS_VERSION}
+	libcups:         ${CUPS_VERSION}
 	cups-config:     ${with_cups_config}
 	ghostscript:     ${enable_ghostscript}
 	gs-path:         ${with_gs_path}

@@ -184,7 +184,7 @@ cups_array_t *				// O - List of PPD files
 ppdCollectionListPPDs(
 	cups_array_t  *ppd_collections, // I - Directories to search for PPDs
 					//     in
-	int           limit,		// I - Limit
+	cups_len_t    limit,		// I - Limit
 	int           num_options,	// I - Number of options
 	cups_option_t *options,		// I - Options
 	cf_logfunc_t log,		// I - Log function

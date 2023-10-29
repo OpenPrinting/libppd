@@ -84,8 +84,7 @@ libppd_la_SOURCES = \
 	ppd/file-private.h \
 	ppd/imagetops-pstops.c \
 	ppd/ipp-private.h \
-	ppd/language.c \
-	ppd/language-private.h \
+	ppd/libcups2.c \
 	ppd/libcups2-private.h \
 	ppd/pdftops.c \
 	ppd/raster-interpret.c \
@@ -125,13 +124,19 @@ libppd_la_LIBADD = \
 libppd_la_CFLAGS = \
 	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
+libppd_la_CXXFLAGS = \
+	$(libppd_la_CFLAGS)
 libppd_la_LDFLAGS = \
 	-no-undefined \
 	-version-info 2
 
 testppd_SOURCES = ppd/testppd.c
-testppd_LDADD = libppd.la \
-		-lcups
+testppd_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+testppd_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

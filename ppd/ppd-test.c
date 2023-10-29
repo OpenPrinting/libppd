@@ -16,6 +16,7 @@
 #include <ppd/array-private.h>
 #include <ppd/raster-private.h>
 #include <ppd/ppd.h>
+#include <ppd/libcups2-private.h>
 #include <cups/array.h>
 #include <cupsfilters/log.h>
 #include <stdio.h>
@@ -161,9 +162,9 @@ int ppdTest(int ignore,          // Which errors to ignore
 
   if (report && *report == NULL)
   {
-    *report = cupsArrayNew3(NULL, NULL, NULL, 0,
-                            (cups_acopy_func_t)_ppdStrAlloc,
-                            (cups_afree_func_t)_ppdStrFree);
+    *report = cupsArrayNew(NULL, NULL, NULL, 0,
+                            (cups_acopy_cb_t)_ppdStrAlloc,
+                            (cups_afree_cb_t)_ppdStrFree);
     if (*report == NULL)
     {
       if (log) log(ld, CF_LOGLEVEL_ERROR,
@@ -179,9 +180,9 @@ int ppdTest(int ignore,          // Which errors to ignore
   // Open the PPD file...
   //
 
-  for (i = 0, file = (char *)cupsArrayFirst(file_array);
+  for (i = 0, file = (char *)cupsArrayGetFirst(file_array);
        file;
-       i ++, file = (char *)cupsArrayNext(file_array))
+       i ++, file = (char *)cupsArrayGetNext(file_array))
   {
     if (strcmp(file, "-") == 0)
     {
@@ -4599,9 +4600,9 @@ check_translations(ppd_file_t *ppd,       // I - PPD file
     // This file contains localizations, check them...
     //
 
-    for (language = (char *)cupsArrayFirst(languages);
+    for (language = (char *)cupsArrayGetFirst(languages);
          language;
-         language = (char *)cupsArrayNext(languages))
+         language = (char *)cupsArrayGetNext(languages))
     {
       langlen = (int)strlen(language);
       if (langlen != 2 && langlen != 5)
@@ -4760,9 +4761,9 @@ check_translations(ppd_file_t *ppd,       // I - PPD file
 
 	    if (_ppd_strcasecmp(option->keyword, "PageSize"))
             {
-	      for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+	      for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 		   cparam;
-		   cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+		   cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
 	      {
 		snprintf(ckeyword, sizeof(ckeyword), "%s.ParamCustom%.28s",
                          language, option->keyword);
@@ -4895,9 +4896,9 @@ check_translations(ppd_file_t *ppd,       // I - PPD file
     // Verify that we have the base language for each localized one...
     //
 
-    for (language = (char *)cupsArrayFirst(languages);
+    for (language = (char *)cupsArrayGetFirst(languages);
 	 language;
-	 language = (char *)cupsArrayNext(languages))
+	 language = (char *)cupsArrayGetNext(languages))
       if (language[2])
       {
 	//
@@ -5068,7 +5069,7 @@ test_raster(ppd_file_t *ppd,       // I - PPD file
 	    void *ld)              // I - Log function data
 {
   char str_format[2048];      // Formatted string
-  cups_page_header2_t header; // Page header
+  cups_page_header_t header; // Page header
 
 
   ppdMarkDefaults(ppd);

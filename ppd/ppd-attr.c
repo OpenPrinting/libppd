@@ -12,9 +12,10 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -64,7 +65,7 @@ ppdFindAttr(ppd_file_t *ppd,		// I - PPD file data
 
       while (attr && _ppd_strcasecmp(spec, attr->spec))
       {
-        if ((attr = (ppd_attr_t *)cupsArrayNext(ppd->sorted_attrs)) != NULL &&
+        if ((attr = (ppd_attr_t *)cupsArrayGetNext(ppd->sorted_attrs)) != NULL &&
 	    _ppd_strcasecmp(attr->name, name))
 	  attr = NULL;
       }
@@ -101,7 +102,7 @@ ppdFindNextAttr(ppd_file_t *ppd,	// I - PPD file data
   // See if there are more attributes to return...
   //
 
-  while ((attr = (ppd_attr_t *)cupsArrayNext(ppd->sorted_attrs)) != NULL)
+  while ((attr = (ppd_attr_t *)cupsArrayGetNext(ppd->sorted_attrs)) != NULL)
   {
     //
     // Check the next attribute to see if it is a match...
@@ -113,7 +114,7 @@ ppdFindNextAttr(ppd_file_t *ppd,	// I - PPD file data
       // Nope, reset the current pointer to the end of the array...
       //
 
-      cupsArrayIndex(ppd->sorted_attrs, cupsArrayCount(ppd->sorted_attrs));
+      cupsArrayGetElement(ppd->sorted_attrs, cupsArrayGetCount(ppd->sorted_attrs));
 
       return (NULL);
     }

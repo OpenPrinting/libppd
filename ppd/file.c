@@ -12,9 +12,9 @@
 // Include necessary headers...
 //
 
-#include "file-private.h"
-#include "language-private.h"
-#include "debug-internal.h"
+#include <ppd/file-private.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cups/language.h>
@@ -22,6 +22,13 @@
 #  ifdef HAVE_LIBZ
 #    include <zlib.h>
 #  endif // HAVE_LIBZ
+
+
+//
+// Macro for localized text...
+//
+
+#  define _(x) x
 
 
 #ifndef _WIN32
@@ -178,13 +185,13 @@ _ppdFileCheck(
 	  loglevel = CF_LOGLEVEL_DEBUG;
 	  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("Directory \"%s\" permissions OK "
+		     cupsLangGetString(lang, _("Directory \"%s\" permissions OK "
 					    "(0%o/uid=%d/gid=%d).")),
 		     filename, fileinfo.st_mode, (int)fileinfo.st_uid,
 		     (int)fileinfo.st_gid);
 	  else
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("File \"%s\" permissions OK "
+		     cupsLangGetString(lang, _("File \"%s\" permissions OK "
 					    "(0%o/uid=%d/gid=%d).")),
 		     filename, fileinfo.st_mode, (int)fileinfo.st_uid,
 		     (int)fileinfo.st_gid);
@@ -194,12 +201,12 @@ _ppdFileCheck(
 	  loglevel = CF_LOGLEVEL_ERROR;
 	  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("Directory \"%s\" not available: "
+		     cupsLangGetString(lang, _("Directory \"%s\" not available: "
 					    "%s")),
 		     filename, strerror(errno));
 	  else
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("File \"%s\" not available: %s")),
+		     cupsLangGetString(lang, _("File \"%s\" not available: %s")),
 		     filename, strerror(errno));
           break;
 
@@ -207,14 +214,14 @@ _ppdFileCheck(
 	  loglevel = CF_LOGLEVEL_ERROR;
 	  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("Directory \"%s\" has insecure "
+		     cupsLangGetString(lang, _("Directory \"%s\" has insecure "
 					    "permissions "
 					    "(0%o/uid=%d/gid=%d).")),
 		     filename, fileinfo.st_mode, (int)fileinfo.st_uid,
 		     (int)fileinfo.st_gid);
 	  else
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("File \"%s\" has insecure "
+		     cupsLangGetString(lang, _("File \"%s\" has insecure "
 					    "permissions "
 					    "(0%o/uid=%d/gid=%d).")),
 		     filename, fileinfo.st_mode, (int)fileinfo.st_uid,
@@ -225,11 +232,11 @@ _ppdFileCheck(
 	  loglevel = CF_LOGLEVEL_ERROR;
 	  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("Directory \"%s\" is a file.")),
+		     cupsLangGetString(lang, _("Directory \"%s\" is a file.")),
 		     filename);
 	  else
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("File \"%s\" is a directory.")),
+		     cupsLangGetString(lang, _("File \"%s\" is a directory.")),
 		     filename);
           break;
 
@@ -237,11 +244,11 @@ _ppdFileCheck(
 	  loglevel = CF_LOGLEVEL_ERROR;
 	  if (filetype == _PPD_FILE_CHECK_DIRECTORY)
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("Directory \"%s\" contains a "
+		     cupsLangGetString(lang, _("Directory \"%s\" contains a "
 					    "relative path.")), filename);
 	  else
 	    snprintf(message, sizeof(message),
-		     _ppdLangString(lang, _("File \"%s\" contains a relative "
+		     cupsLangGetString(lang, _("File \"%s\" contains a relative "
 					    "path.")), filename);
           break;
     }

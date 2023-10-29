@@ -14,9 +14,10 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "debug-internal.h"
-#include "ppd.h"
+#include <ppd/string-private.h>
+#include <ppd/debug-internal.h>
+#include <ppd/ppd.h>
+#include <ppd/libcups2-private.h>
 #if defined(_WIN32) || defined(__EMX__)
 #  include <io.h>
 #else
@@ -101,14 +102,14 @@ ppdCollect2(ppd_file_t    *ppd,		// I - PPD file data
 
   count = 0;
   if ((collect = calloc(sizeof(ppd_choice_t *),
-                        (size_t)cupsArrayCount(ppd->marked))) == NULL)
+                        (size_t)cupsArrayGetCount(ppd->marked))) == NULL)
   {
     *choices = NULL;
     return (0);
   }
 
   if ((orders = calloc(sizeof(float),
-		       (size_t)cupsArrayCount(ppd->marked))) == NULL)
+		       (size_t)cupsArrayGetCount(ppd->marked))) == NULL)
   {
     *choices = NULL;
     free(collect);
@@ -119,9 +120,9 @@ ppdCollect2(ppd_file_t    *ppd,		// I - PPD file data
   // Loop through all options and add choices as needed...
   //
 
-  for (c = (ppd_choice_t *)cupsArrayFirst(ppd->marked);
+  for (c = (ppd_choice_t *)cupsArrayGetFirst(ppd->marked);
        c;
-       c = (ppd_choice_t *)cupsArrayNext(ppd->marked))
+       c = (ppd_choice_t *)cupsArrayGetNext(ppd->marked))
   {
     csection = c->option->section;
     corder   = c->option->order;
@@ -721,9 +722,9 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
         // Add space to account for custom parameter substitution...
 	//
 
-        for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+        for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	     cparam;
-	     cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	     cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
 	{
           switch (cparam->type)
 	  {
@@ -770,9 +771,9 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 					// %%BeginFeature: *Customkeyword True\n
 
 
-        for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+        for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	     cparam;
-	     cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	     cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
 	{
           switch (cparam->type)
 	  {
@@ -864,9 +865,9 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	      while (isdigit(*cptr & 255))
 	        pnum = pnum * 10 + *cptr++ - '0';
 
-              for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+              for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	           cparam;
-		   cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+		   cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
 		if (cparam->order == pnum)
 		  break;
 
@@ -1067,20 +1068,20 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	                                // order
 
 
-        params = cupsArrayNew((cups_array_func_t)ppd_compare_cparams, NULL);
+        params = cupsArrayNew((cups_array_cb_t)ppd_compare_cparams, NULL, NULL, 0, NULL, NULL);
 
-        for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+        for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	     cparam;
-	     cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	     cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
           cupsArrayAdd(params, cparam);
 
         snprintf(bufptr, (size_t)(bufend - bufptr + 1),
 		 "%%%%BeginFeature: *Custom%s True\n", coption->keyword);
         bufptr += strlen(bufptr);
 
-        for (cparam = (ppd_cparam_t *)cupsArrayFirst(params);
+        for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(params);
 	     cparam;
-	     cparam = (ppd_cparam_t *)cupsArrayNext(params))
+	     cparam = (ppd_cparam_t *)cupsArrayGetNext(params))
 	{
           switch (cparam->type)
 	  {

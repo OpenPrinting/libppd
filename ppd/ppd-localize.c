@@ -14,10 +14,10 @@
 // Include necessary headers.
 //
 
-#include "string-private.h"
-#include "language-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -109,13 +109,13 @@ ppdLocalize(ppd_file_t *ppd)		// I - PPD file
   // Translate any custom parameters...
   //
 
-  for (coption = (ppd_coption_t *)cupsArrayFirst(ppd->coptions);
+  for (coption = (ppd_coption_t *)cupsArrayGetFirst(ppd->coptions);
        coption;
-       coption = (ppd_coption_t *)cupsArrayNext(ppd->coptions))
+       coption = (ppd_coption_t *)cupsArrayGetNext(ppd->coptions))
   {
-    for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+    for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	 cparam;
-	 cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	 cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
     {
       snprintf(ckeyword, sizeof(ckeyword), "ParamCustom%.29s",
 	       coption->keyword);
@@ -287,11 +287,11 @@ ppdLocalizeIPPReason(
 	   !strcmp(ptr, "-warning")))
         *ptr = '\0';
 
-      message = _ppdLangString(lang, msgid);
+      message = cupsLangGetString(lang, msgid);
 
       if (message && strcmp(message, msgid))
       {
-        strlcpy(buffer, _ppdLangString(lang, message), bufsize);
+        strlcpy(buffer, cupsLangGetString(lang, message), bufsize);
 	return (buffer);
       }
     }
@@ -484,9 +484,9 @@ ppdFreeLanguages(
   char	*language;			// Current language
 
 
-  for (language = (char *)cupsArrayFirst(languages);
+  for (language = (char *)cupsArrayGetFirst(languages);
        language;
-       language = (char *)cupsArrayNext(languages))
+       language = (char *)cupsArrayGetNext(languages))
     free(language);
 
   cupsArrayDelete(languages);
@@ -518,7 +518,7 @@ ppdGetLanguages(ppd_file_t *ppd)	// I - PPD file
   // Yes, load the list...
   //
 
-  if ((languages = cupsArrayNew((cups_array_func_t)strcmp, NULL)) == NULL)
+  if ((languages = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL)) == NULL)
     return (NULL);
 
   if ((value = strdup(attr->value)) == NULL)
@@ -561,7 +561,7 @@ ppdGetLanguages(ppd_file_t *ppd)	// I - PPD file
 
   free(value);
 
-  if (cupsArrayCount(languages) == 0)
+  if (cupsArrayGetCount(languages) == 0)
   {
     cupsArrayDelete(languages);
     return (NULL);
@@ -710,7 +710,7 @@ ppd_ll_CC(char   *ll_CC,		// O - Country-specific locale name
   // Copy the locale name...
   //
 
-  strlcpy(ll_CC, lang->language, ll_CC_size);
+  strlcpy(ll_CC, cupsLangGetName(lang), ll_CC_size);
 
   if (strlen(ll_CC) == 2)
   {
@@ -731,7 +731,7 @@ ppd_ll_CC(char   *ll_CC,		// O - Country-specific locale name
       strlcpy(ll_CC, "zh_CN", ll_CC_size);
   }
 
-  DEBUG_printf(("8ppd_ll_CC: lang->language=\"%s\", ll_CC=\"%s\"...",
-                lang->language, ll_CC));
+  DEBUG_printf(("8ppd_ll_CC: cupsLangGetName(lang)=\"%s\", ll_CC=\"%s\"...",
+                cupsLangGetName(lang), ll_CC));
   return (lang);
 }

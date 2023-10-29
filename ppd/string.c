@@ -13,10 +13,11 @@
 //
 
 #define _PPD_STRING_C_
-#include "string-private.h"
-#include "array-private.h"
-#include "thread-private.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/array-private.h>
+#include <ppd/thread-private.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <stddef.h>
 #include <limits.h>
 
@@ -64,7 +65,7 @@ _ppdStrAlloc(const char *s)		// I - String
   _ppdMutexLock(&sp_mutex);
 
   if (!stringpool)
-    stringpool = cupsArrayNew((cups_array_func_t)ppd_compare_sp_items, NULL);
+    stringpool = cupsArrayNew((cups_array_cb_t)ppd_compare_sp_items, NULL, NULL, 0, NULL, NULL);
 
   if (!stringpool)
   {
@@ -151,13 +152,13 @@ _ppdStrFlush(void)
 
 
   DEBUG_printf(("4_ppdStrFlush: %d strings in array",
-                cupsArrayCount(stringpool)));
+                cupsArrayGetCount(stringpool)));
 
   _ppdMutexLock(&sp_mutex);
 
-  for (item = (_ppd_sp_item_t *)cupsArrayFirst(stringpool);
+  for (item = (_ppd_sp_item_t *)cupsArrayGetFirst(stringpool);
        item;
-       item = (_ppd_sp_item_t *)cupsArrayNext(stringpool))
+       item = (_ppd_sp_item_t *)cupsArrayGetNext(stringpool))
     free(item);
 
   cupsArrayDelete(stringpool);
@@ -517,9 +518,9 @@ _ppdStrStatistics(size_t *alloc_bytes,	// O - Allocated bytes
   _ppdMutexLock(&sp_mutex);
 
   for (count = 0, abytes = 0, tbytes = 0,
-	 item = (_ppd_sp_item_t *)cupsArrayFirst(stringpool);
+	 item = (_ppd_sp_item_t *)cupsArrayGetFirst(stringpool);
        item;
-       item = (_ppd_sp_item_t *)cupsArrayNext(stringpool))
+       item = (_ppd_sp_item_t *)cupsArrayGetNext(stringpool))
   {
     //
     // Count allocated memory, using a 64-bit aligned buffer as a basis.

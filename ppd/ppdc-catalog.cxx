@@ -852,7 +852,11 @@ put_utf16(cups_file_t *fp,		// I - File to write to
     buffer[0] = (unsigned char)(ch >> 8);
     buffer[1] = (unsigned char)ch;
 
+#ifdef HAVE_LIBCUPS2
     if (cupsFileWrite(fp, (char *)buffer, 2) == 2)
+#else
+    if (cupsFileWrite(fp, (char *)buffer, 2))
+#endif // HAVE_LIBCUPS2
       return (0);
   }
   else
@@ -865,7 +869,11 @@ put_utf16(cups_file_t *fp,		// I - File to write to
     buffer[2] = (unsigned char)(0xdc | ((ch >> 8) & 0x03));
     buffer[3] = (unsigned char)ch;
 
+#ifdef HAVE_LIBCUPS2
     if (cupsFileWrite(fp, (char *)buffer, 4) == 4)
+#else
+    if (cupsFileWrite(fp, (char *)buffer, 4))
+#endif // HAVE_LIBCUPS2
       return (0);
   }
 

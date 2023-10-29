@@ -14,9 +14,10 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -97,9 +98,9 @@ ppdGetConflicts(
   // Loop through all of the UI constraints and add any options that conflict...
   //
 
-  for (num_options = 0, c = (ppd_cups_uiconsts_t *)cupsArrayFirst(active);
+  for (num_options = 0, c = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(active);
        c;
-       c = (ppd_cups_uiconsts_t *)cupsArrayNext(active))
+       c = (ppd_cups_uiconsts_t *)cupsArrayGetNext(active))
   {
     for (i = c->num_constraints, cptr = c->constraints;
          i > 0;
@@ -221,7 +222,7 @@ ppdResolveConflicts(
   cupsArraySave(ppd->sorted_attrs);
 
   resolvers = NULL;
-  pass      = cupsArrayNew((cups_array_func_t)_ppd_strcasecmp, NULL);
+  pass      = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL, NULL, 0, NULL, NULL);
   tries     = 0;
 
   while (tries < 100 &&
@@ -231,11 +232,11 @@ ppdResolveConflicts(
     tries ++;
 
     if (!resolvers)
-      resolvers = cupsArrayNew((cups_array_func_t)_ppd_strcasecmp, NULL);
+      resolvers = cupsArrayNew((cups_array_cb_t)_ppd_strcasecmp, NULL, NULL, 0, NULL, NULL);
 
-    for (consts = (ppd_cups_uiconsts_t *)cupsArrayFirst(active), changed = 0;
+    for (consts = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(active), changed = 0;
          consts;
-	 consts = (ppd_cups_uiconsts_t *)cupsArrayNext(active))
+	 consts = (ppd_cups_uiconsts_t *)cupsArrayGetNext(active))
     {
       if (consts->resolver[0])
       {
@@ -599,16 +600,16 @@ ppdConflicts(ppd_file_t *ppd)		// I - PPD to check
 
   active    = ppd_test_constraints(ppd, NULL, NULL, 0, NULL,
                                    _PPD_ALL_CONSTRAINTS);
-  conflicts = cupsArrayCount(active);
+  conflicts = cupsArrayGetCount(active);
 
   //
   // Loop through all of the UI constraints and flag any options
   // that conflict...
   //
 
-  for (c = (ppd_cups_uiconsts_t *)cupsArrayFirst(active);
+  for (c = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(active);
        c;
-       c = (ppd_cups_uiconsts_t *)cupsArrayNext(active))
+       c = (ppd_cups_uiconsts_t *)cupsArrayGetNext(active))
   {
     for (i = c->num_constraints, cptr = c->constraints;
          i > 0;
@@ -720,7 +721,7 @@ ppd_load_constraints(ppd_file_t *ppd)	// I - PPD file
   // Create an array to hold the constraint data...
   //
 
-  ppd->cups_uiconstraints = cupsArrayNew(NULL, NULL);
+  ppd->cups_uiconstraints = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
   //
   // Find the installable options group if it exists...
@@ -973,13 +974,13 @@ ppd_test_constraints(
     ppd_load_constraints(ppd);
 
   DEBUG_printf(("9ppd_test_constraints: %d constraints!",
-	        cupsArrayCount(ppd->cups_uiconstraints)));
+	        cupsArrayGetCount(ppd->cups_uiconstraints)));
 
   cupsArraySave(ppd->marked);
 
-  for (consts = (ppd_cups_uiconsts_t *)cupsArrayFirst(ppd->cups_uiconstraints);
+  for (consts = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(ppd->cups_uiconstraints);
        consts;
-       consts = (ppd_cups_uiconsts_t *)cupsArrayNext(ppd->cups_uiconstraints))
+       consts = (ppd_cups_uiconsts_t *)cupsArrayGetNext(ppd->cups_uiconstraints))
   {
     DEBUG_printf(("9ppd_test_constraints: installable=%d, resolver=\"%s\", "
                   "num_constraints=%d option1=\"%s\", choice1=\"%s\", "
@@ -1180,7 +1181,7 @@ ppd_test_constraints(
     if (i <= 0)
     {
       if (!active)
-        active = cupsArrayNew(NULL, NULL);
+        active = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
       cupsArrayAdd(active, consts);
       DEBUG_puts("9ppd_test_constraints: Added...");
@@ -1190,7 +1191,7 @@ ppd_test_constraints(
   cupsArrayRestore(ppd->marked);
 
   DEBUG_printf(("8ppd_test_constraints: Found %d active constraints!",
-                cupsArrayCount(active)));
+                cupsArrayGetCount(active)));
 
   return (active);
 }

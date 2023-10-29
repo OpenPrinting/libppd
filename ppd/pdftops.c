@@ -34,8 +34,9 @@
 #include <cupsfilters/ipp.h>
 #include <cupsfilters/pdf.h>
 #include <cupsfilters/image.h>
-#include "ppd.h"
-#include "ppd-filter.h"
+#include <ppd/ppd.h>
+#include <ppd/ppd-filter.h>
+#include <ppd/libcups2-private.h>
 
 #define MAX_CHECK_COMMENT_LINES	20
 
@@ -312,7 +313,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
                 numvalues = 0;          // Number of values actually read
   ppd_choice_t  *choice;
   ppd_attr_t    *attr;
-  cups_page_header2_t header;
+  cups_page_header_t header;
   cups_file_t	*fp;			// Post-processing input file
   int		pdf_pid,		// Process ID for pdftops/gs
 		pdf_argc = 0,		// Number of args for pdftops/gs
@@ -369,7 +370,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
   // Copy input into temporary file ...
   //
 
-  if ((fd = cupsTempFd(tempfile, sizeof(tempfile))) < 0)
+  if ((fd = cupsCreateTempFd(NULL, NULL, tempfile, sizeof(tempfile))) < 0)
   {
     if (log) log(ld, CF_LOGLEVEL_ERROR,
 		 "ppdFilterPDFToPS: Unable to copy PDF file: %s", strerror(errno));

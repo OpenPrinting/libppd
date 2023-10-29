@@ -14,11 +14,12 @@
 // Include necessary headers.
 //
 
-#include "string-private.h"
-#include "language-private.h"
-#include "thread-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/string-private.h>
+#include <ppd/thread-private.h>
+#include <ppd/libcups2-private.h>
+#include <cups/transcode.h>
 
 
 //
@@ -31,6 +32,13 @@
 #define PPD_STRING	8		// Line contained a string or code
 
 #define PPD_HASHSIZE	512		// Size of hash
+
+
+//
+// Macro for localized text...
+//
+
+#  define _(x) x
 
 
 //
@@ -209,13 +217,13 @@ ppdClose(ppd_file_t *ppd)		// I - PPD file record
   // Free custom options...
   //
 
-  for (coption = (ppd_coption_t *)cupsArrayFirst(ppd->coptions);
+  for (coption = (ppd_coption_t *)cupsArrayGetFirst(ppd->coptions);
        coption;
-       coption = (ppd_coption_t *)cupsArrayNext(ppd->coptions))
+       coption = (ppd_coption_t *)cupsArrayGetNext(ppd->coptions))
   {
-    for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+    for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
          cparam;
-	 cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+	 cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
     {
       switch (cparam->type)
       {
@@ -248,9 +256,9 @@ ppdClose(ppd_file_t *ppd)		// I - PPD file record
     ppd_cups_uiconsts_t *consts;	// Current constraints
 
 
-    for (consts = (ppd_cups_uiconsts_t *)cupsArrayFirst(ppd->cups_uiconstraints);
+    for (consts = (ppd_cups_uiconsts_t *)cupsArrayGetFirst(ppd->cups_uiconstraints);
          consts;
-	 consts = (ppd_cups_uiconsts_t *)cupsArrayNext(ppd->cups_uiconstraints))
+	 consts = (ppd_cups_uiconsts_t *)cupsArrayGetNext(ppd->cups_uiconstraints))
     {
       free(consts->constraints);
       free(consts);
@@ -315,9 +323,9 @@ ppdErrorString(ppd_status_t status)	// I - PPD status
 
 
   if (status < PPD_OK || status >= PPD_MAX_STATUS)
-    return (_ppdLangString(cupsLangDefault(), _("Unknown")));
+    return (cupsLangGetString(cupsLangDefault(), _("Unknown")));
   else
-    return (_ppdLangString(cupsLangDefault(), messages[status]));
+    return (cupsLangGetString(cupsLangDefault(), messages[status]));
 }
 
 
@@ -330,19 +338,19 @@ cups_encoding_t				// O - CUPS encoding value
 ppdGetEncoding(const char *name)	// I - LanguageEncoding string
 {
   if (!_ppd_strcasecmp(name, "ISOLatin1"))
-    return (CUPS_ISO8859_1);
+    return (CUPS_ENCODING_ISO8859_1);
   else if (!_ppd_strcasecmp(name, "ISOLatin2"))
-    return (CUPS_ISO8859_2);
+    return (CUPS_ENCODING_ISO8859_2);
   else if (!_ppd_strcasecmp(name, "ISOLatin5"))
-    return (CUPS_ISO8859_5);
+    return (CUPS_ENCODING_ISO8859_5);
   else if (!_ppd_strcasecmp(name, "JIS83-RKSJ"))
-    return (CUPS_JIS_X0213);
+    return (CUPS_ENCODING_JIS_X0213);
   else if (!_ppd_strcasecmp(name, "MacStandard"))
-    return (CUPS_MAC_ROMAN);
+    return (CUPS_ENCODING_MAC_ROMAN);
   else if (!_ppd_strcasecmp(name, "WindowsANSI"))
-    return (CUPS_WINDOWS_1252);
+    return (CUPS_ENCODING_WINDOWS_1252);
   else
-    return (CUPS_UTF8);
+    return (CUPS_ENCODING_UTF_8);
 }
 
 
@@ -552,7 +560,7 @@ ppdOpenWithLocalization(
     if ((lang = cupsLangDefault()) == NULL)
       return (NULL);
 
-    snprintf(ll_CC, sizeof(ll_CC), "%.5s.", lang->language);
+    snprintf(ll_CC, sizeof(ll_CC), "%.5s.", cupsLangGetName(lang));
 
     //
     // <rdar://problem/22130168>
@@ -561,26 +569,26 @@ ppdOpenWithLocalization(
     // Need to use a different base language for some locales...
     //
 
-    if (!strcmp(lang->language, "zh_HK"))
+    if (!strcmp(cupsLangGetName(lang), "zh_HK"))
     {					// Traditional Chinese + variants
       strlcpy(ll_CC, "zh_TW.", sizeof(ll_CC));
       strlcpy(ll, "zh_", sizeof(ll));
     }
-    else if (!strncmp(lang->language, "zh", 2))
+    else if (!strncmp(cupsLangGetName(lang), "zh", 2))
       strlcpy(ll, "zh_", sizeof(ll));	// Any Chinese variant
-    else if (!strncmp(lang->language, "jp", 2))
+    else if (!strncmp(cupsLangGetName(lang), "jp", 2))
     {					// Any Japanese variant
       strlcpy(ll_CC, "ja", sizeof(ll_CC));
       strlcpy(ll, "jp", sizeof(ll));
     }
-    else if (!strncmp(lang->language, "nb", 2) ||
-	     !strncmp(lang->language, "no", 2))
+    else if (!strncmp(cupsLangGetName(lang), "nb", 2) ||
+	     !strncmp(cupsLangGetName(lang), "no", 2))
     {					// Any Norwegian variant
       strlcpy(ll_CC, "nb", sizeof(ll_CC));
       strlcpy(ll, "no", sizeof(ll));
     }
     else
-      snprintf(ll, sizeof(ll), "%2.2s.", lang->language);
+      snprintf(ll, sizeof(ll), "%2.2s.", cupsLangGetName(lang));
 
     ll_CC_len = strlen(ll_CC);
     ll_len    = strlen(ll);
@@ -642,8 +650,8 @@ ppdOpenWithLocalization(
   ppd->color_device   = 0;
   ppd->colorspace     = PPD_CS_N;
   ppd->landscape      = -90;
-  ppd->coptions       = cupsArrayNew((cups_array_func_t)ppd_compare_coptions,
-				     NULL);
+  ppd->coptions       = cupsArrayNew((cups_array_cb_t)ppd_compare_coptions,
+				     NULL, NULL, 0, NULL, NULL);
 
   //
   // Read lines from the PPD file and add them to the file record...
@@ -654,7 +662,7 @@ ppdOpenWithLocalization(
   option     = NULL;
   choice     = NULL;
   ui_keyword = 0;
-  encoding   = CUPS_ISO8859_1;
+  encoding   = CUPS_ENCODING_ISO8859_1;
   loc        = localeconv();
 
   while ((mask = ppd_read(fp, &line, keyword, name, text, &string, 1, pg)) != 0)
@@ -851,7 +859,7 @@ ppdOpenWithLocalization(
       ppd->pcfilename = string;
     else if (!strcmp(keyword, "NickName"))
     {
-      if (encoding != CUPS_UTF8)
+      if (encoding != CUPS_ENCODING_UTF_8)
       {
         cups_utf8_t	utf8[256];	// UTF-8 version of NickName
 
@@ -2154,9 +2162,9 @@ ppdOpenWithLocalization(
   // each choice and custom option...
   //
 
-  ppd->options = cupsArrayNew2((cups_array_func_t)ppd_compare_options, NULL,
-                               (cups_ahash_func_t)ppd_hash_option,
-			       PPD_HASHSIZE);
+  ppd->options = cupsArrayNew((cups_array_cb_t)ppd_compare_options, NULL,
+                               (cups_ahash_cb_t)ppd_hash_option,
+			       PPD_HASHSIZE, NULL, NULL);
 
   for (i = ppd->num_groups, group = ppd->groups;
        i > 0;
@@ -2183,7 +2191,7 @@ ppdOpenWithLocalization(
   // Create an array to track the marked choices...
   //
 
-  ppd->marked = cupsArrayNew((cups_array_func_t)ppd_compare_choices, NULL);
+  ppd->marked = cupsArrayNew((cups_array_cb_t)ppd_compare_choices, NULL, NULL, 0, NULL, NULL);
 
   //
   // Return the PPD file structure...
@@ -2415,8 +2423,8 @@ ppd_add_attr(ppd_file_t *ppd,		// I - PPD file data
   //
 
   if (!ppd->sorted_attrs)
-    ppd->sorted_attrs = cupsArrayNew((cups_array_func_t)ppd_compare_attrs,
-                                     NULL);
+    ppd->sorted_attrs = cupsArrayNew((cups_array_cb_t)ppd_compare_attrs,
+                                     NULL, NULL, 0, NULL, NULL);
 
   //
   // Allocate memory for the new attribute...
@@ -2748,7 +2756,7 @@ ppd_get_coption(ppd_file_t *ppd,	// I - PPD file
 
   strlcpy(copt->keyword, name, sizeof(copt->keyword));
 
-  copt->params = cupsArrayNew((cups_array_func_t)NULL, NULL);
+  copt->params = cupsArrayNew((cups_array_cb_t)NULL, NULL, NULL, 0, NULL, NULL);
 
   cupsArrayAdd(ppd->coptions, copt);
 

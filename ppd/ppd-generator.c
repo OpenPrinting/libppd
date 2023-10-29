@@ -15,24 +15,23 @@
 //   information.
 //
 
-#include <config.h>
-#include <limits.h>
-#include <cups/cups.h>
-#include <cups/dir.h>
-#include <ppd/ppd.h>
-#include <ppd/string-private.h>
-#include <cupsfilters/ipp.h>
-#include <cupsfilters/catalog.h>
-
-
 //
 // Include necessary headers.
 //
 
+#include <config.h>
+#include <cups/cups.h>
+#include <cups/dir.h>
+#include <cups/pwg.h>
+#include <ppd/ppd.h>
+#include <ppd/string-private.h>
+#include <ppd/libcups2-private.h>
+#include <cupsfilters/ipp.h>
+#include <cupsfilters/catalog.h>
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
-#include <cups/pwg.h>
 
 
 //
@@ -43,6 +42,27 @@
 #define IPP_FINISHINGS_CUPS_FOLD_ACCORDION IPP_FINISHINGS_CUPS_FOLD_ACCORDIAN
 #define IPP_FINISHINGS_FOLD_ACCORDION IPP_FINISHINGS_FOLD_ACCORDIAN
 #endif
+
+
+//
+// Types...
+//
+
+typedef struct _ppd_size_s                // **** Media Size (cups_size_t of libcups2) ****
+{
+  char          media[128];             // Media name to use
+  int           width,                  // Width in hundredths of millimeters
+                length,                 // Length in hundredths of
+                                        // millimeters
+                bottom,                 // Bottom margin in hundredths of
+                                        // millimeters
+                left,                   // Left margin in hundredths of
+                                        // millimeters
+                right,                  // Right margin in hundredths of
+                                        // millimeters
+                top;                    // Top margin in hundredths of
+                                        // millimeters
+} _ppd_size_t;
 
 
 //
@@ -189,7 +209,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 {
   cups_file_t		*fp;		// PPD file
   cups_array_t		*printer_sizes;	// Media sizes we've added
-  cups_size_t		*size;		// Current media size
+  _ppd_size_t		*size;		// Current media size
   ipp_attribute_t	*attr,		// xxx-supported
                         *attr2,
 			*lang_supp,	// printer-strings-languages-supported
@@ -243,7 +263,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   char			*defaultoutbin = NULL;
   const char		*outbin;
   char			outbin_properties[1024];
-  int			octet_str_len;
+  cups_len_t		octet_str_len;
   void			*outbin_properties_octet;
   int			outputorderinfofound = 0,
 			faceupdown = 1,
@@ -276,7 +296,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   // Open a temporary file for the PPD...
   //
 
-  if ((fp = cupsTempFile2(buffer, (int)bufsize)) == NULL)
+  if ((fp = cupsCreateTempFile(NULL, NULL, buffer, (int)bufsize)) == NULL)
   {
     if (status_msg && status_msg_size)
       snprintf(status_msg, status_msg_size, "%s", strerror(errno));
@@ -444,7 +464,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     printer_opt_strings_catalog = cfCatalogOptionArrayNew();
     cfCatalogLoad(ippGetString(attr, 0, NULL), NULL,
 		  printer_opt_strings_catalog);
-    if (cupsArrayCount(printer_opt_strings_catalog) > 0)
+    if (cupsArrayGetCount(printer_opt_strings_catalog) > 0)
     {
       http_t		*http = NULL;	// Connection to printer
       const char	*printer_uri =
@@ -626,9 +646,9 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   max_res = NULL;
   // Put all available PDls into a simple case-insensitevely searchable
   // sorted string list
-  if ((pdl_list = cupsArrayNew3((cups_array_func_t)strcasecmp, NULL, NULL, 0,
-				(cups_acopy_func_t)strdup,
-				(cups_afree_func_t)free)) == NULL)
+  if ((pdl_list = cupsArrayNew((cups_array_cb_t)strcasecmp, NULL, NULL, 0,
+				(cups_acopy_cb_t)strdup,
+				(cups_afree_cb_t)free)) == NULL)
     goto bad_ppd;
   int formatfound = 0;
 
@@ -808,7 +828,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
               }
             }
           }
-          if (cupsArrayCount(current_res) > 0 &&
+          if (cupsArrayGetCount(current_res) > 0 &&
 	      cfJoinResolutionArrays(&common_res, &current_res, &common_def,
 				     &current_def))
           {
@@ -954,14 +974,14 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
       }
     }
     if (common_def == NULL) {
-      count = cupsArrayCount(common_res);
+      count = cupsArrayGetCount(common_res);
       common_def =
-	cfCopyResolution(cupsArrayIndex(common_res, count / 2), NULL);
+	cfCopyResolution(cupsArrayGetElement(common_res, count / 2), NULL);
     }
   }
   // Get minimum and maximum resolution
-  min_res = cfCopyResolution(cupsArrayFirst(common_res), NULL);
-  max_res = cfCopyResolution(cupsArrayLast(common_res), NULL);
+  min_res = cfCopyResolution(cupsArrayGetFirst(common_res), NULL);
+  max_res = cfCopyResolution(cupsArrayGetLast(common_res), NULL);
   cupsArrayDelete(common_res);
 
   //
@@ -969,7 +989,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   // supported and ppdize them one by one
   //
 
-  attr = ippFirstAttribute(supported); // first attribute
+  attr = ippGetFirstAttribute(supported); // first attribute
   while (attr)                        // loop through all the attributes
   {
     if ((is_apple && strncasecmp(ippGetName(attr), "urf-", 4) == 0) ||
@@ -985,12 +1005,12 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
       {
 	if ((current_res = cfIPPAttrToResolutionArray(attr)) != NULL)
 	{
-	  count = cupsArrayCount(current_res);
+	  count = cupsArrayGetCount(current_res);
 	  if (count > 1)
 	    cupsFilePuts(fp, "\"");
-	  for (i = 0, current_def = cupsArrayFirst(current_res);
+	  for (i = 0, current_def = cupsArrayGetFirst(current_res);
 	       current_def;
-	       i ++, current_def = cupsArrayNext(current_res))
+	       i ++, current_def = cupsArrayGetNext(current_res))
 	  {
 	    int x = current_def->x;
 	    int y = current_def->y;
@@ -1021,7 +1041,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	  cupsFilePrintf(fp, "%s\n", buf);
       }
     }
-    attr = ippNextAttribute(supported);
+    attr = ippGetNextAttribute(supported);
   }
 
   //
@@ -1038,7 +1058,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   else
     strcpy(ppdname, default_pagesize);
 
-  if (cupsArrayCount(sizes) > 0)
+  if (cupsArrayGetCount(sizes) > 0)
   {
     //
     // List all of the standard sizes...
@@ -1057,8 +1077,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 
     // Find a page size without ".Borderless" suffix
     // (if all are ".Borderless" we drop the suffix in the PPD)
-    for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
       if (strcasestr(size->media, ".Borderless") == NULL)
 	break;
     if (size)
@@ -1074,8 +1094,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*OpenUI *PageSize/%s: PickOne\n"
 		   "*OrderDependency: 10 AnySetup *PageSize\n"
 		   "*DefaultPageSize: %s\n", "Media Size", ppdname);
-    for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(twidth, twidth + sizeof(twidth),
 		      size->width * 72.0 / 2540.0, loc);
@@ -1123,8 +1143,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*OpenUI *PageRegion/%s: PickOne\n"
 		   "*OrderDependency: 10 AnySetup *PageRegion\n"
 		   "*DefaultPageRegion: %s\n", "Media Size", ppdname);
-    for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(twidth, twidth + sizeof(twidth),
 		      size->width * 72.0 / 2540.0, loc);
@@ -1172,8 +1192,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*DefaultImageableArea: %s\n"
 		   "*DefaultPaperDimension: %s\n", ppdname, ppdname);
 
-    for (size = (cups_size_t *)cupsArrayFirst(sizes); size;
-	 size = (cups_size_t *)cupsArrayNext(sizes))
+    for (size = (_ppd_size_t *)cupsArrayGetFirst(sizes); size;
+	 size = (_ppd_size_t *)cupsArrayGetNext(sizes))
     {
       cfStrFormatd(tleft, tleft + sizeof(tleft),
 		      size->left * 72.0 / 2540.0, loc);
@@ -1860,9 +1880,9 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     };
 
     count = ippGetCount(attr);
-    names = cupsArrayNew3((cups_array_func_t)strcmp, NULL, NULL, 0,
-			  (cups_acopy_func_t)strdup, (cups_afree_func_t)free);
-    fin_options = cupsArrayNew((cups_array_func_t)strcmp, NULL);
+    names = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0,
+			  (cups_acopy_cb_t)strdup, (cups_afree_cb_t)free);
+    fin_options = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL);
 
     //
     // Staple/Bind/Stitch
@@ -2275,7 +2295,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     cupsFilePrintf(fp, "*cupsFinishingTemplate None/%s: \"\"\n",
 		   (human_readable ? human_readable : "None"));
 
-    templates = cupsArrayNew((cups_array_func_t)strcmp, NULL);
+    templates = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0, NULL, NULL);
     count     = ippGetCount(attr);
 
     for (i = 0; i < count; i ++)
@@ -2301,8 +2321,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	human_readable = (char *)keyword;
       cupsFilePrintf(fp, "*cupsFinishingTemplate %s/%s: \"\n", keyword,
 		     human_readable);
-      for (finishing_attr = ippFirstAttribute(finishing_col); finishing_attr;
-	   finishing_attr = ippNextAttribute(finishing_col)) {
+      for (finishing_attr = ippGetFirstAttribute(finishing_col); finishing_attr;
+	   finishing_attr = ippGetNextAttribute(finishing_col)) {
         if (ippGetValueTag(finishing_attr) == IPP_TAG_BEGIN_COLLECTION) {
 	  const char *name = ippGetName(finishing_attr);
 					// Member attribute name
@@ -2317,19 +2337,19 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 
     cupsFilePuts(fp, "*CloseUI: *cupsFinishingTemplate\n");
 
-    if (cupsArrayCount(fin_options))
+    if (cupsArrayGetCount(fin_options))
     {
       const char	*fin_option;	// Current finishing option
 
       cupsFilePuts(fp, "*cupsUIConstraint finishing-template: \"*cupsFinishingTemplate");
-      for (fin_option = (const char *)cupsArrayFirst(fin_options); fin_option;
-	   fin_option = (const char *)cupsArrayNext(fin_options))
+      for (fin_option = (const char *)cupsArrayGetFirst(fin_options); fin_option;
+	   fin_option = (const char *)cupsArrayGetNext(fin_options))
         cupsFilePrintf(fp, " %s", fin_option);
       cupsFilePuts(fp, "\"\n");
 
       cupsFilePuts(fp, "*cupsUIResolver finishing-template: \"*cupsFinishingTemplate None");
-      for (fin_option = (const char *)cupsArrayFirst(fin_options); fin_option;
-	   fin_option = (const char *)cupsArrayNext(fin_options))
+      for (fin_option = (const char *)cupsArrayGetFirst(fin_options); fin_option;
+	   fin_option = (const char *)cupsArrayGetNext(fin_options))
         cupsFilePrintf(fp, " %s None", fin_option);
       cupsFilePuts(fp, "\"\n");
     }
@@ -2573,8 +2593,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
         cupsFilePrintf(fp, "*APPrinterPreset %s/%s: \"\n", preset_name,
 		       localized_name);
 
-      for (member = ippFirstAttribute(preset); member;
-	   member = ippNextAttribute(preset))
+      for (member = ippGetFirstAttribute(preset); member;
+	   member = ippGetNextAttribute(preset))
       {
         member_name = ippGetName(member);
 
@@ -2723,8 +2743,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   if (conflicts != NULL)
   {
     char* constraint;
-    for (constraint = (char *)cupsArrayFirst(conflicts); constraint;
-         constraint = (char *)cupsArrayNext(conflicts))
+    for (constraint = (char *)cupsArrayGetFirst(conflicts); constraint;
+         constraint = (char *)cupsArrayGetNext(conflicts))
       cupsFilePrintf(fp, "%s", constraint);
   }
 
@@ -2809,10 +2829,10 @@ http_connect(http_t     **http,		// IO - Current HTTP connection
   else
     encryption = HTTP_ENCRYPTION_IF_REQUESTED;
 
-  if (!*http || strcasecmp(host, httpGetHostname(*http, curhost, sizeof(curhost))) || httpAddrPort(httpGetAddress(*http)) != port || httpIsEncrypted(*http) != (encryption == HTTP_ENCRYPTION_ALWAYS))
+  if (!*http || strcasecmp(host, httpGetHostname(*http, curhost, sizeof(curhost))) || httpAddrGetPort(httpGetAddress(*http)) != port || httpIsEncrypted(*http) != (encryption == HTTP_ENCRYPTION_ALWAYS))
   {
     httpClose(*http);
-    *http = httpConnect2(host, port, NULL, AF_UNSPEC, encryption, 1, 5000, NULL);
+    *http = httpConnect(host, port, NULL, AF_UNSPEC, encryption, 1, 5000, NULL);
   }
 
   return (*http != NULL);

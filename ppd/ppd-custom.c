@@ -14,9 +14,10 @@
 // Include necessary headers.
 //
 
-#include "string-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -56,9 +57,9 @@ ppdFindCustomParam(ppd_coption_t *opt,	// I - Custom option
   if (!opt)
     return (NULL);
 
-  for (param = (ppd_cparam_t *)cupsArrayFirst(opt->params);
+  for (param = (ppd_cparam_t *)cupsArrayGetFirst(opt->params);
        param;
-       param = (ppd_cparam_t *)cupsArrayNext(opt->params))
+       param = (ppd_cparam_t *)cupsArrayGetNext(opt->params))
     if (!_ppd_strcasecmp(param->name, name))
       break;
 
@@ -78,7 +79,7 @@ ppdFirstCustomParam(ppd_coption_t *opt)	// I - Custom option
   if (!opt)
     return (NULL);
 
-  return ((ppd_cparam_t *)cupsArrayFirst(opt->params));
+  return ((ppd_cparam_t *)cupsArrayGetFirst(opt->params));
 }
 
 
@@ -94,5 +95,5 @@ ppdNextCustomParam(ppd_coption_t *opt)	// I - Custom option
   if (!opt)
     return (NULL);
 
-  return ((ppd_cparam_t *)cupsArrayNext(opt->params));
+  return ((ppd_cparam_t *)cupsArrayGetNext(opt->params));
 }

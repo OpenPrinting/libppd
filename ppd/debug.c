@@ -11,8 +11,8 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/debug-internal.h>
 #ifdef _WIN32
 #  include <sys/timeb.h>
 #  include <time.h>

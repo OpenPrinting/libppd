@@ -12,9 +12,10 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "debug-internal.h"
-#include "array-private.h"
+#include <ppd/string-private.h>
+#include <ppd/debug-internal.h>
+#include <ppd/array-private.h>
+#include <ppd/libcups2-private.h>
 
 
 //
@@ -129,9 +130,9 @@ _ppdArrayNewStrings(const char *s,	// I - Delimited strings or NULL
   cups_array_t	*a;			// Array
 
 
-  if ((a = cupsArrayNew3((cups_array_func_t)strcmp, NULL, NULL, 0,
-                         (cups_acopy_func_t)_ppdStrAlloc,
-			 (cups_afree_func_t)_ppdStrFree)) != NULL)
+  if ((a = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0,
+                         (cups_acopy_cb_t)_ppdStrAlloc,
+			 (cups_afree_cb_t )_ppdStrFree)) != NULL)
     _ppdArrayAddStrings(a, s, delim);
 
   return (a);

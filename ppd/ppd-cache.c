@@ -11,12 +11,12 @@
 // Include necessary headers...
 //
 
-#include "string-private.h"
-#include "array-private.h"
-#include "ipp-private.h"
-#include "language-private.h"
-#include "ppd.h"
-#include "debug-internal.h"
+#include <ppd/string-private.h>
+#include <ppd/array-private.h>
+#include <ppd/ipp-private.h>
+#include <ppd/ppd.h>
+#include <ppd/debug-internal.h>
+#include <ppd/libcups2-private.h>
 #include <math.h>
 #include <limits.h>
 #include <errno.h>
@@ -37,6 +37,24 @@
 #define IPP_FINISHINGS_FOLD_ACCORDION IPP_FINISHINGS_FOLD_ACCORDIAN
 #endif
 
+//
+// Macro for localized text...
+//
+
+#  define _(x) x
+
+
+//
+// Types...
+//
+
+typedef struct _ppd_ui_string_s		// **** UI string list entry ****
+{
+  char	*name,				// Machine-readable option name/
+                                        // PWG name
+	*ui_str;			// Human-readable UI string
+} _ppd_ui_string_t;
+
 
 //
 // Local functions...
@@ -44,11 +62,14 @@
 
 static const char *ppd_inputslot_for_keyword(ppd_cache_t *pc,
 					     const char *keyword);
+static void	ppd_ui_string_add(cups_array_t *a, const char *msg,
+				    const char *str);
+static int	ppd_ui_string_compare(_ppd_ui_string_t *m1, _ppd_ui_string_t *m2);
+static void	ppd_ui_string_free(_ppd_ui_string_t *m);
+static cups_array_t *ppd_ui_strings_new(void *context);
 static void	ppd_pwg_add_finishing(cups_array_t *finishings,
 				      ipp_finishings_t template,
 				      const char *name, const char *value);
-static void	ppd_pwg_add_message(cups_array_t *a, const char *msg,
-				    const char *str);
 static int	ppd_pwg_compare_finishings(ppd_pwg_finishings_t *a,
 					   ppd_pwg_finishings_t *b);
 static void	ppd_pwg_free_finishings(ppd_pwg_finishings_t *f);
@@ -86,7 +107,7 @@ set_error(const char   *message,	// I - status-message value
      //
 
       ppd_cache_status_message =
-	_ppdStrAlloc(_ppdLangString(cupsLangDefault(),
+	_ppdStrAlloc(cupsLangGetString(cupsLangDefault(),
 				      message));
     }
     else
@@ -208,8 +229,8 @@ ppdConvertOptions(
 		   "job-accounting-user-id", NULL, keyword);
   }
 
-  for (mandatory = (const char *)cupsArrayFirst(pc->mandatory); mandatory;
-       mandatory = (const char *)cupsArrayNext(pc->mandatory))
+  for (mandatory = (const char *)cupsArrayGetFirst(pc->mandatory); mandatory;
+       mandatory = (const char *)cupsArrayGetNext(pc->mandatory))
   {
     if (strcmp(mandatory, "copies") &&
 	strcmp(mandatory, "destination-uris") &&
@@ -715,18 +736,18 @@ ppdCacheCreateWithFile(
     else if (!_ppd_strcasecmp(line, "Filter"))
     {
       if (!pc->filters)
-        pc->filters = cupsArrayNew3(NULL, NULL, NULL, 0,
-				    (cups_acopy_func_t)strdup,
-				    (cups_afree_func_t)free);
+        pc->filters = cupsArrayNew(NULL, NULL, NULL, 0,
+				    (cups_acopy_cb_t)strdup,
+				    (cups_afree_cb_t)free);
 
       cupsArrayAdd(pc->filters, value);
     }
     else if (!_ppd_strcasecmp(line, "PreFilter"))
     {
       if (!pc->prefilters)
-        pc->prefilters = cupsArrayNew3(NULL, NULL, NULL, 0,
-				       (cups_acopy_func_t)strdup,
-				       (cups_afree_func_t)free);
+        pc->prefilters = cupsArrayNew(NULL, NULL, NULL, 0,
+				       (cups_acopy_cb_t)strdup,
+				       (cups_afree_cb_t)free);
 
       cupsArrayAdd(pc->prefilters, value);
     }
@@ -765,7 +786,7 @@ ppdCacheCreateWithFile(
 
         *attrs = ippNew();
 
-        if (ippReadIO(fp, (ipp_iocb_t)cupsFileRead, 1, NULL,
+        if (ippReadIO(fp, (ipp_io_cb_t)cupsFileRead, 1, NULL,
 		      *attrs) != IPP_STATE_DATA)
 	{
 	  DEBUG_puts("ppdCacheCreateWithFile: Bad IPP data.");
@@ -1088,9 +1109,9 @@ ppdCacheCreateWithFile(
     {
       if (!pc->finishings)
 	pc->finishings =
-	    cupsArrayNew3((cups_array_func_t)ppd_pwg_compare_finishings,
+	    cupsArrayNew((cups_array_cb_t)ppd_pwg_compare_finishings,
 			  NULL, NULL, 0, NULL,
-			  (cups_afree_func_t)ppd_pwg_free_finishings);
+			  (cups_afree_cb_t)ppd_pwg_free_finishings);
 
       if ((finishings = calloc(1, sizeof(ppd_pwg_finishings_t))) == NULL)
         goto create_error;
@@ -1104,9 +1125,9 @@ ppdCacheCreateWithFile(
     else if (!_ppd_strcasecmp(line, "FinishingTemplate"))
     {
       if (!pc->templates)
-        pc->templates = cupsArrayNew3((cups_array_func_t)strcmp, NULL, NULL, 0,
-				      (cups_acopy_func_t)strdup,
-				      (cups_afree_func_t)free);
+        pc->templates = cupsArrayNew((cups_array_cb_t)strcmp, NULL, NULL, 0,
+				      (cups_acopy_cb_t)strdup,
+				      (cups_afree_cb_t)free);
 
       cupsArrayAdd(pc->templates, value);
     }
@@ -1130,9 +1151,9 @@ ppdCacheCreateWithFile(
     else if (!_ppd_strcasecmp(line, "SupportFile"))
     {
       if (!pc->support_files)
-        pc->support_files = cupsArrayNew3(NULL, NULL, NULL, 0,
-					  (cups_acopy_func_t)strdup,
-					  (cups_afree_func_t)free);
+        pc->support_files = cupsArrayNew(NULL, NULL, NULL, 0,
+					  (cups_acopy_cb_t)strdup,
+					  (cups_afree_cb_t)free);
 
       cupsArrayAdd(pc->support_files, value);
     }
@@ -1240,7 +1261,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   pwg_size_t		*new_size;	// New size to add, if any
   const char		*filter;	// Current filter
   ppd_pwg_finishings_t	*finishings;	// Current finishings value
-  char			msg_id[256];	// Message identifier
+  char			id[256];	// UI string Identifier
 
 
   DEBUG_printf(("ppdCacheCreateWithPPD(ppd=%p)", ppd));
@@ -1262,7 +1283,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     goto create_error;
   }
 
-  pc->strings = _ppdMessageNew(NULL);
+  pc->strings = ppd_ui_strings_new(NULL);
 
   //
   // Copy and convert size data...
@@ -1535,8 +1556,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "media-source.%s", pwg_name);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "media-source.%s", pwg_name);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1658,8 +1679,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "media-type.%s", map->pwg);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "media-type.%s", map->pwg);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1693,8 +1714,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "output-bin.%s", pwg_keyword);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "output-bin.%s", pwg_keyword);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -1723,8 +1744,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "preset-name.%s", ppd_attr->spec);
-      ppd_pwg_add_message(pc->strings, msg_id, ppd_attr->text);
+      snprintf(id, sizeof(id), "preset-name.%s", ppd_attr->spec);
+      ppd_ui_string_add(pc->strings, id, ppd_attr->text);
 
       //
       // Get the options for this preset...
@@ -1974,8 +1995,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   // Copy filters and pre-filters...
   //
 
-  pc->filters = cupsArrayNew3(NULL, NULL, NULL, 0, (cups_acopy_func_t)strdup,
-			      (cups_afree_func_t)free);
+  pc->filters = cupsArrayNew(NULL, NULL, NULL, 0, (cups_acopy_cb_t)strdup,
+			      (cups_afree_cb_t)free);
 
   cupsArrayAdd(pc->filters,
                "application/vnd.cups-raw application/octet-stream 0 -");
@@ -2000,9 +2021,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   // See if we have a command filter...
   //
 
-  for (filter = (const char *)cupsArrayFirst(pc->filters);
+  for (filter = (const char *)cupsArrayGetFirst(pc->filters);
        filter;
-       filter = (const char *)cupsArrayNext(pc->filters))
+       filter = (const char *)cupsArrayGetNext(pc->filters))
     if (!_ppd_strncasecmp(filter, "application/vnd.cups-command", 28) &&
         _ppd_isspace(filter[28]))
       break;
@@ -2017,9 +2038,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     // filter...
     //
 
-    for (filter = (const char *)cupsArrayFirst(pc->filters);
+    for (filter = (const char *)cupsArrayGetFirst(pc->filters);
 	 filter;
-	 filter = (const char *)cupsArrayNext(pc->filters))
+	 filter = (const char *)cupsArrayGetNext(pc->filters))
       if (!_ppd_strncasecmp(filter, "application/vnd.cups-postscript", 31) &&
 	  _ppd_isspace(filter[31]))
 	break;
@@ -2032,9 +2053,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 
   if ((ppd_attr = ppdFindAttr(ppd, "cupsPreFilter", NULL)) != NULL)
   {
-    pc->prefilters = cupsArrayNew3(NULL, NULL, NULL, 0,
-				   (cups_acopy_func_t)strdup,
-				   (cups_afree_func_t)free);
+    pc->prefilters = cupsArrayNew(NULL, NULL, NULL, 0,
+				   (cups_acopy_cb_t)strdup,
+				   (cups_afree_cb_t)free);
 
     do
       cupsArrayAdd(pc->prefilters, ppd_attr->value);
@@ -2062,9 +2083,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     //
 
     pc->finishings =
-      cupsArrayNew3((cups_array_func_t)ppd_pwg_compare_finishings,
+      cupsArrayNew((cups_array_cb_t)ppd_pwg_compare_finishings,
 		    NULL, NULL, 0, NULL,
-		    (cups_afree_func_t)ppd_pwg_free_finishings);
+		    (cups_afree_cb_t)ppd_pwg_free_finishings);
 
     do
     {
@@ -2088,9 +2109,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     //
 
     pc->finishings =
-      cupsArrayNew3((cups_array_func_t)ppd_pwg_compare_finishings,
+      cupsArrayNew((cups_array_cb_t)ppd_pwg_compare_finishings,
 		    NULL, NULL, 0, NULL,
-		    (cups_afree_func_t)ppd_pwg_free_finishings);
+		    (cups_afree_cb_t)ppd_pwg_free_finishings);
 
     if ((ppd_option = ppdFindOption(ppd, "StapleLocation")) != NULL)
     {
@@ -2217,7 +2238,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 			      "RIFoldType", "OutsideTwoFold");
     }
 
-    if (cupsArrayCount(pc->finishings) == 0)
+    if (cupsArrayGetCount(pc->finishings) == 0)
     {
       cupsArrayDelete(pc->finishings);
       pc->finishings = NULL;
@@ -2226,10 +2247,10 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 
   if ((ppd_option = ppdFindOption(ppd, "cupsFinishingTemplate")) != NULL)
   {
-    pc->templates = cupsArrayNew3((cups_array_func_t)strcmp,
+    pc->templates = cupsArrayNew((cups_array_cb_t)strcmp,
 				  NULL, NULL, 0,
-				  (cups_acopy_func_t)strdup,
-				  (cups_afree_func_t)free);
+				  (cups_acopy_cb_t)strdup,
+				  (cups_afree_cb_t)free);
 
     for (choice = ppd_option->choices, i = ppd_option->num_choices; i > 0;
 	 choice ++, i --)
@@ -2240,8 +2261,8 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
       // Add localized text for PWG keyword to message catalog...
       //
 
-      snprintf(msg_id, sizeof(msg_id), "finishing-template.%s", choice->choice);
-      ppd_pwg_add_message(pc->strings, msg_id, choice->text);
+      snprintf(id, sizeof(id), "finishing-template.%s", choice->choice);
+      ppd_ui_string_add(pc->strings, id, choice->text);
     }
   }
 
@@ -2280,9 +2301,9 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   // Support files...
   //
 
-  pc->support_files = cupsArrayNew3(NULL, NULL, NULL, 0,
-				    (cups_acopy_func_t)strdup,
-				    (cups_afree_func_t)free);
+  pc->support_files = cupsArrayNew(NULL, NULL, NULL, 0,
+				    (cups_acopy_cb_t)strdup,
+				    (cups_afree_cb_t)free);
 
   for (ppd_attr = ppdFindAttr(ppd, "cupsICCProfile", NULL);
        ppd_attr;
@@ -2349,7 +2370,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
   int                    is_color;
   unsigned int           base_res_x = 0,
                          base_res_y = 0;
-  cups_page_header2_t    header,
+  cups_page_header_t    header,
                          optheader;
   int                    preferred_bits;
   ppd_attr_t             *ppd_attr;
@@ -2476,7 +2497,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       }
 
       // Array for properties of the choices
-      choice_properties = cupsArrayNew(NULL, NULL);
+      choice_properties = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
 
       //
       // Gather the data for each choice
@@ -2898,7 +2919,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       {
 	for (k = 0; k < option->num_choices; k ++)
         {
-	  properties = cupsArrayIndex(choice_properties, k);
+	  properties = cupsArrayGetElement(choice_properties, k);
 
 	  // presets[0][0]: Mono/Draft
 	  if (best_mono_draft >= 0 &&
@@ -3007,7 +3028,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
 
       for (k = 0; k < option->num_choices; k ++)
       {
-	properties = cupsArrayIndex(choice_properties, k);
+	properties = cupsArrayGetElement(choice_properties, k);
 	c = option->choices[k].choice;
 
 	// Vendor-specific options
@@ -3290,7 +3311,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       }
 
       for (k = 0; k < option->num_choices; k ++)
-	free(cupsArrayIndex(choice_properties, k));
+	free(cupsArrayGetElement(choice_properties, k));
       cupsArrayDelete(choice_properties);
     }
   }
@@ -3456,7 +3477,7 @@ ppdCacheGetFinishingOptions(
   // Range check input...
   //
 
-  if (!pc || cupsArrayCount(pc->finishings) == 0 || !options ||
+  if (!pc || cupsArrayGetCount(pc->finishings) == 0 || !options ||
       (!job && value == IPP_FINISHINGS_NONE))
     return (num_options);
 
@@ -3541,9 +3562,9 @@ ppdCacheGetFinishingValues(
   // Go through the finishings options and see what is set...
   //
 
-  for (f = (ppd_pwg_finishings_t *)cupsArrayFirst(pc->finishings);
+  for (f = (ppd_pwg_finishings_t *)cupsArrayGetFirst(pc->finishings);
        f;
-       f = (ppd_pwg_finishings_t *)cupsArrayNext(pc->finishings))
+       f = (ppd_pwg_finishings_t *)cupsArrayGetNext(pc->finishings))
   {
     DEBUG_printf(("ppdCacheGetFinishingValues: Checking %d (%s)",
 		  (int)f->value, ippEnumString("finishings", (int)f->value)));
@@ -3640,7 +3661,7 @@ ppdCacheGetInputSlot(
     ipp_attribute_t	*media_col,	// media-col attribute
 			*media_source;	// media-source attribute
     pwg_size_t		size;		// Dimensional size
-    int			margins_set;	// Were the margins set?
+    cups_bool_t		margins_set;	// Were the margins set?
 
     media_col = ippFindAttribute(job, "media-col", IPP_TAG_BEGIN_COLLECTION);
     if (media_col &&
@@ -3779,8 +3800,8 @@ ppdCacheGetPageSize(
 		*variant,		// Page size variant
 		*closest,		// Closest size
 		jobsize;		// Size data from job
-  int		margins_set,		// Were the margins set?
-		dwidth,			// Difference in width
+  cups_bool_t	margins_set;		// Were the margins set?
+  int		dwidth,			// Difference in width
 		dlength,		// Difference in length
 		dleft,			// Difference in left margins
 		dright,			// Difference in right margins
@@ -4381,14 +4402,14 @@ ppdCacheWriteFile(
   if (pc->product)
     cupsFilePutConf(fp, "Product", pc->product);
 
-  for (value = (const char *)cupsArrayFirst(pc->filters);
+  for (value = (const char *)cupsArrayGetFirst(pc->filters);
        value;
-       value = (const char *)cupsArrayNext(pc->filters))
+       value = (const char *)cupsArrayGetNext(pc->filters))
     cupsFilePutConf(fp, "Filter", value);
 
-  for (value = (const char *)cupsArrayFirst(pc->prefilters);
+  for (value = (const char *)cupsArrayGetFirst(pc->prefilters);
        value;
-       value = (const char *)cupsArrayNext(pc->prefilters))
+       value = (const char *)cupsArrayGetNext(pc->prefilters))
     cupsFilePutConf(fp, "PreFilter", value);
 
   cupsFilePrintf(fp, "SingleFile %s\n", pc->single_file ? "true" : "false");
@@ -4397,9 +4418,9 @@ ppdCacheWriteFile(
   // Finishing options...
   //
 
-  for (f = (ppd_pwg_finishings_t *)cupsArrayFirst(pc->finishings);
+  for (f = (ppd_pwg_finishings_t *)cupsArrayGetFirst(pc->finishings);
        f;
-       f = (ppd_pwg_finishings_t *)cupsArrayNext(pc->finishings))
+       f = (ppd_pwg_finishings_t *)cupsArrayGetNext(pc->finishings))
   {
     cupsFilePrintf(fp, "Finishings %d", f->value);
     for (i = f->num_options, option = f->options; i > 0; i --, option ++)
@@ -4407,7 +4428,7 @@ ppdCacheWriteFile(
     cupsFilePutChar(fp, '\n');
   }
 
-  for (value = (const char *)cupsArrayFirst(pc->templates); value; value = (const char *)cupsArrayNext(pc->templates))
+  for (value = (const char *)cupsArrayGetFirst(pc->templates); value; value = (const char *)cupsArrayGetNext(pc->templates))
     cupsFilePutConf(fp, "FinishingTemplate", value);
 
   //
@@ -4430,18 +4451,18 @@ ppdCacheWriteFile(
   if (pc->password)
     cupsFilePutConf(fp, "JobPassword", pc->password);
 
-  for (value = (char *)cupsArrayFirst(pc->mandatory);
+  for (value = (char *)cupsArrayGetFirst(pc->mandatory);
        value;
-       value = (char *)cupsArrayNext(pc->mandatory))
+       value = (char *)cupsArrayGetNext(pc->mandatory))
     cupsFilePutConf(fp, "Mandatory", value);
 
   //
   // Support files...
   //
 
-  for (value = (char *)cupsArrayFirst(pc->support_files);
+  for (value = (char *)cupsArrayGetFirst(pc->support_files);
        value;
-       value = (char *)cupsArrayNext(pc->support_files))
+       value = (char *)cupsArrayGetNext(pc->support_files))
     cupsFilePutConf(fp, "SupportFile", value);
 
   //
@@ -4450,10 +4471,10 @@ ppdCacheWriteFile(
 
   if (attrs)
   {
-    cupsFilePrintf(fp, "IPP " CUPS_LLFMT "\n", CUPS_LLCAST ippLength(attrs));
+    cupsFilePrintf(fp, "IPP " CUPS_LLFMT "\n", CUPS_LLCAST ippGetLength(attrs));
 
     ippSetState(attrs, IPP_STATE_IDLE);
-    ippWriteIO(fp, (ipp_iocb_t)cupsFileWrite, 1, NULL, attrs);
+    ippWriteIO(fp, (ipp_io_cb_t)cupsFileWrite, 1, NULL, attrs);
   }
 
   //
@@ -4627,6 +4648,71 @@ ppdPwgPageSizeForMedia(
 
 
 //
+// 'ppd_ui_string_add()' - Add an entry to the PPD-cached UI strings list.
+//
+
+static void
+ppd_ui_string_add(cups_array_t *l,	// I - UI string list
+		  const char   *name,	// I - Machine-readable name
+		  const char   *ui_str) // I - UI string
+{
+  _ppd_ui_string_t	*u;		// New entry
+
+
+  if ((u = calloc(1, sizeof(_ppd_ui_string_t))) != NULL)
+  {
+    u->name = strdup(name);
+    u->ui_str = strdup(ui_str);
+    cupsArrayAdd(l, u);
+  }
+}
+
+
+//
+// 'ppd_ui_string_compare()' - Compare two messages.
+//
+
+static int			// O - Result of comparison
+ppd_ui_string_compare(
+    _ppd_ui_string_t *u1,	// I - First UI-string entry
+    _ppd_ui_string_t *u2)	// I - Second UI-string entry
+{
+  return (strcmp(u1->name, u2->name));
+}
+
+
+//
+// 'ppd_ui_string_free()' - Free a message.
+//
+
+static void
+ppd_ui_string_free(_ppd_ui_string_t *u)	// I - UI-string entry
+{
+  if (u->name)
+    free(u->name);
+
+  if (u->ui_str)
+    free(u->ui_str);
+
+  free(u);
+}
+
+
+//
+// 'ppd_ui_strings_new()' - Make a new message catalog array.
+//
+
+static cups_array_t *			// O - Array
+ppd_ui_strings_new(void *context)	// I - User data
+{
+  return (cupsArrayNew((cups_array_cb_t )ppd_ui_string_compare, context,
+                       (cups_ahash_cb_t)NULL, 0,
+		       (cups_acopy_cb_t)NULL,
+		       (cups_afree_cb_t)ppd_ui_string_free));
+}
+
+
+//
 // 'ppd_pwg_add_finishing()' - Add a finishings value.
 //
 
@@ -4647,27 +4733,6 @@ ppd_pwg_add_finishing(
     f->num_options = cupsAddOption(name, value, 0, &f->options);
 
     cupsArrayAdd(finishings, f);
-  }
-}
-
-
-//
-// 'ppd_pwg_add_message()' - Add a message to the PPD cached strings.
-//
-
-static void
-ppd_pwg_add_message(cups_array_t *a,	// I - Message catalog
-                const char   *msg,	// I - Message identifier
-                const char   *str)	// I - Localized string
-{
-  _ppd_message_t	*m;		// New message
-
-
-  if ((m = calloc(1, sizeof(_ppd_message_t))) != NULL)
-  {
-    m->msg = strdup(msg);
-    m->str = strdup(str);
-    cupsArrayAdd(a, m);
   }
 }
 

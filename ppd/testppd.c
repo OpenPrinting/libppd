@@ -12,9 +12,10 @@
 // Include necessary headers...
 //
 
-#include "ppd.h"
-#include "array-private.h"
-#include "raster-private.h"
+#include <ppd/ppd.h>
+#include <ppd/array-private.h>
+#include <ppd/raster-private.h>
+#include <ppd/libcups2-private.h>
 #include <sys/stat.h>
 #ifdef _WIN32
 #  include <io.h>
@@ -32,7 +33,7 @@
 static int	do_ppd_tests(const char *filename, int num_options,
 			     cups_option_t *options);
 static int	do_ps_tests(void);
-static void	print_changes(cups_page_header2_t *header, cups_page_header2_t *expected);
+static void	print_changes(cups_page_header_t *header, cups_page_header_t *expected);
 
 
 //
@@ -134,7 +135,7 @@ static const char *setpagedevice_code =
 "/cupsPreferredBitsPerColor 17"
 ">> setpagedevice";
 
-static cups_page_header2_t setpagedevice_header =
+static cups_page_header_t setpagedevice_header =
 {
   "Media Class",			// MediaClass
   "(Media Color)",			// MediaColor
@@ -1209,16 +1210,16 @@ main(int  argc,				// I - Number of command-line arguments
     // PPD directory list -> See whether we have valid PPD collection
 
     cups_array_t *dirlist = _ppdArrayNewStrings(argv[1], ',');
-    cups_array_t *ppd_collections = cupsArrayNew(NULL, NULL);
+    cups_array_t *ppd_collections = cupsArrayNew(NULL, NULL, NULL, 0, NULL, NULL);
     ppd_collection_t *col;
     cups_option_t *options = NULL;
     int num_options = 0;
     int i;
     char *testname = NULL;
 
-    for (s = (char *)cupsArrayFirst(dirlist), i = 1;
+    for (s = (char *)cupsArrayGetFirst(dirlist), i = 1;
 	 s;
-	 s = (char *)cupsArrayNext(dirlist), i ++)
+	 s = (char *)cupsArrayGetNext(dirlist), i ++)
     {
       col = (ppd_collection_t *)calloc(1, sizeof(ppd_collection_t));
       col->path = s;
@@ -1249,21 +1250,21 @@ main(int  argc,				// I - Number of command-line arguments
     {
       if (cupsGetOption("only-makes", num_options, options))
       {
-	printf("Found %d manufacturers.\n\n", cupsArrayCount(ppds));
-	for (s = (char *)cupsArrayFirst(ppds);
+	printf("Found %d manufacturers.\n\n", (int)cupsArrayGetCount(ppds));
+	for (s = (char *)cupsArrayGetFirst(ppds);
 	     s;
-	     s = (char *)cupsArrayNext(ppds))
+	     s = (char *)cupsArrayGetNext(ppds))
 	  puts(s);
       }
       else
       {
 	ppd_info_t *ppd;
-	printf("Found %d PPD files.\n\n", cupsArrayCount(ppds));
+	printf("Found %d PPD files.\n\n", (int)cupsArrayGetCount(ppds));
 	puts("mtime,size,model_number,type,filename,name,languages0,products0,"
 	     "psversions0,make,make_and_model,device_id,scheme");
-	for (ppd = (ppd_info_t *)cupsArrayFirst(ppds);
+	for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppds);
 	     ppd;
-	     ppd = (ppd_info_t *)cupsArrayNext(ppds))
+	     ppd = (ppd_info_t *)cupsArrayGetNext(ppds))
 	{
 	  printf("%d,%ld,%d,%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
 		 "\"%s\",\"%s\"\n",
@@ -1303,9 +1304,9 @@ main(int  argc,				// I - Number of command-line arguments
       printf("%s: No PPD files found.\n", argv[1]);
 
     cupsArrayDelete(dirlist);
-    for (col = (ppd_collection_t *)cupsArrayFirst(ppd_collections);
+    for (col = (ppd_collection_t *)cupsArrayGetFirst(ppd_collections);
 	 col;
-	 col = (ppd_collection_t *)cupsArrayNext(ppd_collections))
+	 col = (ppd_collection_t *)cupsArrayGetNext(ppd_collections))
     {
       free(col->name);
       free(col);
@@ -1313,9 +1314,9 @@ main(int  argc,				// I - Number of command-line arguments
     cupsArrayDelete(ppd_collections);
     if (ppds)
     {
-      for (s = (char *)cupsArrayFirst(ppds);
+      for (s = (char *)cupsArrayGetFirst(ppds);
 	   s;
-	   s = (char *)cupsArrayNext(ppds))
+	   s = (char *)cupsArrayGetNext(ppds))
 	free(s);
       cupsArrayDelete(ppds);
     }
@@ -1436,9 +1437,9 @@ main(int  argc,				// I - Number of command-line arguments
 
           if ((coption = ppdFindCustomOption(ppd, option->keyword)) != NULL)
 	  {
-	    for (cparam = (ppd_cparam_t *)cupsArrayFirst(coption->params);
+	    for (cparam = (ppd_cparam_t *)cupsArrayGetFirst(coption->params);
 	         cparam;
-		 cparam = (ppd_cparam_t *)cupsArrayNext(coption->params))
+		 cparam = (ppd_cparam_t *)cupsArrayGetNext(coption->params))
             {
 	      switch (cparam->type)
 	      {
@@ -1531,15 +1532,15 @@ main(int  argc,				// I - Number of command-line arguments
 
       puts("\nAttributes:");
 
-      for (attr = (ppd_attr_t *)cupsArrayFirst(ppd->sorted_attrs);
+      for (attr = (ppd_attr_t *)cupsArrayGetFirst(ppd->sorted_attrs);
            attr;
-	   attr = (ppd_attr_t *)cupsArrayNext(ppd->sorted_attrs))
+	   attr = (ppd_attr_t *)cupsArrayGetNext(ppd->sorted_attrs))
         printf("    *%s %s/%s: \"%s\"\n", attr->name, attr->spec,
 	       attr->text, attr->value ? attr->value : "");
 
       puts("\nPPD Cache:");
       if ((pc = ppdCacheCreateWithPPD(ppd)) == NULL)
-        printf("    Unable to create: %s\n", cupsLastErrorString());
+        printf("    Unable to create: %s\n", cupsGetErrorString());
       else
       {
         ppdCacheWriteFile(pc, "t.cache", NULL);
@@ -1580,7 +1581,7 @@ do_ppd_tests(const char    *filename,	// I - PPD file
              cups_option_t *options)	// I - Options
 {
   ppd_file_t		*ppd;		// PPD file data
-  cups_page_header2_t	header;		// Page header
+  cups_page_header_t	header;		// Page header
 
 
   printf("\"%s\": ", filename);
@@ -1626,7 +1627,7 @@ do_ppd_tests(const char    *filename,	// I - PPD file
 static int
 do_ps_tests(void)
 {
-  cups_page_header2_t	header;		// Page header
+  cups_page_header_t	header;		// Page header
   int			preferred_bits;	// Preferred bits
   int			errors = 0;	// Number of errors
 
@@ -1751,8 +1752,8 @@ do_ps_tests(void)
 
 static void
 print_changes(
-    cups_page_header2_t *header,	// I - Actual page header
-    cups_page_header2_t *expected)	// I - Expected page header
+    cups_page_header_t *header,	// I - Actual page header
+    cups_page_header_t *expected)	// I - Expected page header
 {
   int	i;				// Looping var
 

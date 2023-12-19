@@ -120,9 +120,11 @@ libppd_la_SOURCES = \
 	$(pkgppddefs_DATA)
 libppd_la_LIBADD = \
 	$(LIBCUPSFILTERS_LIBS) \
+	$(ZLIB_LIBS) \
 	$(CUPS_LIBS)
 libppd_la_CFLAGS = \
 	$(LIBCUPSFILTERS_CFLAGS) \
+	$(ZLIB_CFLAGS) \
 	$(CUPS_CFLAGS)
 libppd_la_CXXFLAGS = \
 	$(libppd_la_CFLAGS)

@@ -289,10 +289,10 @@ ppd_message_file_load(const char *filename,	// I - Message catalog to load
   // Create an array to hold the messages...
   //
 
-if ((a = cupsArrayNew3((cups_array_cb_t)ppd_message_compare, NULL,
-                       (cups_ahash_cb_t)NULL, 0,
-                       (cups_acopy_cb_t)NULL,
-                       (cups_afree_cb_t)ppd_message_free)) == NULL)
+  if ((a = cupsArrayNew3((cups_array_cb_t)ppd_message_compare, NULL,
+                         (cups_ahash_cb_t)NULL, 0,
+                         (cups_acopy_cb_t)NULL,
+                         (cups_afree_cb_t)ppd_message_free)) == NULL)
   {
     DEBUG_puts("5ppd_message_file_load: Unable to allocate array!");
     return (NULL);

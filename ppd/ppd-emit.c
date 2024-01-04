@@ -949,19 +949,24 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	// parameter positions defined in the PPD file...
 	//
 
-        ppd_attr_t	*attr;		// PPD attribute
+	ppd_attr_t	*attr;		// PPD attribute
 	int		pos,		// Position of custom value
 			orientation;	// Orientation to use
 	float		values[5];	// Values for custom command
 
 
-        strlcpy(bufptr, "%%BeginFeature: *CustomPageSize True\n",
+	strlcpy(bufptr, "%%BeginFeature: *CustomPageSize True\n",
 		(size_t)(bufend - bufptr + 1));
         bufptr += 37;
 
-        size = ppdPageSize(ppd, "Custom");
+	if ((size = ppdPageSize(ppd, "Custom")) == NULL)
+	{
+	  free(buffer);
+	  free(choices);
+	  return (NULL);
+	}
 
-        memset(values, 0, sizeof(values));
+	memset(values, 0, sizeof(values));
 
 	if ((attr = ppdFindAttr(ppd, "ParamCustomPageSize", "Width")) != NULL)
 	{

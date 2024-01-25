@@ -339,6 +339,7 @@ ppdLoadAttributes(
   int           def_found,
                 order,
                 face_up,
+                num,
                 have_custom_size = 0;
   cups_page_header_t header;
   static const char * const pdls[][2] =
@@ -657,13 +658,16 @@ ppdLoadAttributes(
 	  yres = res_y[0];
 	}
       }
-      else if (strlen(items[0]) > 0 &&
-	       ((int)(strtol(items[0], &p, 10) * 0) ||
-		(errno == 0 && *p == '\0')))
+      else if (items[0][0] && ((num = strtol(items[0], &p, 10)) | 1) && errno == 0 && *p == '\0')
       {
+	// bitwise OR is used in case the read string is "0".
+	// we had to use strtol() in case there are keyword values starting with a number...
+	int_item[0] = num;
+
 	// Integer number(s)
-	for (j = 0; j < num_items; j ++)
-	  int_item[j] = (int)strtol(items[j], NULL, 10);
+	for (j = 1; j < num_items; j ++)
+	  int_item[j] = (int)strtol(items[j], &p, 10);
+
 	ippAddIntegers(attrs, IPP_TAG_PRINTER, IPP_TAG_INTEGER, item_buf,
 		       num_items, int_item);
       }

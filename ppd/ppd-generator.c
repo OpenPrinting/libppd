@@ -851,44 +851,37 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     formatfound = 1;
     is_pdf = 1;
   }
-  else if (cupsArrayFind(pdl_list, "image/pwg-raster"))
+  else if (cupsArrayFind(pdl_list, "image/pwg-raster") &&
+	   (attr = ippFindAttribute(supported, "pwg-raster-document-resolution-supported", IPP_TAG_RESOLUTION)) != NULL)
   {
-    if ((attr = ippFindAttribute(supported,
-				 "pwg-raster-document-resolution-supported",
-				 IPP_TAG_RESOLUTION)) != NULL)
+    current_def = NULL;
+    if ((current_res = cfIPPAttrToResolutionArray(attr)) != NULL &&
+	cfJoinResolutionArrays(&common_res, &current_res, &common_def,
+			       &current_def))
     {
-      current_def = NULL;
-      if ((current_res = cfIPPAttrToResolutionArray(attr)) != NULL &&
-	  cfJoinResolutionArrays(&common_res, &current_res, &common_def,
-				 &current_def))
-      {
-	cupsFilePuts(fp, "*cupsFilter2: \"image/pwg-raster image/pwg-raster 0 -\"\n");
-	if (formatfound == 0) manual_copies = 1;
-	formatfound = 1;
-	is_pwg = 1;
-      }
+      cupsFilePuts(fp, "*cupsFilter2: \"image/pwg-raster image/pwg-raster 0 -\"\n");
+      if (formatfound == 0) manual_copies = 1;
+      formatfound = 1;
+      is_pwg = 1;
     }
   }
-  else if (cupsArrayFind(pdl_list, "application/PCLm"))
+  else if (cupsArrayFind(pdl_list, "application/PCLm") &&
+	   (attr = ippFindAttribute(supported, "pclm-source-resolution-supported", IPP_TAG_RESOLUTION)) != NULL)
   {
-    if ((attr = ippFindAttribute(supported, "pclm-source-resolution-supported",
-				 IPP_TAG_RESOLUTION)) != NULL)
+    if ((defattr = ippFindAttribute(supported,
+				    "pclm-source-resolution-default",
+				    IPP_TAG_RESOLUTION)) != NULL)
+      current_def = cfIPPResToResolution(defattr, 0);
+    else
+      current_def = NULL;
+    if ((current_res = cfIPPAttrToResolutionArray(attr)) != NULL &&
+	cfJoinResolutionArrays(&common_res, &current_res, &common_def,
+			       &current_def))
     {
-      if ((defattr = ippFindAttribute(supported,
-				      "pclm-source-resolution-default",
-				      IPP_TAG_RESOLUTION)) != NULL)
-	current_def = cfIPPResToResolution(defattr, 0);
-      else
-	current_def = NULL;
-      if ((current_res = cfIPPAttrToResolutionArray(attr)) != NULL &&
-	  cfJoinResolutionArrays(&common_res, &current_res, &common_def,
-				 &current_def))
-      {
-	cupsFilePuts(fp, "*cupsFilter2: \"application/PCLm application/PCLm 0 -\"\n");
-	if (formatfound == 0) manual_copies = 1;
-	formatfound = 1;
-	is_pclm = 1;
-      }
+      cupsFilePuts(fp, "*cupsFilter2: \"application/PCLm application/PCLm 0 -\"\n");
+      if (formatfound == 0) manual_copies = 1;
+      formatfound = 1;
+      is_pclm = 1;
     }
   }
   // Legacy formats only if we have no driverless format

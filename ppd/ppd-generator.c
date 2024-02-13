@@ -723,7 +723,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     is_pdf = 1;
   }
 #ifdef CUPS_RASTER_HAVE_APPLERASTER
-  else if (cupsArrayFind(pdl_list, "image/urf"))
+  else if (cupsArrayFind(pdl_list, "image/urf") &&
+	   (ippFindAttribute(supported, "urf-supported", IPP_TAG_KEYWORD) != NULL))
   {
     int resStore = 0; // Variable for storing the no. of resolutions in the resolution array 
     int resArray[__INT16_MAX__]; // Creating a resolution array supporting a maximum of 32767 resolutions.

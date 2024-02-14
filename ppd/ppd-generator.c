@@ -852,6 +852,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     is_pdf = 1;
   }
   else if (cupsArrayFind(pdl_list, "image/pwg-raster") &&
+	   ippFindAttribute(supported, "pwg-raster-document-type-supported", IPP_TAG_KEYWORD) != NULL &&
 	   (attr = ippFindAttribute(supported, "pwg-raster-document-resolution-supported", IPP_TAG_RESOLUTION)) != NULL)
   {
     current_def = NULL;

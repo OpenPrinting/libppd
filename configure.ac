@@ -164,6 +164,13 @@ AC_SUBST(CUPS_STATEDIR)
 # ========================
 PKG_CHECK_MODULES([LIBCUPSFILTERS], [libcupsfilters])
 
+# ==============
+# Check for zlib
+# ==============
+PKG_CHECK_MODULES([ZLIB], [zlib], ,[
+        AC_CHECK_HEADER([zlib.h])
+        AC_CHECK_LIB([z], [deflateInit])])
+
 # ============================================================
 # Check for whether we want to install the testppdfile utility
 # ============================================================
@@ -220,7 +227,6 @@ AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([sys/stat.h])
 AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([unistd.h])
-AC_CHECK_HEADERS([zlib.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([dirent.h])
 AC_CHECK_HEADERS([sys/ioctl.h])

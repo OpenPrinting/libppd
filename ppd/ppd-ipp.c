@@ -439,24 +439,26 @@ ppdLoadAttributes(
         break;
       }
     }
-  }
 
-  //
-  // Try to find one with the same size...
-  //
+    //
+    // Try to find one with the same size...
+    //
 
-  if (!default_size)
-    for (i = 0, pwg_size = pc->sizes; i < pc->num_sizes; i ++, pwg_size ++)
+    if (!default_size)
     {
-      if (_PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->width),
-			      pwg_size->width) &&
-	  _PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->length),
-			      pwg_size->length))
+      for (i = 0, pwg_size = pc->sizes; i < pc->num_sizes; i ++, pwg_size ++)
       {
-        default_size = pwg_size;
-        break;
+	if (_PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->width),
+				pwg_size->width) &&
+	    _PPD_PWG_EQUIVALENT(PWG_FROM_POINTS(ppd_size->length),
+				pwg_size->length))
+	{
+	  default_size = pwg_size;
+	  break;
+	}
       }
     }
+ }
 
   //
   // Default to A4 or Letter...

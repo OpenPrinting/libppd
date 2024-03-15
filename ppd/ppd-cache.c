@@ -1236,9 +1236,10 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
   pwg_size_t		*pwg_size;	// Current PWG size
   char			pwg_keyword[3 + PPD_MAX_NAME + 1 + 12 + 1 + 12 + 3],
 					// PWG keyword string
-			ppd_name[PPD_MAX_NAME];
+			pwgied_ppd_name[PPD_MAX_NAME];
 					// Normalized PPD name
-  const char		*pwg_name;	// Standard PWG media name
+  const char		*pwg_name,	// Standard PWG media name
+			*ppd_name;	//Standard Adobe PPD name
   pwg_media_t		*pwg_media;	// PWG media data
   ppd_pwg_print_color_mode_t pwg_print_color_mode;
 					// print-color-mode index
@@ -1336,6 +1337,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 	// Standard name and no conflicts, use it!
 	//
 
+	ppd_name      = pwg_media->ppd;
 	pwg_name      = pwg_media->pwg;
 	new_known_pwg = 1;
       }
@@ -1347,11 +1349,12 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 	//     pp_lowerppd_WIDTHxHEIGHTuu
 	//
 
+	ppd_name      = ppd_size->name;
 	pwg_name      = pwg_keyword;
 	new_known_pwg = 0;
 
-	ppdPwgUnppdizeName(ppd_size->name, ppd_name, sizeof(ppd_name), "_.");
-	pwgFormatSizeName(pwg_keyword, sizeof(pwg_keyword), NULL, ppd_name,
+	ppdPwgUnppdizeName(ppd_size->name, pwgied_ppd_name, sizeof(pwgied_ppd_name), "_.");
+	pwgFormatSizeName(pwg_keyword, sizeof(pwg_keyword), NULL, pwgied_ppd_name,
 			  PWG_FROM_POINTS(ppd_size->width),
 			  PWG_FROM_POINTS(ppd_size->length), NULL);
       }
@@ -1425,7 +1428,7 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
 	// Save this size...
 	//
 
-	new_size->map.ppd = strdup(ppd_size->name);
+	new_size->map.ppd = strdup(ppd_name);
 	new_size->map.pwg = strdup(pwg_name);
 	new_size->width   = new_width;
 	new_size->length  = new_length;

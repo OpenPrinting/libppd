@@ -722,6 +722,14 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     formatfound = 1;
     is_pdf = 1;
   }
+  else if (cupsArrayFind(pdl_list, "application/pdf"))
+  {
+    // PDF printer
+    cupsFilePuts(fp, "*cupsFilter2: \"application/vnd.cups-pdf application/pdf 0 -\"\n");
+    manual_copies = 0;
+    formatfound = 1;
+    is_pdf = 1;
+  }
 #ifdef CUPS_RASTER_HAVE_APPLERASTER
   else if (cupsArrayFind(pdl_list, "image/urf") &&
 	   (ippFindAttribute(supported, "urf-supported", IPP_TAG_KEYWORD) != NULL))
@@ -843,14 +851,6 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     }
   }
 #endif
-  else if (cupsArrayFind(pdl_list, "application/pdf"))
-  {
-    // PDF printer
-    cupsFilePuts(fp, "*cupsFilter2: \"application/vnd.cups-pdf application/pdf 0 -\"\n");
-    manual_copies = 0;
-    formatfound = 1;
-    is_pdf = 1;
-  }
   else if (cupsArrayFind(pdl_list, "image/pwg-raster") &&
 	   ippFindAttribute(supported, "pwg-raster-document-type-supported", IPP_TAG_KEYWORD) != NULL &&
 	   (attr = ippFindAttribute(supported, "pwg-raster-document-resolution-supported", IPP_TAG_RESOLUTION)) != NULL)

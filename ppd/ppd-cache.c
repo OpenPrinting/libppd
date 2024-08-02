@@ -26,7 +26,7 @@
 // Macro to test for two almost-equal PWG measurements.
 //
 
-#define _PPD_PWG_EQUIVALENT(x, y)	(abs((x)-(y)) < 2)
+#define _PPD_PWG_EQUIVALENT(x, y)	(abs((x)-(y)) < 50)
 
 //
 // Macros to work around typos in older libcups version

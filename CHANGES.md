@@ -1,4 +1,48 @@
-# CHANGES - libppd v2.0.0 - 2023-09-22
+# CHANGES - libppd v2.1b1 - 2024-08-14
+
+## CHANGES IN V2.1b1 (14th August 2024)
+
+- Added support for libcups3 (libcups of CUPS 3.x)
+  With these changes libcupsfilters can be built either with libcups2
+  (libcups of CUPS 2.x) or libcups3 (libcups of CUPS 3.x). Pull
+  request #27.
+
+- Prefer PDF again in PPDs for driverless printers
+  PDF works better with finishing, especially combinations of multiple
+  copies, collation, and stapling/binding (Issue #42, Pull request
+  #44).
+
+- Use 0.5mm as tolerance when comparing page sizes
+  For the PWG two page sizes are considered the same when the
+  dimensions differ no more than 0.5 mm, libppd used too tight
+  tolerances (Issue #29, Pull request #46).
+
+- PPD generator: Check for required attributes when choosing input format
+  Check for PCLm and PWG the minimum of attributes which we require
+  during PPD generation. (Pull request #39, #40, [Fedora issue](https://bugzilla.redhat.com/show_bug.cgi?id=2263053)).
+
+- `ppdLoadAttributes()`: Improve check whether parameters are integer
+  (Pull request #38)
+
+- `ppdLoadAttributes()`: Fix crash when page size could not get determined
+  (Issue #31, Pull request #37)
+
+- Fix crash if there is no page size for "Custom"
+  (Pull request #35, [CUPS issue #849](https://github.com/OpenPrinting/cups/issues/849))
+
+- Fix crash when incoming `*ptr` is NULL
+  (Pull request #28, same as OpenPrinting/cups#831)
+
+- libcups2 compatibility: Use proper CUPS array callback function types
+  Fixed CUPS array function call in libcups2 compatibility layer (Pull
+  request #33)
+
+- Build system: Fix failure to correctly link to zlib
+  Look up zlib properly with pkg-config (Pull request #32)
+
+- Convert `INSTALL` to `INSTALL.md`
+  (Pull request #34)
+
 
 ## CHANGES IN V2.0.0 (22th September 2023)
 

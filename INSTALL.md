@@ -1,4 +1,4 @@
-# OpenPrinting libppd v2.0.0 Installation Guide
+# OpenPrinting libppd v2.1b1 Installation Guide
 
 
 ## Overview

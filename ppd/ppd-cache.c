@@ -1,6 +1,7 @@
 //
 // PPD cache implementation for libppd.
 //
+// Copyright © 2024 by OpenPrinting
 // Copyright © 2010-2019 by Apple Inc.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
@@ -3434,7 +3435,7 @@ ppdCacheGetBin(
 
   //
   // Range check input...
- 
+
 
   if (!pc || !output_bin)
     return (NULL);
@@ -3935,7 +3936,7 @@ ppdCacheGetPageSize(
       {
 	//
 	// Check not only the base size (like "A4") but also variants (like
-        // "A4.Borderless"). We check only the margins and orientation but do 
+        // "A4.Borderless"). We check only the margins and orientation but do
 	// not re-check the size.
 	//
 
@@ -4776,7 +4777,7 @@ ppdPwgPpdizeName(const char *ipp,	// I - IPP keyword
 	*end;				// End of name buffer
 
 
-  if (!ipp)
+  if (!ipp || !_ppd_isalnum(*ipp))
   {
     *name = '\0';
     return;
@@ -4786,13 +4787,19 @@ ppdPwgPpdizeName(const char *ipp,	// I - IPP keyword
 
   for (ptr = name + 1, end = name + namesize - 1; *ipp && ptr < end;)
   {
-    if (*ipp == '-' && _ppd_isalnum(ipp[1]))
+    if (*ipp == '-' && isalnum(ipp[1]))
     {
       ipp ++;
       *ptr++ = (char)toupper(*ipp++ & 255);
     }
-    else
+    else if (*ipp == '_' || *ipp == '.' || *ipp == '-' || isalnum(*ipp))
+    {
       *ptr++ = *ipp++;
+    }
+    else
+    {
+      ipp ++;
+    }
   }
 
   *ptr = '\0';

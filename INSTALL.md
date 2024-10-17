@@ -1,9 +1,9 @@
-# OpenPrinting libppd v2.1b1 Installation Guide
+# OpenPrinting libppd v2.1.0 Installation Guide
 
 
 ## Overview
 
-This guide provides instructions for compiling and installing OpenPrinting libppd version 2.0.0 from source code. For more details, refer to "README.md" and for a change log, see "CHANGES.md".
+This guide provides instructions for compiling and installing OpenPrinting libppd from source code. For more details, refer to "README.md" and for a change log, see "CHANGES.md".
 
 ### Before You Begin
 

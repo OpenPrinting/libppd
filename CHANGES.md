@@ -1,4 +1,12 @@
-# CHANGES - libppd v2.1b1 - 2024-08-14
+# CHANGES - libppd v2.1.0 - 2024-10-17
+
+## CHANGES IN V2.1.0 (17th October 2024)
+
+- Prevent PPD generation based on invalid IPP response
+  Overtaken from CUPS 2.x: Validate IPP attributes in PPD generator,
+  refactor make-and-model code, PPDize preset and template names,
+  quote PPD localized strings. Fixes CVE-2024-47175.
+
 
 ## CHANGES IN V2.1b1 (14th August 2024)
 

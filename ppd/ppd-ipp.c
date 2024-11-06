@@ -547,7 +547,7 @@ ppdLoadAttributes(
       while (*ptr && isspace(*ptr)) ptr ++;
       if (!isdigit(*ptr))
       {
-	strcpy(buf, ptr);
+	snprintf(buf, sizeof(buf), "%s", ptr);
 	ptr = buf;
 	while (*ptr && !isspace(*ptr)) ptr ++;
 	if (*ptr)

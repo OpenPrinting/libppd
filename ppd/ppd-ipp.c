@@ -538,16 +538,18 @@ ppdLoadAttributes(
       ptr = buf;
       while (*ptr && !isspace(*ptr)) ptr ++;
       if (*ptr)
+      {
 	*ptr = '\0';
+	ptr ++;
+      }
 
       // Check whether the second word is not the cost value, then we have
       // a "*cupsFilter2:* line and the second word is the printer's input
       // format
-      ptr ++;
       while (*ptr && isspace(*ptr)) ptr ++;
       if (!isdigit(*ptr))
       {
-	strcpy(buf, ptr);
+	memmove(buf, ptr, strnlen(ptr, sizeof(buf) - 1) + 1);
 	ptr = buf;
 	while (*ptr && !isspace(*ptr)) ptr ++;
 	if (*ptr)

@@ -546,6 +546,28 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
 	break;
       }
     }
+
+    //
+    // Use Poppler instead of Ghostscript for old Epson laser printers based
+    // on epsonepl(ijs) as the page ends up off-centre by about 6~7mm towards
+    // the top right of the page.
+    //
+    if (make_model[0] &&
+     !strncasecmp(make_model, "Epson", 5) &&
+     (ptr = strcasestr(make_model, "EPL-")) &&
+      (!strncasecmp(ptr + 4, "5700L", 5) ||
+       !strncasecmp(ptr + 4, "5800L", 5) ||
+       !strncasecmp(ptr + 4, "5900L", 5) ||
+       !strncasecmp(ptr + 4, "6100L", 5) ||
+       !strncasecmp(ptr + 4, "6200L", 5)))
+    {
+	    if (log) log(ld, CF_LOGLEVEL_DEBUG,
+			 "ppdFilterPDFToPS: Switching to Poppler's pdftops instead of "
+			 "Ghostscript for old epsoneplijs (EPL-5700L, EPL-5800L, "
+			 "EPL-5900L, EPL-6100L, EPL-6200L) printers to work around "
+			 "off-centre printing");
+	    renderer = PDFTOPS;
+    }
   }
 
   //

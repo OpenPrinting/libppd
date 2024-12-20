@@ -524,7 +524,12 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
   {
     if (log) log(ld, CF_LOGLEVEL_DEBUG,
 		 "ppdFilterRasterToPS: Input is empty, outputting empty file.");
+
     cupsRasterClose(ras);
+    cupsFileClose(inputfp);
+    fclose(outputfp);
+    close(outputfd);
+
     return (0);
   }
 

@@ -848,9 +848,9 @@ ppdCollectionDumpCache(const char *filename,	// I - Filename
   for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist.PPDsByName);
        ppd;
        ppd = (ppd_info_t *)cupsArrayGetNext(ppdlist.PPDsByName))
-    printf("%d,%ld,%d,%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+    printf("%jd,%ld,%d,%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
            "\"%s\",\"%s\"\n",
-           (int)ppd->record.mtime, (long)ppd->record.size,
+           (intmax_t)ppd->record.mtime, (long)ppd->record.size,
 	   ppd->record.model_number, ppd->record.type, ppd->record.filename,
 	   ppd->record.name, ppd->record.languages[0], ppd->record.products[0],
 	   ppd->record.psversions[0], ppd->record.make,

@@ -1321,7 +1321,8 @@ ppdLoadAttributes(
        (ppd_option = ppdFindOption(ppd, "print-rendering-intent")) != NULL) &&
       ppd_option->num_choices > 0)
   {
-    for (i = 0; i < ppd_option->num_choices && i < sizeof(items); i ++)
+    num_items = sizeof(items)/sizeof(char*);
+    for (i = 0; i < ppd_option->num_choices && i < num_items; i ++)
       items[i] = ppd_option->choices[i].choice;
     ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
 		  "print-rendering-intent-supported", i, NULL, items);

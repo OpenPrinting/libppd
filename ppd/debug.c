@@ -257,7 +257,7 @@ _ppd_debug_set(const char *logfile,	// I - Log file or NULL
     {
       char	buffer[1024];		// Filename buffer
 
-      snprintf(buffer, sizeof(buffer), logfile, getpid());
+      snprintf(buffer, sizeof(buffer), "%s-%d", logfile, (int)getpid());
 
       if (buffer[0] == '+')
 	_ppd_debug_fd = open(buffer + 1, O_WRONLY | O_APPEND | O_CREAT, 0644);

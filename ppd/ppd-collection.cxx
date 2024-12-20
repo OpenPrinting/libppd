@@ -232,6 +232,7 @@ ppdCollectionListPPDs(
   ppdlist.PPDsByMakeModel = cupsArrayNew((cups_array_cb_t)compare_ppds,
 					  NULL, NULL, 0, NULL, NULL);
   ppdlist.ChangedPPD      = 0;
+  ppdlist.Inodes          = NULL;
 
 
   //
@@ -1273,11 +1274,14 @@ free_ppdlist(ppd_list_t *ppdlist)	// I - PPD list to free
   ppd_info_t	*ppd;			// Pointer to PPD info
 
 
-  for (dinfoptr = (struct stat *)cupsArrayGetFirst(ppdlist->Inodes);
-       dinfoptr;
-       dinfoptr = (struct stat *)cupsArrayGetNext(ppdlist->Inodes))
-    free(dinfoptr);
-  cupsArrayDelete(ppdlist->Inodes);
+  if (ppdlist->Inodes)
+  {
+    for (dinfoptr = (struct stat *)cupsArrayGetFirst(ppdlist->Inodes);
+         dinfoptr;
+         dinfoptr = (struct stat *)cupsArrayGetNext(ppdlist->Inodes))
+      free(dinfoptr);
+    cupsArrayDelete(ppdlist->Inodes);
+  }
 
   for (ppd = (ppd_info_t *)cupsArrayGetFirst(ppdlist->PPDsByName);
        ppd;

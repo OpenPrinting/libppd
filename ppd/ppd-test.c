@@ -3059,7 +3059,7 @@ check_filters(ppd_file_t *ppd,       // I - PPD file
     type[256],           // Type for filter
     dstsuper[16],        // Destination super-type for filter
     dsttype[256],        // Destination type for filter
-    program[128],        // Program/filter name
+    program[1024],        // Program/filter name
     pathprog[1024];      // Complete path to program/filter
   int cost;              // Cost of filter
   const char *prefix;    // WARN/FAIL prefix

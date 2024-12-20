@@ -67,7 +67,7 @@ typedef union				// **** TAR record format ****
 		chksum[8],		// Octal checksum value
 		linkflag,		// File type
 		linkname[100],		// Source path for link
-		magic[6],		// Magic string
+		magic[8],		// Magic string
 		version[2],		// Format version
 		uname[32],		// User name
 		gname[32],		// Group name

@@ -752,7 +752,7 @@ ppdCacheCreateWithFile(
 
       cupsArrayAdd(pc->prefilters, value);
     }
-    else if (!_ppd_strcasecmp(line, "Product"))
+    else if (!pc->product && !_ppd_strcasecmp(line, "Product"))
     {
       pc->product = strdup(value);
     }

@@ -1,4 +1,4 @@
-# OpenPrinting libppd v2.1.0 - 2024-10-17
+# OpenPrinting libppd v2.1.1 - 2025-02-19
 
 Looking for compile instructions? Read the file "INSTALL.md"
 instead...

@@ -1,4 +1,23 @@
-# CHANGES - libppd v2.1.0 - 2024-10-17
+# CHANGES - libppd v2.1.1 - 2025-02-19
+
+## CHANGES IN V2.1.1 (19th February 2025)
+
+- pdftops: Use Poppler for a few old Epson laser printers
+  This works around documents being printed off-centre, shifted
+  towards the top right. Affected are printers using epsoneplijs:
+  EPL-5700L, EPL-5800L, EPL-5900L, EPL-6100L, EPL-6200L (Pull request
+  #53).
+
+- Fixed bugs discovered by static analyzer OpenScanHub
+  Possible buffer overflows, uninitialized memory, format string
+  issues and resource leaks, ... (Pull request #54)
+
+- Fix crash bugs in `ppdLoadAttributes()`
+  When parsing the "*cupsFilter(2): ..." lines in the PPD file use
+  `memmove()` instead of `strcpy()` as the latter does not support
+  handling overlapping memory portions and do not move running pointer
+  beyond the end of the input string (Pull request #51).
+
 
 ## CHANGES IN V2.1.0 (17th October 2024)
 

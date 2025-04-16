@@ -311,62 +311,76 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   // Get a sanitized make and model...
   //
 
-  if ((attr = ippFindAttribute(supported, "printer-make-and-model", IPP_TAG_TEXT)) != NULL && ippValidateAttribute(attr))
+  make[0] = '\0';
+  for (i = 0; i < 2; i ++)
   {
-    // Sanitize the model name to only contain PPD-safe characters.
-    strlcpy(make, ippGetString(attr, 0, NULL), sizeof(make));
-
-    for (mptr = make; *mptr; mptr ++)
+    if ((i == 0 &&
+	 (attr = ippFindAttribute(supported, "printer-make-and-model",
+				  IPP_TAG_TEXT)) != NULL &&
+	 ippValidateAttribute(attr) &&
+	 strlcpy(make, ippGetString(attr, 0, NULL), sizeof(make)) > 0) ||
+	(i == 1 &&
+	 make_model &&
+	 strlcpy(make, make_model, sizeof(make)) > 0))
     {
-      if (*mptr < ' ' || *mptr >= 127 || *mptr == '\"')
+      // Sanitize the model name to only contain PPD-safe characters.
+      for (mptr = make; *mptr; mptr ++)
       {
-        // Truncate the make and model on the first bad character...
-	*mptr = '\0';
-	break;
+	if (*mptr < ' ' || *mptr >= 127 || *mptr == '\"')
+	{
+	  // Truncate the make and model on the first bad character...
+	  *mptr = '\0';
+	  break;
+	}
       }
-    }
 
-    while (mptr > make)
-    {
       // Strip trailing whitespace...
-      mptr --;
-      if (*mptr == ' ')
-	*mptr = '\0';
-    }
+      while (mptr > make)
+      {
+	mptr --;
+	if (*mptr == ' ')
+	  *mptr = '\0';
+	else
+	  break;
+      }
 
-    if (!make[0])
-    {
       // Use a default make and model if nothing remains...
+      if (!make[0])
+	strlcpy(make, "Unknown", sizeof(make));
+    }
+    else
+    {
+      // Use a default make and model...
       strlcpy(make, "Unknown", sizeof(make));
     }
-  }
-  else
-  {
-    // Use a default make and model...
-    strlcpy(make, "Unknown", sizeof(make));
-  }
 
-  if (!strncasecmp(make, "Hewlett Packard ", 16) || !strncasecmp(make, "Hewlett-Packard ", 16))
-  {
-    // Normalize HP printer make and model...
-    model = make + 16;
-    strlcpy(make, "HP", sizeof(make));
+    if (!strncasecmp(make, "Hewlett Packard ", 16) || !strncasecmp(make, "Hewlett-Packard ", 16))
+    {
+      // Normalize HP printer make and model...
+      model = make + 16;
+      strlcpy(make, "HP", sizeof(make));
 
-    if (!strncasecmp(model, "HP ", 3))
-      model += 3;
-  }
-  else if ((mptr = strchr(make, ' ')) != NULL)
-  {
-    // Separate "MAKE MODEL"...
-    while (*mptr && *mptr == ' ')
-      *mptr++ = '\0';
+      if (!strncasecmp(model, "HP ", 3))
+	model += 3;
+    }
+    else if ((mptr = strchr(make, ' ')) != NULL)
+    {
+      // Separate "MAKE MODEL"...
+      while (*mptr && *mptr == ' ')
+	*mptr++ = '\0';
 
-    model = mptr;
-  }
-  else
-  {
-    // No separate model name...
-    model = "Printer";
+      model = mptr;
+    }
+    else
+    {
+      // No separate model name...
+      model = "Printer";
+    }
+
+    // Check whether IPP make/model name is satisfying or whether we should
+    // try the supplied DNS-SD make/model name
+    if (strcmp(make, "Unknown") && strcmp (model, "Printer"))
+      break;
   }
 
   //

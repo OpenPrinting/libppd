@@ -2475,7 +2475,8 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       // control at the composite option
       //
 
-      if (strstr(ppd->nickname, "Foomatic") &&
+      if (ppd->nickname &&
+          strstr(ppd->nickname, "Foomatic") &&
 	  !strncmp(option->choices[0].choice, "From", 4) &&
 	  ppdFindOption(ppd, option->choices[0].choice + 4))
       {

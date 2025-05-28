@@ -776,6 +776,9 @@ extern const char	*ppdCacheGetPageSize(ppd_cache_t *pc, ipp_t *job,
 					     const char *keyword, int *exact);
 extern pwg_size_t	*ppdCacheGetSize(ppd_cache_t *pc,
 					 const char *page_size);
+extern pwg_size_t	*ppdCacheGetSize2(ppd_cache_t *pc,
+					 const char *page_size,
+					 ppd_size_t *ppd_size);
 extern const char	*ppdCacheGetSource(ppd_cache_t *pc,
 					   const char *input_slot);
 extern const char	*ppdCacheGetType(ppd_cache_t *pc,

@@ -357,9 +357,9 @@ AS_IF([test "x$enable_pdftops" != "xyes"], [
 		CUPS_PDFTOPS="$with_pdftops_path"
 	], [
 		AS_IF([test "x$cross_compiling" = "xyes"], [
-			CUPS_PDFTOPS="/usr/bin/pdftops"
+			CUPS_PDFTOPS="pdftops"
 		], [
-			AC_CHECK_PROG(CUPS_PDFTOPS, pdftops, /usr/bin/pdftops)
+			AC_CHECK_PROG(CUPS_PDFTOPS, pdftops, pdftops)
 		])
 		AS_IF([test "x$CUPS_PDFTOPS" = "x"], [
 			AC_MSG_ERROR([Required pdftops is missing. Please install the pdftops utility of Poppler.])

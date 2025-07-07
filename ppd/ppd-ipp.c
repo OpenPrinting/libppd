@@ -1,6 +1,7 @@
 //
 // PPD options <-> IPP attributes routines for libppd.
 //
+// Copyright © 2022-2025 by OpenPrinting
 // Copyright © 2007-2019 by Apple Inc.
 // Copyright © 1997-2007 by Easy Software Products, all rights reserved.
 //
@@ -432,14 +433,7 @@ ppdLoadAttributes(
     // Look up default size...
     //
 
-    for (i = 0, pwg_size = pc->sizes; i < pc->num_sizes; i ++, pwg_size ++)
-    {
-      if (!strcmp(pwg_size->map.ppd, ppd_size->name))
-      {
-        default_size = pwg_size;
-        break;
-      }
-    }
+    default_size = ppdCacheGetSize2(pc, ppd_size->name, ppd_size);
 
     //
     // Try to find one with the same size...

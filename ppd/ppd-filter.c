@@ -298,7 +298,8 @@ ppdFilterLoadPPD(cf_filter_data_t *data) // I/O - Job and printer data
   //
 
   ppd = filter_data_ext->ppd;
-  ppd->cache = ppdCacheCreateWithPPD(ppd);
+  if (!ppd->cache)
+    ppd->cache = ppdCacheCreateWithPPD(ppd);
   ppdMarkDefaults(ppd);
   ppdMarkOptions(ppd, data->num_options, data->options);
   num_job_attr_options = ppdGetOptions(&job_attr_options, data->printer_attrs,

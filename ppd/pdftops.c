@@ -1068,13 +1068,9 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
 
       // Issue a warning message when printing a grayscale job with Poppler
       if (log) log(ld, CF_LOGLEVEL_WARN,
-		   "ppdFilterPDFToPS: Grayscale/monochrome printing requested for this "
-		   "job but Poppler is not able to convert to "
-		   "grayscale/monochrome PostScript.");
-      if (log) log(ld, CF_LOGLEVEL_WARN,
-		   "ppdFilterPDFToPS: Use \"pdftops-renderer\" option (see "
-		   "cups-filters README.md file) to use Ghostscript or MuPDF for "
-		   "the PDF -> PostScript conversion.");
+		   "ppdFilterPDFToPS: Grayscale/monochrome could be printed as "
+		   "color with Poppler. See cups-filters README.md file "
+		   "(\"pdftops-renderer\" option).");
     }
     pdf_argv[pdf_argc++] = filename;
     pdf_argv[pdf_argc++] = (char *)"-";

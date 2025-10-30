@@ -106,11 +106,11 @@ static int		ppd_update_filters(ppd_file_t *ppd,
 
 
 //
-// 'ppdClose()' - Free all memory used by the PPD file.
+// 'ppdClose2()' - Free all memory used by the PPD file.
 //
 
 void
-ppdClose(ppd_file_t *ppd)		// I - PPD file record
+ppdClose2(ppd_file_t *ppd)		// I - PPD file record
 {
   int			i;		// Looping var
   ppd_group_t		*group;		// Current group

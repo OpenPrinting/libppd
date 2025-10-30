@@ -611,7 +611,9 @@ typedef struct
 // Definition for backward compatibility, will be removed soon
 #define cupsMarkOptions cupsMarkOptions_USE_ppdMarkOptions_INSTEAD
 
-extern void		ppdClose(ppd_file_t *ppd);
+extern void		ppdClose2(ppd_file_t *ppd);
+#define       ppdClose ppdClose2
+
 extern int		ppdCollect(ppd_file_t *ppd, ppd_section_t section,
 			           ppd_choice_t  ***choices);
 extern int		ppdConflicts(ppd_file_t *ppd);

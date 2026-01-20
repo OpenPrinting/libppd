@@ -4515,7 +4515,7 @@ ppdCacheWriteFile(
 
   if (attrs)
   {
-    cupsFilePrintf(fp, "IPP " CUPS_LLFMT "\n", CUPS_LLCAST ippGetLength(attrs));
+    cupsFilePrintf(fp, "IPP %zu\n", ippGetLength(attrs));
 
     ippSetState(attrs, IPP_STATE_IDLE);
     ippWriteIO(fp, (ipp_io_cb_t)cupsFileWrite, 1, NULL, attrs);

@@ -206,10 +206,8 @@ AM_CONDITIONAL([ENABLE_GENSTRINGS],
 # Check system functions
 # ======================
 AC_CHECK_FUNCS(sigaction)
-AC_CHECK_FUNCS(waitpid wait3)
+AC_CHECK_FUNCS(waitpid)
 AC_CHECK_FUNCS(strtoll)
-AC_CHECK_FUNCS(open_memstream)
-AC_CHECK_FUNCS(getline,[],AC_SUBST([GETLINE],['bannertopdf-getline.$(OBJEXT)']))
 AC_CHECK_FUNCS(strcasestr,[],AC_SUBST([STRCASESTR],['pdftops-strcasestr.$(OBJEXT)']))
 AC_SEARCH_LIBS(pow, m)
 dnl Checks for string functions.
@@ -229,7 +227,6 @@ AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([dirent.h])
-AC_CHECK_HEADERS([sys/ioctl.h])
 AC_CHECK_HEADER(string.h,AC_DEFINE(HAVE_STRING_H))
 AC_CHECK_HEADER(strings.h,AC_DEFINE(HAVE_STRINGS_H))
 

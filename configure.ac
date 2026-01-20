@@ -23,14 +23,6 @@ AC_LANG([C++])
 AC_CONFIG_HEADERS([config.h])
 # Extra defines for the config.h
 AH_BOTTOM([
-#ifdef HAVE_LONG_LONG
-#  define CUPS_LLFMT   "%lld"
-#  define CUPS_LLCAST  (long long)
-#else
-#  define CUPS_LLFMT   "%ld"
-#  define CUPS_LLCAST  (long)
-#endif /* HAVE_LONG_LONG */
-
 #ifdef HAVE_ARC4RANDOM
 #  define CUPS_RAND() arc4random()
 #  define CUPS_SRAND(v) arc4random_stir()
@@ -242,10 +234,7 @@ AS_IF([test x"$enable_largefile" != "xno"], [
 ])
 AC_SUBST(LARGEFILE)
 
-AC_CHECK_TYPE(long long, [long_long_found=yes], [long_long_found=no])
-AS_IF([test x"$long_long_found" = "xyes"], [
-	AC_DEFINE([HAVE_LONG_LONG], [], [Platform supports long long type])
-])
+AC_TYPE_LONG_LONG_INT
 
 # =====================================================
 # Check for Ghostscript and PDF-to-PostScript converter

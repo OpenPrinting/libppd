@@ -2279,11 +2279,11 @@ ppdcSource::quotef(cups_file_t *fp,	// I - File to write to
 	    memcpy(tformat, bufformat, (size_t)(format - bufformat));
 	    tformat[format - bufformat] = '\0';
 
-#  ifdef HAVE_LONG_LONG
+#  ifdef HAVE_LONG_LONG_INT
             if (size == 'L')
 	      bytes += cupsFilePrintf(fp, tformat, va_arg(ap, long long));
 	    else
-#  endif // HAVE_LONG_LONG
+#  endif // HAVE_LONG_LONG_INT
             if (size == 'l')
 	      bytes += cupsFilePrintf(fp, tformat, va_arg(ap, long));
 	    else

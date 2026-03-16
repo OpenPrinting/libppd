@@ -47,7 +47,8 @@ jobs:
             libcups2-dev \
             libcupsfilters-dev \
             ghostscript \
-            mupdf-tools
+            mupdf-tools \
+            poppler-utils
 
       - name: Build project
         run: |

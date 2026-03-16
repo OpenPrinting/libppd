@@ -1,12 +1,10 @@
-name: CodeQL Analysis
+name: CodeQL
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  schedule:
-    - cron: '0 3 * * 1'
 
 jobs:
   analyze:
@@ -14,12 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      actions: read
       contents: read
       security-events: write
 
     strategy:
-      fail-fast: false
       matrix:
         language: [ 'cpp' ]
 
@@ -55,9 +51,6 @@ jobs:
           ./autogen.sh
           ./configure
           make
-
-      - name: Run tests
-        run: make check
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

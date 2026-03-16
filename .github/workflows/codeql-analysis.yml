@@ -1,0 +1,62 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            automake \
+            autopoint \
+            gettext \
+            libtool \
+            libtool-bin \
+            pkg-config \
+            libcups2-dev \
+            libcupsfilters-dev \
+            ghostscript \
+            mupdf-tools
+
+      - name: Build project
+        run: |
+          ./autogen.sh
+          ./configure
+          make
+
+      - name: Run tests
+        run: make check
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

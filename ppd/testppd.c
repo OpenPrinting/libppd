@@ -1163,7 +1163,22 @@ main(int  argc,				// I - Number of command-line arguments
     }
 
     status += do_ps_tests();
+  
+  fputs("ppdCacheCreateWithPPD(sbo_test.ppd - overflow regression): ", 
+        stdout);
+  if ((ppd = ppdOpenFile("ppd/sbo_test.ppd")) != NULL)
+  {
+    pc = ppdCacheCreateWithPPD(ppd);
+    if (pc)
+    ppdCacheDestroy(pc);
+    puts("PASS");
   }
+    else
+      {
+        puts("FAIL (Unable to open PPD)");
+        status ++;
+      }
+    }
   else if (!strcmp(argv[1], "--raster"))
   {
     for (status = 0, num_options = 0, options = NULL, i = 1; i < argc; i ++)

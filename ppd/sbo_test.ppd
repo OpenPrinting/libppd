@@ -37,7 +37,6 @@
 
 *% These constraints are used to test ppdConflicts() and cupsResolveConflicts()
 *cupsUIConstraints envelope: "*PageSize Letter *InputSlot Envelope"
-*cupsUIConstraints envelope: "*PageSizeß¾ËßÕ¶‘Š‹¬“‹ßº‘‰š“šİõÕœŠŒª¶­šŒ“‰šßš‘‰š“šÅßİÕ¶‘Š‹¬“‹ß²anual *PageSize Env10"
 
 *cupsUIConstraints envphoto: "*PageSize Env10 *InputSlot Envelope *Quality Photo"
 *cupsUIResolver envphoto: "*Quality Normal"
@@ -97,7 +96,7 @@
 *PaperDimension A4:	"595 842"
 *PaperDimension Env10:	"297 684"
 
-*% Custom page size support
+*% This custom page size is used to test ppdCacheCreateWithPPD() with out-of-range dimension
 *HWMargins:      0 0 0 0
 *NonUIOrderDependency: 100 AnySetup *CustomPageSize True
 *CustomPageSize True/Custom Page Size: "PageSize=Custom"

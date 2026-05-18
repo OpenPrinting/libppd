@@ -24,7 +24,8 @@ EXTRA_DIST = \
 	libppd.pc.in
 
 EXTRA_DIST += \
-	ppd/testdriver.c
+	ppd/testdriver.c \
+	ppd/test-internal.h
 
 # =========
 # Utilities
@@ -54,9 +55,11 @@ pkgppddefs_DATA = \
 lib_LTLIBRARIES = libppd.la
 
 check_PROGRAMS = \
-	testppd
+	testppd \
+	test_ppd_localize
 TESTS = \
-	testppd
+	testppd \
+	test_ppd_localize
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -137,6 +140,14 @@ testppd_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
 testppd_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_localize_SOURCES = ppd/test_ppd_localize.c
+test_ppd_localize_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_localize_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
 

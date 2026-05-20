@@ -1444,10 +1444,14 @@ ppdCacheCreateWithPPD(ppd_file_t *ppd)	// I - PPD file
     // Generate custom size data...
     //
 
-    pwgFormatSizeName(pwg_keyword, sizeof(pwg_keyword), "custom", "max",
-		      PWG_FROM_POINTS(ppd->custom_max[0]),
-		      PWG_FROM_POINTS(ppd->custom_max[1]), NULL);
-
+  if (!pwgFormatSizeName(pwg_keyword, sizeof(pwg_keyword),"custom", "max",
+                          PWG_FROM_POINTS(ppd->custom_max[0]),
+                          PWG_FROM_POINTS(ppd->custom_max[1]), NULL))
+      {
+        DEBUG_puts("ppdCacheCreateWithPPD: pwgFormatSizeName failure.");
+        goto create_error;
+      }
+      
     // Some PPD files have upper limits too large to be treated with
     // int numbers, if we have an overflow (negative result for one
     // dimension) use a fixed, large value instead

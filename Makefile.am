@@ -57,11 +57,13 @@ lib_LTLIBRARIES = libppd.la
 check_PROGRAMS = \
 	testppd \
 	test_ppd_localize \
-	test_ppd_cache
+	test_ppd_cache \
+	test_ppd_ipp
 TESTS = \
 	testppd \
 	test_ppd_localize \
-	test_ppd_cache
+	test_ppd_cache \
+	test_ppd_ipp
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -158,6 +160,14 @@ test_ppd_cache_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
 test_ppd_cache_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_ipp_SOURCES = ppd/test_ppd_ipp.c
+test_ppd_ipp_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_ipp_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
 

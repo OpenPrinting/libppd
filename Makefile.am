@@ -58,12 +58,14 @@ check_PROGRAMS = \
 	testppd \
 	test_ppd_localize \
 	test_ppd_cache \
-	test_ppd_ipp
+	test_ppd_ipp \
+	test_ppd_mark
 TESTS = \
 	testppd \
 	test_ppd_localize \
 	test_ppd_cache \
-	test_ppd_ipp
+	test_ppd_ipp \
+	test_ppd_mark
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -168,6 +170,14 @@ test_ppd_ipp_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
 test_ppd_ipp_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_mark_SOURCES = ppd/test_ppd_mark.c
+test_ppd_mark_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_mark_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
 

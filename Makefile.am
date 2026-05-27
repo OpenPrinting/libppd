@@ -61,7 +61,8 @@ check_PROGRAMS = \
 	test_ppd_ipp \
 	test_ppd_mark \
 	test_ppd_custom \
-	test_ppd_attr
+	test_ppd_attr \
+	test_ppd_page
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -69,7 +70,8 @@ TESTS = \
 	test_ppd_ipp \
 	test_ppd_mark \
 	test_ppd_custom \
-	test_ppd_attr
+	test_ppd_attr \
+	test_ppd_page
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -198,6 +200,14 @@ test_ppd_attr_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
 test_ppd_attr_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_page_SOURCES = ppd/test_ppd_page.c
+test_ppd_page_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_page_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
 

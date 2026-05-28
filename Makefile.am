@@ -62,7 +62,9 @@ check_PROGRAMS = \
 	test_ppd_mark \
 	test_ppd_custom \
 	test_ppd_attr \
-	test_ppd_page
+	test_ppd_page \
+	test_ppd_conflicts \
+	test_ppd_load_profile
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -71,7 +73,8 @@ TESTS = \
 	test_ppd_mark \
 	test_ppd_custom \
 	test_ppd_attr \
-	test_ppd_page
+	test_ppd_page \
+	test_ppd_conflicts
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -210,6 +213,24 @@ test_ppd_page_LDADD = \
 test_ppd_page_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
+
+test_ppd_conflicts_SOURCES = ppd/test_ppd_conflicts.c
+test_ppd_conflicts_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_conflicts_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_load_profile_SOURCES = ppd/test_ppd_load_profile.c
+test_ppd_load_profile_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS) \
+	$(LIBCUPSFILTERS_LIBS)
+test_ppd_load_profile_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS) \
+	$(LIBCUPSFILTERS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

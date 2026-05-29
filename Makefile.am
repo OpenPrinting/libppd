@@ -64,7 +64,8 @@ check_PROGRAMS = \
 	test_ppd_attr \
 	test_ppd_page \
 	test_ppd_conflicts \
-	test_ppd_emit
+	test_ppd_emit \
+	test_ppd_filter
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -75,7 +76,8 @@ TESTS = \
 	test_ppd_attr \
 	test_ppd_page \
 	test_ppd_conflicts \
-	test_ppd_emit
+	test_ppd_emit \
+	test_ppd_filter
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -229,6 +231,16 @@ test_ppd_emit_LDADD = \
 	$(CUPS_LIBS)
 test_ppd_emit_CFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_filter_SOURCES = ppd/test_ppd_filter.c
+test_ppd_filter_LDADD = \
+	libppd.la \
+	$(LIBCUPSFILTERS_LIBS) \
+	$(CUPS_LIBS)
+test_ppd_filter_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 EXTRA_DIST += \

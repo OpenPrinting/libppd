@@ -65,7 +65,8 @@ check_PROGRAMS = \
 	test_ppd_page \
 	test_ppd_conflicts \
 	test_ppd_emit \
-	test_ppd_filter
+	test_ppd_filter \
+	test_ppd_generator
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -77,7 +78,8 @@ TESTS = \
 	test_ppd_page \
 	test_ppd_conflicts \
 	test_ppd_emit \
-	test_ppd_filter
+	test_ppd_filter \
+	test_ppd_generator
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -239,6 +241,16 @@ test_ppd_filter_LDADD = \
 	$(LIBCUPSFILTERS_LIBS) \
 	$(CUPS_LIBS)
 test_ppd_filter_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
+	$(CUPS_CFLAGS)
+
+test_ppd_generator_SOURCES = ppd/test_ppd_generator.c
+test_ppd_generator_LDADD = \
+	libppd.la \
+	$(LIBCUPSFILTERS_LIBS) \
+	$(CUPS_LIBS)
+test_ppd_generator_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)

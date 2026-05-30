@@ -131,7 +131,7 @@ ppdLutLoad(ppd_file_t *ppd,		// I - PPD file
 	    void       *ld)             // I - Log function data
 {
   char		name[PPD_MAX_NAME],	// Attribute name
-		spec[PPD_MAX_NAME];	// Attribute spec
+		spec[IPP_MAX_NAME];	// Attribute spec
   ppd_attr_t	*attr;			// Attribute
   int		nvals;			// Number of values
   float		vals[4];		// Values

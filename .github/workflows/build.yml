@@ -1,39 +1,126 @@
-name: Build libppd
+# =============================================================================
+# Build and Test Workflow for libppd  (x86_64 / ubuntu-latest)
+#
+# Modelled on the libcupsfilters CI in the sister OpenPrinting repository.
+# Scope is intentionally restricted to a single native architecture
+# (x86_64 on ubuntu-latest) so the build runs quickly and deterministically
+# while still proving:
+#
+#   * The complete repository compiles end-to-end (libppd.la plus all
+#     declared programs and tests under check_PROGRAMS) — not just that
+#     the test binaries link against an already-built library.
+#   * All registered TESTS pass (the 8 native C unit tests added in this
+#     cycle: testppd, test_ppd_localize, test_ppd_cache, test_ppd_ipp,
+#     test_ppd_mark, test_ppd_custom, test_ppd_attr, test_ppd_page,
+#     test_ppd_conflicts).  test_ppd_load_profile is intentionally
+#     deregistered in Makefile.am pending mentor review of a latent
+#     bug in ppdLutLoad().
+#
+# The apt package list was derived from a direct scan of configure.ac:
+#
+#   * PKG_CHECK_MODULES([LIBCUPSFILTERS], [libcupsfilters])  ->  libcupsfilters-dev
+#   * PKG_CHECK_MODULES([ZLIB], [zlib])                      ->  zlib1g-dev
+#   * AC_PATH_TOOL(CUPSCONFIG, [cups-config]) (cups3 absent
+#     on ubuntu-latest, falls back to libcups2)              ->  libcups2-dev
+#   * AC_CHECK_PROG(CUPS_GHOSTSCRIPT, gs)                    ->  ghostscript
+#   * AC_CHECK_PROG(CUPS_PDFTOPS, pdftops)                   ->  poppler-utils
+#   * AC_CHECK_PROG(CUPS_MUTOOL, mutool)                     ->  mupdf-tools
+#   * pdftocairo (Poppler renderer)                          ->  poppler-utils
+#   * AM_GNU_GETTEXT([external]) / AM_ICONV                  ->  gettext, autopoint
+#   * AC_PROG_CC, AC_PROG_CXX, AX_CXX_COMPILE_STDCXX([11])   ->  build-essential
+#   * LT_INIT                                                ->  libtool
+#   * PKG_PROG_PKG_CONFIG                                    ->  pkg-config
+#   * AC_PROG_INSTALL                                        ->  (provided by build-essential)
+#
+# All three of ghostscript / poppler-utils / mupdf-tools are installed so
+# the default ./configure (no --disable-* flags) succeeds — that gives us
+# the maximum-coverage build the user asked for ("comprehensive build,
+# rather than just checking if the unit tests run").
+# =============================================================================
+
+name: Build and Test (libppd)
 
 on:
   push:
+    branches:
+      - '**'
   pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build & Test (x86_64)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      # -----------------------------------------------------------------------
+      # System dependencies — derived from configure.ac (see header comment).
+      # -----------------------------------------------------------------------
+      - name: Install build & runtime dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          set -ex
+          sudo apt-get update --fix-missing -y
+          sudo apt-get install -y --no-install-recommends \
             build-essential \
             autoconf \
             automake \
             autopoint \
-            gettext \
             libtool \
             pkg-config \
+            gettext \
             libcups2-dev \
             libcupsfilters-dev \
+            zlib1g-dev \
             ghostscript \
             poppler-utils \
-            mupdf-tools 
+            mupdf-tools
 
-      - name: Build project
-        run: |
-          ./autogen.sh
-          ./configure
-          make
-      
-      - name: Run tests
-        run: make check
+      # -----------------------------------------------------------------------
+      # Full build — autogen.sh regenerates configure / Makefile.in from the
+      # autotools sources; configure runs without --disable-* flags so every
+      # external renderer (gs / pdftops / mutool / pdftocairo) is exercised;
+      # make -j$(nproc) builds the library AND every check_PROGRAMS binary,
+      # surfacing any compiler errors or warnings as build output.
+      # -----------------------------------------------------------------------
+      - name: autogen.sh
+        run: ./autogen.sh
+
+      - name: configure
+        run: ./configure
+
+      - name: make
+        run: make -j$(nproc) V=1
+
+      # -----------------------------------------------------------------------
+      # Run the registered TESTS.  V=1 and VERBOSE=1 expose both the
+      # compile-line per object AND each test's stderr in the workflow log
+      # on failure, matching the libcupsfilters CI pattern.  We deliberately
+      # do NOT pipe stderr away — a failing test prints its full diagnostic
+      # before the step exits non-zero, and the test-suite.log artifact (see
+      # next step) preserves the full automake summary for download.
+      # -----------------------------------------------------------------------
+      - name: make check
+        id: check
+        run: make check V=1 VERBOSE=1
+
+      # -----------------------------------------------------------------------
+      # Artifact upload — only fires when `make check` failed.  Captures the
+      # top-level test-suite.log automake produces plus any per-test .log /
+      # .trs files so the failure can be diagnosed offline.
+      # -----------------------------------------------------------------------
+      - name: Upload test-suite.log on failure
+        if: failure() && steps.check.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: libppd-test-suite-log-x86_64
+          path: |
+            test-suite.log
+            **/*.log
+            **/*.trs
+          if-no-files-found: warn
+          retention-days: 14

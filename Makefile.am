@@ -24,7 +24,8 @@ EXTRA_DIST = \
 	libppd.pc.in
 
 EXTRA_DIST += \
-	ppd/testdriver.c
+	ppd/testdriver.c \
+	ppd/test-internal.h
 
 # =========
 # Utilities
@@ -54,9 +55,33 @@ pkgppddefs_DATA = \
 lib_LTLIBRARIES = libppd.la
 
 check_PROGRAMS = \
-	testppd
+	testppd \
+	test_ppd_localize \
+	test_ppd_cache \
+	test_ppd_ipp \
+	test_ppd_mark \
+	test_ppd_custom \
+	test_ppd_attr \
+	test_ppd_page \
+	test_ppd_conflicts \
+	test_ppd_emit \
+	test_ppd_filter \
+	test_ppd_generator \
+	test_ppd_load_profile
 TESTS = \
-	testppd
+	testppd \
+	test_ppd_localize \
+	test_ppd_cache \
+	test_ppd_ipp \
+	test_ppd_mark \
+	test_ppd_custom \
+	test_ppd_attr \
+	test_ppd_page \
+	test_ppd_conflicts \
+	test_ppd_emit \
+	test_ppd_filter \
+	test_ppd_generator \
+	test_ppd_load_profile
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -139,6 +164,108 @@ testppd_LDADD = \
 testppd_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
+
+test_ppd_localize_SOURCES = ppd/test_ppd_localize.c
+test_ppd_localize_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_localize_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_cache_SOURCES = ppd/test_ppd_cache.c
+test_ppd_cache_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_cache_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_ipp_SOURCES = ppd/test_ppd_ipp.c
+test_ppd_ipp_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_ipp_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_mark_SOURCES = ppd/test_ppd_mark.c
+test_ppd_mark_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_mark_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_custom_SOURCES = ppd/test_ppd_custom.c
+test_ppd_custom_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_custom_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_attr_SOURCES = ppd/test_ppd_attr.c
+test_ppd_attr_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_attr_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_page_SOURCES = ppd/test_ppd_page.c
+test_ppd_page_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_page_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_conflicts_SOURCES = ppd/test_ppd_conflicts.c
+test_ppd_conflicts_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_conflicts_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_emit_SOURCES = ppd/test_ppd_emit.c
+test_ppd_emit_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_emit_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS)
+
+test_ppd_filter_SOURCES = ppd/test_ppd_filter.c
+test_ppd_filter_LDADD = \
+	libppd.la \
+	$(LIBCUPSFILTERS_LIBS) \
+	$(CUPS_LIBS)
+test_ppd_filter_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
+	$(CUPS_CFLAGS)
+
+test_ppd_generator_SOURCES = ppd/test_ppd_generator.c
+test_ppd_generator_LDADD = \
+	libppd.la \
+	$(LIBCUPSFILTERS_LIBS) \
+	$(CUPS_LIBS)
+test_ppd_generator_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
+	$(CUPS_CFLAGS)
+
+test_ppd_load_profile_SOURCES = ppd/test_ppd_load_profile.c
+test_ppd_load_profile_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS) \
+	$(LIBCUPSFILTERS_LIBS)
+test_ppd_load_profile_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS) \
+	$(LIBCUPSFILTERS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

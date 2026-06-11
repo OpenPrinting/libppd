@@ -113,10 +113,18 @@ if [ "$#" -eq 0 ]; then
 fi
 
 rc=0
+total=0
+n_pass=0
+n_fail=0
+results=""
 for name in "$@"; do
+    total=$((total + 1))
     script="$TESTS_DIR/$name"
     if [ ! -f "$script" ]; then
         echo "run.sh: no such test: $script" >&2
+        n_fail=$((n_fail + 1))
+        results="$results
+FAIL: $name (not found)"
         rc=1
         continue
     fi
@@ -125,11 +133,32 @@ for name in "$@"; do
     echo "=== autopkgtest: $name (CIROOT=$CIROOT, prefix=$CIPREFIX) ==="
     if ( cd "$workdir" && "$script" ); then
         echo "=== PASS: $name ==="
+        n_pass=$((n_pass + 1))
+        results="$results
+PASS: $name"
     else
-        rc=$?
-        echo "=== FAIL: $name (exit $rc) ===" >&2
+        ec=$?
+        echo "=== FAIL: $name (exit $ec) ===" >&2
+        n_fail=$((n_fail + 1))
+        results="$results
+FAIL: $name (exit $ec)"
         rc=1
     fi
     rm -rf "$workdir"
 done
+
+# ---------------------------------------------------------------------------
+# Aggregate summary (mirrors the Automake `make check` test-suite summary)
+# ---------------------------------------------------------------------------
+echo "============================================================================"
+echo "Downstream autopkgtest summary"
+echo "============================================================================"
+printf '# TOTAL: %d\n' "$total"
+printf '# PASS:  %d\n' "$n_pass"
+printf '# FAIL:  %d\n' "$n_fail"
+echo "----------------------------------------------------------------------------"
+# Per-test breakdown (strip the leading blank line from the accumulator).
+printf '%s\n' "$results" | sed '/^$/d'
+echo "============================================================================"
+
 exit $rc

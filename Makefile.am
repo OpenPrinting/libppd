@@ -451,20 +451,26 @@ CIROOT_BINDS = \
 	$(CIROOT)$(bindir)/testppd:/usr/bin/testppd \
 	$(CIROOT)$(datadir)/ppd:/usr/share/ppd
 
-# Proot-free leg: the dev compile/link/run test needs no /usr redirection.
+# Full downstream suite in a single wrapper invocation, so the run produces one
+# aggregate PASS/FAIL summary across both tests.  Both run under the /usr binds;
+# the dev test never touches the bound paths, so the binds are a no-op for it.
+test-autopkgtest: stage-ciroot
+	$(CIROOT_ENV) \
+	AUTOPKGTEST_BINDS="$(CIROOT_BINDS)" \
+	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-dev libppd-2-ppd-handling
+
+# Proot/bind-free leg: the dev compile/link/run test needs no /usr redirection
+# (used on the QEMU-emulated CI legs, where nested redirection is unreliable).
 test-autopkgtest-dev: stage-ciroot
 	$(CIROOT_ENV) \
 	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-dev
 
-# Proot leg: the PPD-handling test hardcodes /usr/bin/testppd and
-# /usr/share/ppd/testppd; run it under proot with the staged binds.
+# PPD-handling test only, under the staged /usr binds (handy for debugging the
+# redirection path in isolation).
 test-autopkgtest-ppd: stage-ciroot
 	$(CIROOT_ENV) \
 	AUTOPKGTEST_BINDS="$(CIROOT_BINDS)" \
 	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-ppd-handling
-
-# Full downstream suite (used on native CI legs and locally).
-test-autopkgtest: test-autopkgtest-dev test-autopkgtest-ppd
 
 .PHONY: stage-ciroot install-test-programs install-test-data \
 	test-autopkgtest test-autopkgtest-dev test-autopkgtest-ppd

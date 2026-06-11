@@ -1,0 +1,71 @@
+#!/bin/sh
+# autopkgtest check: Build and run a program against libppd, to verify
+# that the headers and pkg-config file are installed correctly
+# (C) 2012 Canonical Ltd.
+# (C) 2018-2019 Simon McVittie
+# (C) 2023 Till Kamppeter
+# Authors: Martin Pitt, Simon McVittie, Till Kamppeter
+
+set -eux
+
+package=libppd
+WORKDIR="$(mktemp -d)"
+export HOME="$WORKDIR"
+export XDG_RUNTIME_DIR="$WORKDIR"
+trap 'cd /; rm -rf "$WORKDIR"' 0 INT QUIT ABRT PIPE TERM
+
+if [ -n "${DEB_HOST_GNU_TYPE:-}" ]; then
+    CROSS_COMPILE="$DEB_HOST_GNU_TYPE-"
+else
+    CROSS_COMPILE=
+fi
+
+cd "$WORKDIR"
+cat <<EOF > test.c
+// All header files of libppd API
+#include <ppd/ppd.h>
+#include <ppd/ppd-filter.h>
+#include <ppd/ppdc.h>
+
+int main(int argc, char *argv[])
+{
+  // Actually use something from the library, so that it gets actually linked
+  cf_filter_universal_parameter_t universal_parameters;
+  memset(&universal_parameters, 0, sizeof(cf_filter_universal_parameter_t));
+  return (ppdFilterCUPSWrapper(argc, argv, ppdFilterUniversal,
+          		       &universal_parameters, NULL));
+}
+EOF
+
+cat <<EOF > test.drv
+#include <font.defs>
+#include <media.defs>
+Font *
+Manufacturer "Test"
+ModelName "TestPrinter"
+Version 1.0
+Filter image/urf 100 -
+*MediaSize Letter
+MediaSize A4
+ColorDevice true
+ColorModel Gray/Grayscale w chunky 0
+*ColorModel RGB/Color rgb chunky 0
+*Resolution - 8 0 0 0 "600dpi/600 DPI"
+Resolution - 8 0 0 0 "1200dpi/1200 DPI"
+PCFileName "test.ppd"
+EOF
+
+ppdc test.drv
+echo "create test PPD ($package): OK"
+export PPD=./ppd/test.ppd
+export CONTENT_TYPE=text/plain
+export FINAL_CONTENT_TYPE=application/vnd.cups-pdf
+# Deliberately word-splitting pkg-config's output:
+# shellcheck disable=SC2046
+${CROSS_COMPILE}g++ -o "${package}-test" test.c $(${CROSS_COMPILE}pkg-config --cflags --libs "$package") $(${CROSS_COMPILE}pkg-config --cflags --libs "libcupsfilters")
+echo "build ($package): OK"
+[ -x "${package}-test" ]
+echo -en 'Test1\nTest2\nTest3\n' | ./${package}-test 1 1 1 1 'PageSize=A4 Resolution=1200dpi' > test.pdf
+echo "run ($package): OK"
+file test.pdf | grep -q 'PDF document'
+echo "check output file ($package): OK"

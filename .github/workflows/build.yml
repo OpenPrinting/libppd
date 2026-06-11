@@ -103,7 +103,9 @@ jobs:
             zlib1g-dev \
             ghostscript \
             poppler-utils \
-            mupdf-tools
+            mupdf-tools \
+            file \
+            proot
 
       - name: Build & test libppd (native)
         if: matrix.use-qemu == false
@@ -111,7 +113,9 @@ jobs:
           set -ex
           cd "$REPO_DIR"
           ./autogen.sh
-          ./configure
+          # --enable-ppdc-utils: the downstream libppd-2-dev autopkgtest needs
+          # the staged `ppdc` to compile its test.drv into a PPD.
+          ./configure --enable-ppdc-utils
           make -j$(nproc) V=1
           make check V=1 VERBOSE=1 || {
             echo "==== test-suite.log ===="
@@ -122,6 +126,16 @@ jobs:
             done
             exit 1
           }
+
+      - name: Autopkgtest (DESTDIR staging, native)
+        if: matrix.use-qemu == false
+        run: |
+          set -ex
+          cd "$REPO_DIR"
+          # Full downstream suite: libppd-2-dev (proot-free) +
+          # libppd-2-ppd-handling (proot redirects /usr/bin/testppd and
+          # /usr/share/ppd into the staging tree).
+          make test-autopkgtest V=1
 
       # -----------------------------------------------------------------------
       # EMULATED LEG  (armhf via QEMU armv7, riscv64 via QEMU)
@@ -166,12 +180,14 @@ jobs:
               zlib1g-dev \
               ghostscript \
               poppler-utils \
-              mupdf-tools
+              mupdf-tools \
+              file
           run: |
             set -ex
             cd /workspace
             ./autogen.sh
-            ./configure
+            # --enable-ppdc-utils: needed by the libppd-2-dev autopkgtest.
+            ./configure --enable-ppdc-utils
             make -j$(nproc) V=1
             make check V=1 VERBOSE=1 || {
               echo "==== test-suite.log ===="
@@ -182,6 +198,12 @@ jobs:
               done
               exit 1
             }
+
+            # Downstream autopkgtest, proot-free leg only: nested proot under
+            # QEMU-user emulation is unreliable, so the absolute-path PPD-
+            # handling test runs on the native legs.  The dev compile/link/run
+            # test runs here.
+            make test-autopkgtest-dev V=1
 
       # -----------------------------------------------------------------------
       # ARTIFACT UPLOAD (all four legs, only on failure)

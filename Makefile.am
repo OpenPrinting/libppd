@@ -367,4 +367,104 @@ ppdpo_CFLAGS = \
 distclean-local:
 	rm -rf *.cache *~
 
+clean-local:
+	rm -rf $(CIROOT)
+
 SUBDIRS =
+
+# ============================================================
+# Staged-install downstream autopkgtests (DESTDIR staging)
+# ============================================================
+# Install the just-built tree into an ephemeral root ($(CIROOT)) with
+# `make install DESTDIR=`, top up the bits that `make install` does not ship
+# but the downstream Debian autopkgtests require, fix up the staged .pc, then
+# run the unmodified downstream scripts against that tree.
+CIROOT = $(abs_top_builddir)/_ciroot
+
+EXTRA_DIST += \
+	ci/autopkgtest/run.sh \
+	ci/autopkgtest/debian-tests/control \
+	ci/autopkgtest/debian-tests/libppd-2-dev \
+	ci/autopkgtest/debian-tests/libppd-2-ppd-handling
+
+# Fix A: check_PROGRAMS are build-only under Automake and are never copied by
+# `make install`.  The downstream PPD-handling test executes the test driver
+# as an *installed* binary (/usr/bin/testppd), so build it and stage it into
+# $(CIROOT)$(bindir).  Uses libtool --mode=install so the binary is relinked
+# cleanly against $(libdir) (LD_LIBRARY_PATH then forces the staged library).
+STAGED_TEST_BINARIES = testppd
+
+install-test-programs: $(STAGED_TEST_BINARIES)
+	$(MKDIR_P) "$(CIROOT)$(bindir)"
+	@for p in $(STAGED_TEST_BINARIES); do \
+	  echo "  STAGE   $$p -> $(CIROOT)$(bindir)/$$p"; \
+	  $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) "$$p" "$(CIROOT)$(bindir)/$$p" || exit 1; \
+	done
+
+# Fix C (data seeding): the downstream PPD-handling test copies its PPDs from
+# the installed $(datadir)/ppd/testppd directory, which upstream `make install`
+# does not ship.  Seed every test PPD the current testppd binary opens
+# (test.ppd, test2.ppd, sbo_test.ppd) so the unmodified script finds them.
+STAGED_TEST_PPDS = \
+	ppd/test.ppd \
+	ppd/test2.ppd \
+	ppd/sbo_test.ppd
+
+install-test-data:
+	$(MKDIR_P) "$(CIROOT)$(datadir)/ppd/testppd"
+	@for f in $(STAGED_TEST_PPDS); do \
+	  echo "  STAGE   $$f -> $(CIROOT)$(datadir)/ppd/testppd/"; \
+	  $(INSTALL_DATA) "$(srcdir)/$$f" "$(CIROOT)$(datadir)/ppd/testppd/" || exit 1; \
+	done
+
+# Build everything, DESTDIR-install it, top up the test-only programs/data,
+# then rewrite the staged libppd.pc prefix so a downstream consumer resolves
+# THIS build (not a system copy) while the system dependency .pc files
+# (libcupsfilters, cups) keep resolving normally.
+stage-ciroot: all
+	rm -rf "$(CIROOT)"
+	$(MAKE) $(AM_MAKEFLAGS) install DESTDIR="$(CIROOT)"
+	$(MAKE) $(AM_MAKEFLAGS) install-test-programs install-test-data
+	@pc="$(CIROOT)$(libdir)/pkgconfig/libppd.pc"; \
+	if [ -f "$$pc" ]; then \
+	  sed -i.bak -E "s#^(prefix|exec_prefix|libdir|includedir)=(/.*)#\1=$(CIROOT)\2#" "$$pc"; \
+	  rm -f "$$pc.bak"; \
+	  echo "stage-ciroot: rewrote staged-tree paths in $$pc"; \
+	fi
+
+# Common environment for the wrapper.  PPDC_DATADIR / CUPS_DATADIR point ppdc
+# at the staged *.defs so `ppdc test.drv` resolves <font.defs> / <media.defs>
+# from the staging tree.
+# NB: libppd configures with a split prefix (prefix=/ but exec_prefix=/usr and
+# everything installs under /usr), so the staging root the wrapper points at is
+# $(CIROOT)$(exec_prefix), not $(CIROOT)$(prefix).
+CIROOT_ENV = \
+	CIROOT="$(CIROOT)" \
+	CIPREFIX="$(exec_prefix)" \
+	TOP_BUILDDIR="$(abs_top_builddir)" \
+	PPDC_DATADIR="$(CIROOT)$(datadir)/ppdc" \
+	CUPS_DATADIR="$(CIROOT)$(datadir)"
+
+# Absolute-path binds for the PPD-handling test (Fix C).  Only these two host
+# paths are overlaid onto /usr; the rest of /usr is untouched.
+CIROOT_BINDS = \
+	$(CIROOT)$(bindir)/testppd:/usr/bin/testppd \
+	$(CIROOT)$(datadir)/ppd:/usr/share/ppd
+
+# Proot-free leg: the dev compile/link/run test needs no /usr redirection.
+test-autopkgtest-dev: stage-ciroot
+	$(CIROOT_ENV) \
+	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-dev
+
+# Proot leg: the PPD-handling test hardcodes /usr/bin/testppd and
+# /usr/share/ppd/testppd; run it under proot with the staged binds.
+test-autopkgtest-ppd: stage-ciroot
+	$(CIROOT_ENV) \
+	AUTOPKGTEST_BINDS="$(CIROOT_BINDS)" \
+	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-ppd-handling
+
+# Full downstream suite (used on native CI legs and locally).
+test-autopkgtest: test-autopkgtest-dev test-autopkgtest-ppd
+
+.PHONY: stage-ciroot install-test-programs install-test-data \
+	test-autopkgtest test-autopkgtest-dev test-autopkgtest-ppd

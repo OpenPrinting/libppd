@@ -9,4 +9,4 @@ Version: @VERSION@
 
 Libs: -L${libdir} -lppd
 Libs.private: @CUPS_LIBS@
-Cflags: -I${includedir}/ppd
+Cflags: -I${includedir} -I${includedir}/ppd

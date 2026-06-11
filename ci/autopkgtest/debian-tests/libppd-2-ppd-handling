@@ -1,0 +1,20 @@
+#!/bin/sh
+# autopkgtest check: Run "make check" test program "testppd" using libppd
+# installed on the system.
+# (C) 2012 Canonical Ltd.
+# (C) 2023 Till Kamppeter
+# Authors: Martin Pitt, Till Kamppeter
+
+set -eux
+
+package=libppd
+WORKDIR="$(mktemp -d)"
+export HOME="$WORKDIR"
+export XDG_RUNTIME_DIR="$WORKDIR"
+trap 'cd /; rm -rf "$WORKDIR"' 0 INT QUIT ABRT PIPE TERM
+
+# Copy test PPD files into right place
+cp -r /usr/share/ppd/testppd ppd
+# Run the test program
+/usr/bin/testppd
+echo "run test program on system's $package: OK"

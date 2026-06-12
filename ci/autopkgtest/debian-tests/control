@@ -1,0 +1,12 @@
+Tests: libppd-2-dev
+Depends: build-essential,
+	 libcups2-dev,
+         libcupsfilters-dev,
+	 libppd-dev,
+         pkg-config,
+	 libppd-utils,
+Restrictions: allow-stderr
+
+Tests: libppd-2-ppd-handling
+Depends: libppd-tests
+Restrictions: allow-stderr

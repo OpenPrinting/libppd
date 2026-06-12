@@ -434,7 +434,10 @@ stage-ciroot: all
 
 # Common environment for the wrapper.  PPDC_DATADIR / CUPS_DATADIR point ppdc
 # at the staged *.defs so `ppdc test.drv` resolves <font.defs> / <media.defs>
-# from the staging tree.
+# from the staging tree.  LIBPPD_TESTPPD / LIBPPD_PPDDIR point the PPD-handling
+# test at the staged binary and data instead of the system /usr paths, so it
+# needs no absolute-path redirection (no root, no proot) and runs identically
+# on native and QEMU-emulated architectures.
 # NB: libppd configures with a split prefix (prefix=/ but exec_prefix=/usr and
 # everything installs under /usr), so the staging root the wrapper points at is
 # $(CIROOT)$(exec_prefix), not $(CIROOT)$(prefix).
@@ -443,33 +446,24 @@ CIROOT_ENV = \
 	CIPREFIX="$(exec_prefix)" \
 	TOP_BUILDDIR="$(abs_top_builddir)" \
 	PPDC_DATADIR="$(CIROOT)$(datadir)/ppdc" \
-	CUPS_DATADIR="$(CIROOT)$(datadir)"
-
-# Absolute-path binds for the PPD-handling test (Fix C).  Only these two host
-# paths are overlaid onto /usr; the rest of /usr is untouched.
-CIROOT_BINDS = \
-	$(CIROOT)$(bindir)/testppd:/usr/bin/testppd \
-	$(CIROOT)$(datadir)/ppd:/usr/share/ppd
+	CUPS_DATADIR="$(CIROOT)$(datadir)" \
+	LIBPPD_TESTPPD="$(CIROOT)$(bindir)/testppd" \
+	LIBPPD_PPDDIR="$(CIROOT)$(datadir)/ppd/testppd"
 
 # Full downstream suite in a single wrapper invocation, so the run produces one
-# aggregate PASS/FAIL summary across both tests.  Both run under the /usr binds;
-# the dev test never touches the bound paths, so the binds are a no-op for it.
+# aggregate PASS/FAIL summary across both tests.  Neither test needs privilege
+# or path redirection, so this is identical on every architecture.
 test-autopkgtest: stage-ciroot
 	$(CIROOT_ENV) \
-	AUTOPKGTEST_BINDS="$(CIROOT_BINDS)" \
 	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-dev libppd-2-ppd-handling
 
-# Proot/bind-free leg: the dev compile/link/run test needs no /usr redirection
-# (used on the QEMU-emulated CI legs, where nested redirection is unreliable).
+# Single-test convenience targets (handy for debugging one case in isolation).
 test-autopkgtest-dev: stage-ciroot
 	$(CIROOT_ENV) \
 	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-dev
 
-# PPD-handling test only, under the staged /usr binds (handy for debugging the
-# redirection path in isolation).
 test-autopkgtest-ppd: stage-ciroot
 	$(CIROOT_ENV) \
-	AUTOPKGTEST_BINDS="$(CIROOT_BINDS)" \
 	    $(SHELL) $(srcdir)/ci/autopkgtest/run.sh libppd-2-ppd-handling
 
 .PHONY: stage-ciroot install-test-programs install-test-data \

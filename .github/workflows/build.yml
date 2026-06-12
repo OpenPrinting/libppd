@@ -104,8 +104,7 @@ jobs:
             ghostscript \
             poppler-utils \
             mupdf-tools \
-            file \
-            proot
+            file
 
       - name: Build & test libppd (native)
         if: matrix.use-qemu == false
@@ -132,9 +131,10 @@ jobs:
         run: |
           set -ex
           cd "$REPO_DIR"
-          # Full downstream suite: libppd-2-dev (proot-free) +
-          # libppd-2-ppd-handling (proot redirects /usr/bin/testppd and
-          # /usr/share/ppd into the staging tree).
+          # Full downstream suite: libppd-2-dev (compile/link/run) +
+          # libppd-2-ppd-handling.  Both point at the staged tree via
+          # environment overrides, so no privilege or path redirection is
+          # needed.
           make test-autopkgtest V=1
 
       # -----------------------------------------------------------------------
@@ -199,11 +199,11 @@ jobs:
               exit 1
             }
 
-            # Downstream autopkgtest, proot-free leg only: nested proot under
-            # QEMU-user emulation is unreliable, so the absolute-path PPD-
-            # handling test runs on the native legs.  The dev compile/link/run
-            # test runs here.
-            make test-autopkgtest-dev V=1
+            # Full downstream autopkgtest suite.  Both tests resolve the
+            # staged build tree through environment overrides (no absolute
+            # paths, no privilege, no bind mounts), so the same suite that
+            # runs on the native legs runs unchanged under QEMU emulation.
+            make test-autopkgtest V=1
 
       # -----------------------------------------------------------------------
       # ARTIFACT UPLOAD (all four legs, only on failure)

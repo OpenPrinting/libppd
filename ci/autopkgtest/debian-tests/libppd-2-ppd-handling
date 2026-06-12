@@ -13,8 +13,15 @@ export HOME="$WORKDIR"
 export XDG_RUNTIME_DIR="$WORKDIR"
 trap 'cd /; rm -rf "$WORKDIR"' 0 INT QUIT ABRT PIPE TERM
 
+# Location of the installed test program and its PPD data.  Default to the
+# system paths used when the package is installed (the normal Debian
+# autopkgtest case); allow a staged build tree to override them so the test
+# assumes no absolute paths and runs unprivileged on every architecture.
+: "${LIBPPD_TESTPPD:=/usr/bin/testppd}"
+: "${LIBPPD_PPDDIR:=/usr/share/ppd/testppd}"
+
 # Copy test PPD files into right place
-cp -r /usr/share/ppd/testppd ppd
+cp -r "$LIBPPD_PPDDIR" ppd
 # Run the test program
-/usr/bin/testppd
+"$LIBPPD_TESTPPD"
 echo "run test program on system's $package: OK"

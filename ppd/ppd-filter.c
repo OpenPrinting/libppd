@@ -148,7 +148,8 @@ ppdFilterCUPSWrapper(
   {
     if ((val = getenv("CUPS_FONTPATH")) == NULL)
     {
-      val = CUPS_DATADIR;
+      if ((val = getenv("CUPS_DATADIR")) == NULL)
+	val = CUPS_DATADIR;
       snprintf(buf, sizeof(buf), "%s/fonts", val);
       val = buf;
     }

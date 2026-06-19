@@ -99,7 +99,7 @@ extern "C" {
 //   NB: libcups3 defines its own enum named cups_bool_t (in cups/raster.h),
 //   so this private alias must NOT reuse that name.
 
-#    define ppd_cups_bool_t        int
+#    define ppd_bool_t             int
 
 //   Prototypes of functions equivalent to newly introduced ones in libcups3
 
@@ -114,7 +114,7 @@ const char *cupsLangGetString(cups_lang_t *lang, const char *message);
 
 #    define cups_len_t            size_t
 #    define cups_utf8_t           char
-#    define ppd_cups_bool_t        bool
+#    define ppd_bool_t             bool
 
 #  endif // HAVE_LIBCUPS2
 

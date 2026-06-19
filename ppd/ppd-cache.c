@@ -3672,7 +3672,7 @@ ppdCacheGetInputSlot(
     ipp_attribute_t	*media_col,	// media-col attribute
 			*media_source;	// media-source attribute
     pwg_size_t		size;		// Dimensional size
-    ppd_cups_bool_t	margins_set;	// Were the margins set?
+    ppd_bool_t	margins_set;	// Were the margins set?
 
     media_col = ippFindAttribute(job, "media-col", IPP_TAG_BEGIN_COLLECTION);
     if (media_col &&
@@ -3811,7 +3811,7 @@ ppdCacheGetPageSize(
 		*variant,		// Page size variant
 		*closest,		// Closest size
 		jobsize;		// Size data from job
-  ppd_cups_bool_t margins_set;		// Were the margins set?
+  ppd_bool_t margins_set;		// Were the margins set?
   int		dwidth,			// Difference in width
 		dlength,		// Difference in length
 		dleft,			// Difference in left margins

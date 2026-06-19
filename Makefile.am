@@ -315,8 +315,13 @@ genstrings_SOURCES = \
 genstrings_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-genstrings_CFLAGS = \
+# These utilities are built from C++ (.cxx) sources, so their per-target
+# compiler flags must be *_CXXFLAGS - Automake ignores *_CFLAGS for C++.
+# Without this the CUPS include path is dropped, which only fails for a
+# source-installed CUPS whose headers are not in the default search path.
+genstrings_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 ppdc_SOURCES = \
@@ -324,8 +329,9 @@ ppdc_SOURCES = \
 ppdc_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-ppdc_CFLAGS = \
+ppdc_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 ppdhtml_SOURCES = \
@@ -333,8 +339,9 @@ ppdhtml_SOURCES = \
 ppdhtml_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-ppdhtml_CFLAGS = \
+ppdhtml_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 ppdi_SOURCES = \
@@ -342,8 +349,9 @@ ppdi_SOURCES = \
 ppdi_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-ppdi_CFLAGS = \
+ppdi_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 ppdmerge_SOURCES = \
@@ -351,8 +359,9 @@ ppdmerge_SOURCES = \
 ppdmerge_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-ppdmerge_CFLAGS = \
+ppdmerge_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 ppdpo_SOURCES = \
@@ -360,8 +369,9 @@ ppdpo_SOURCES = \
 ppdpo_LDADD = \
 	libppd.la \
 	$(CUPS_LIBS)
-ppdpo_CFLAGS = \
+ppdpo_CXXFLAGS = \
 	-I$(srcdir)/ppd/ \
+	$(LIBCUPSFILTERS_CFLAGS) \
 	$(CUPS_CFLAGS)
 
 distclean-local:

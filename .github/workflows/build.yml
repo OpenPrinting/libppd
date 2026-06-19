@@ -37,10 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Emulated arches (armhf, riscv64) are temporarily disabled to iterate
-        # on the fast native legs first; re-enable them (matrix entry + include
-        # block below) once amd64/arm64 are green on all three CUPS releases.
-        arch: [amd64, arm64]
+        arch: [amd64, arm64, armhf, riscv64]
         cups: [system-2x, source-2.5.x, source-3.x]
         include:
           - arch: amd64
@@ -49,14 +46,14 @@ jobs:
           - arch: arm64
             runs-on: ubuntu-24.04-arm
             use-qemu: false
-          # - arch: armhf
-          #   runs-on: ubuntu-latest
-          #   use-qemu: true
-          #   qemu-arch: armv7
-          # - arch: riscv64
-          #   runs-on: ubuntu-latest
-          #   use-qemu: true
-          #   qemu-arch: riscv64
+          - arch: armhf
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: armv7
+          - arch: riscv64
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: riscv64
 
     steps:
       - uses: actions/checkout@v4

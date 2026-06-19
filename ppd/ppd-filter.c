@@ -1453,6 +1453,19 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 
 
   universal_parameters = *(cf_filter_universal_parameter_t *)parameters;
+
+  // texttopdf locates its charset files (charsets/pdf.<charset>) under the CUPS
+  // data directory.  Default it from the environment, as CUPS does, when the
+  // caller left it unset, so the filter never sees a NULL directory.
+  if (universal_parameters.texttopdf_params.data_dir == NULL)
+  {
+    char *datadir;			// CUPS data directory
+
+    if ((datadir = getenv("CUPS_DATADIR")) == NULL)
+      datadir = (char *)CUPS_DATADIR;
+    universal_parameters.texttopdf_params.data_dir = datadir;
+  }
+
   input = data->content_type;
   if (input == NULL)
   {

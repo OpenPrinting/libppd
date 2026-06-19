@@ -426,6 +426,16 @@ install-test-data:
 	  echo "  STAGE   $$f -> $(CIROOT)$(datadir)/ppd/testppd/"; \
 	  $(INSTALL_DATA) "$(srcdir)/$$f" "$(CIROOT)$(datadir)/ppd/testppd/" || exit 1; \
 	done
+	@# The libppd-2-dev test exercises the text -> PDF path, whose texttopdf
+	@# filter (from libcupsfilters) reads charsets/pdf.<charset> from the CUPS
+	@# data directory.  The wrapper points CUPS_DATADIR at the staging tree, so
+	@# seed the charset data (installed by libcupsfilters into the real
+	@# $(CUPS_DATADIR)/charsets) into the staged tree.
+	@if [ -d "$(CUPS_DATADIR)/charsets" ]; then \
+	  echo "  STAGE   $(CUPS_DATADIR)/charsets -> $(CIROOT)$(datadir)/charsets/"; \
+	  $(MKDIR_P) "$(CIROOT)$(datadir)/charsets"; \
+	  cp -a "$(CUPS_DATADIR)/charsets/." "$(CIROOT)$(datadir)/charsets/" || exit 1; \
+	fi
 
 # Build everything, DESTDIR-install it, top up the test-only programs/data,
 # then rewrite the staged libppd.pc prefix so a downstream consumer resolves

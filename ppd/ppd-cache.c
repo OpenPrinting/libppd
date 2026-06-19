@@ -1072,7 +1072,7 @@ ppdCacheCreateWithFile(
       }
 
       pc->num_presets[print_color_mode][print_quality] =
-          cupsParseOptions(valueptr, 0,
+          cupsParseOptions(valueptr, NULL, 0,
 	                   pc->presets[print_color_mode] + print_quality);
     }
     else if (!_ppd_strcasecmp(line, "OptimizePreset"))
@@ -1095,7 +1095,7 @@ ppdCacheCreateWithFile(
       }
 
       pc->num_optimize_presets[print_content_optimize] =
-          cupsParseOptions(valueptr, 0,
+          cupsParseOptions(valueptr, NULL, 0,
 	                   pc->optimize_presets + print_content_optimize);
     }
     else if (!_ppd_strcasecmp(line, "SidesOption"))
@@ -1118,7 +1118,7 @@ ppdCacheCreateWithFile(
         goto create_error;
 
       finishings->value       = (ipp_finishings_t)strtol(value, &valueptr, 10);
-      finishings->num_options = cupsParseOptions(valueptr, 0,
+      finishings->num_options = cupsParseOptions(valueptr, NULL, 0,
                                                  &(finishings->options));
 
       cupsArrayAdd(pc->finishings, finishings);
@@ -3672,7 +3672,7 @@ ppdCacheGetInputSlot(
     ipp_attribute_t	*media_col,	// media-col attribute
 			*media_source;	// media-source attribute
     pwg_size_t		size;		// Dimensional size
-    cups_bool_t		margins_set;	// Were the margins set?
+    ppd_bool_t	margins_set;	// Were the margins set?
 
     media_col = ippFindAttribute(job, "media-col", IPP_TAG_BEGIN_COLLECTION);
     if (media_col &&
@@ -3811,7 +3811,7 @@ ppdCacheGetPageSize(
 		*variant,		// Page size variant
 		*closest,		// Closest size
 		jobsize;		// Size data from job
-  cups_bool_t	margins_set;		// Were the margins set?
+  ppd_bool_t margins_set;		// Were the margins set?
   int		dwidth,			// Difference in width
 		dlength,		// Difference in length
 		dleft,			// Difference in left margins

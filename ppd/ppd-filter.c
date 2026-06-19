@@ -112,7 +112,7 @@ ppdFilterCUPSWrapper(
 
   options     = NULL;
   if (argc > 5)
-    num_options = cupsParseOptions(argv[5], 0, &options);
+    num_options = cupsParseOptions(argv[5], NULL, 0, &options);
 
   if ((filter_data.printer = getenv("PRINTER")) == NULL)
     filter_data.printer = argv[0];
@@ -148,7 +148,8 @@ ppdFilterCUPSWrapper(
   {
     if ((val = getenv("CUPS_FONTPATH")) == NULL)
     {
-      val = CUPS_DATADIR;
+      if ((val = getenv("CUPS_DATADIR")) == NULL)
+	val = CUPS_DATADIR;
       snprintf(buf, sizeof(buf), "%s/fonts", val);
       val = buf;
     }
@@ -1453,6 +1454,19 @@ ppdFilterUniversal(int inputfd,         // I - File descriptor input stream
 
 
   universal_parameters = *(cf_filter_universal_parameter_t *)parameters;
+
+  // texttopdf locates its charset files (charsets/pdf.<charset>) under the CUPS
+  // data directory.  Default it from the environment, as CUPS does, when the
+  // caller left it unset, so the filter never sees a NULL directory.
+  if (universal_parameters.texttopdf_params.data_dir == NULL)
+  {
+    char *datadir;			// CUPS data directory
+
+    if ((datadir = getenv("CUPS_DATADIR")) == NULL)
+      datadir = (char *)CUPS_DATADIR;
+    universal_parameters.texttopdf_params.data_dir = datadir;
+  }
+
   input = data->content_type;
   if (input == NULL)
   {

@@ -824,6 +824,13 @@ main(int  argc,				// I - Number of command-line arguments
       printf("FAIL (\"%s\" instead of \"/help/foo/bar.html\")\n", buffer);
     }
 
+#ifdef HAVE_LIBCUPS2
+    // NB: these cases switch the locale at run time via putenv() and rely on
+    // cupsLangDefault() re-reading the environment on each call.  libcups3
+    // caches the default language, so a mid-process LANG change is not honoured
+    // there; skip them on libcups3.  The default-locale path above and the
+    // hermetic test_ppd_localize test still cover ppdLocalize*() on libcups3.
+
     // Force French
     putenv("LANG=fr");
     putenv("LC_ALL=fr");
@@ -855,6 +862,7 @@ main(int  argc,				// I - Number of command-line arguments
       status ++;
       printf("FAIL (\"%s\" instead of \"Number 1 Foo Reason\")\n", buffer);
     }
+#endif // HAVE_LIBCUPS2
 
     //
     // cupsMarkerName localization...
@@ -888,6 +896,8 @@ main(int  argc,				// I - Number of command-line arguments
              text ? text : "(null)");
     }
 
+#ifdef HAVE_LIBCUPS2
+    // Run-time locale switching (see note above); not honoured on libcups3.
     // Force French locale
     putenv("LANG=fr");
     putenv("LC_ALL=fr");
@@ -921,6 +931,7 @@ main(int  argc,				// I - Number of command-line arguments
       printf("FAIL (\"%s\" instead of \"Number 1 Cyan Toner\")\n",
              text ? text : "(null)");
     }
+#endif // HAVE_LIBCUPS2
 
     ppdClose(ppd);
 
@@ -1188,12 +1199,12 @@ main(int  argc,				// I - Number of command-line arguments
         if (argv[i][1] == 'o')
         {
           if (argv[i][2])
-            num_options = cupsParseOptions(argv[i] + 2, num_options, &options);
+            num_options = cupsParseOptions(argv[i] + 2, NULL, num_options, &options);
           else
           {
             i ++;
             if (i < argc)
-              num_options = cupsParseOptions(argv[i], num_options, &options);
+              num_options = cupsParseOptions(argv[i], NULL, num_options, &options);
             else
             {
               puts("Usage: testppd --raster [-o name=value ...] [filename.ppd ...]");

@@ -64,6 +64,17 @@ extern "C" {
 #    define ippGetNextAttribute    ippNextAttribute
 #    define ippGetLength           ippLength
 
+//   Option parser: libcups3 spells it cupsParseOptions() with a trailing
+//   "end" pointer.  CUPS 2.5 provides the same 4-argument parser under the
+//   historic name cupsParseOptions2(); CUPS 2.4 only has the 3-argument form,
+//   so the "end" argument is dropped there.
+
+#    if CUPS_VERSION_MINOR >= 5
+#      define cupsParseOptions cupsParseOptions2
+#    else
+#      define cupsParseOptions(arg, end, num_options, options) cupsParseOptions(arg, num_options, options)
+#    endif
+
 //   Functions replaced by a different functions in libcups3
 
 #    define cupsCreateTempFd(prefix,suffix,buffer,bufsize) cupsTempFd(buffer,bufsize)
@@ -85,8 +96,10 @@ extern "C" {
 
 //   For some functions' parameters in libcups3 bool is used while
 //   int was used in libcups2. We use this type in such a case.
+//   NB: libcups3 defines its own enum named cups_bool_t (in cups/raster.h),
+//   so this private alias must NOT reuse that name.
 
-#    define cups_bool_t           int
+#    define ppd_bool_t             int
 
 //   Prototypes of functions equivalent to newly introduced ones in libcups3
 
@@ -101,7 +114,7 @@ const char *cupsLangGetString(cups_lang_t *lang, const char *message);
 
 #    define cups_len_t            size_t
 #    define cups_utf8_t           char
-#    define cups_bool_t           bool
+#    define ppd_bool_t             bool
 
 #  endif // HAVE_LIBCUPS2
 

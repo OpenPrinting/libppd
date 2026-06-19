@@ -64,6 +64,17 @@ extern "C" {
 #    define ippGetNextAttribute    ippNextAttribute
 #    define ippGetLength           ippLength
 
+//   Option parser: libcups3 spells it cupsParseOptions() with a trailing
+//   "end" pointer.  CUPS 2.5 provides the same 4-argument parser under the
+//   historic name cupsParseOptions2(); CUPS 2.4 only has the 3-argument form,
+//   so the "end" argument is dropped there.
+
+#    if CUPS_VERSION_MINOR >= 5
+#      define cupsParseOptions cupsParseOptions2
+#    else
+#      define cupsParseOptions(arg, end, num_options, options) cupsParseOptions(arg, num_options, options)
+#    endif
+
 //   Functions replaced by a different functions in libcups3
 
 #    define cupsCreateTempFd(prefix,suffix,buffer,bufsize) cupsTempFd(buffer,bufsize)

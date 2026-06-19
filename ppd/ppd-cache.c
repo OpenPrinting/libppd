@@ -1072,7 +1072,7 @@ ppdCacheCreateWithFile(
       }
 
       pc->num_presets[print_color_mode][print_quality] =
-          cupsParseOptions(valueptr, 0,
+          cupsParseOptions(valueptr, NULL, 0,
 	                   pc->presets[print_color_mode] + print_quality);
     }
     else if (!_ppd_strcasecmp(line, "OptimizePreset"))
@@ -1095,7 +1095,7 @@ ppdCacheCreateWithFile(
       }
 
       pc->num_optimize_presets[print_content_optimize] =
-          cupsParseOptions(valueptr, 0,
+          cupsParseOptions(valueptr, NULL, 0,
 	                   pc->optimize_presets + print_content_optimize);
     }
     else if (!_ppd_strcasecmp(line, "SidesOption"))
@@ -1118,7 +1118,7 @@ ppdCacheCreateWithFile(
         goto create_error;
 
       finishings->value       = (ipp_finishings_t)strtol(value, &valueptr, 10);
-      finishings->num_options = cupsParseOptions(valueptr, 0,
+      finishings->num_options = cupsParseOptions(valueptr, NULL, 0,
                                                  &(finishings->options));
 
       cupsArrayAdd(pc->finishings, finishings);

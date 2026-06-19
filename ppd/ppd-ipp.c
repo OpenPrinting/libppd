@@ -95,7 +95,7 @@ ppdGetOptions(cups_option_t **options,	// O - Options
       // media-col value...
       //
 
-      num_media_col = cupsParseOptions(value, 0, &media_col);
+      num_media_col = cupsParseOptions(value, NULL, 0, &media_col);
     }
     else
     {
@@ -120,7 +120,7 @@ ppdGetOptions(cups_option_t **options,	// O - Options
     const char	*x_dimension,		// x-dimension value
 		*y_dimension;		// y-dimension value
 
-    num_media_size = cupsParseOptions(value, 0, &media_size);
+    num_media_size = cupsParseOptions(value, NULL, 0, &media_size);
 
     if ((x_dimension = cupsGetOption("x-dimension",
 				     num_media_size, media_size)) != NULL &&

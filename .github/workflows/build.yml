@@ -1,36 +1,18 @@
 # =============================================================================
-# Multi-Architecture Build & Test Workflow for libppd
+# Multi-Architecture / multi-CUPS Build & Test Workflow for libppd
 #
-# Modelled on the QEMU-based CI used in the sister OpenPrinting repositories
-# (libcupsfilters, cups-filters).  Proves on every push / PR / manual dispatch
-# that libppd compiles end-to-end (libppd.la + every check_PROGRAMS binary)
-# and that every registered TEST in Makefile.am passes under
-# `make check V=1 VERBOSE=1` on FOUR architectures:
+# Matrix: 4 architectures x 3 CUPS releases = 12 combinations.
+#   architectures: amd64, arm64 (native runners); armhf, riscv64 (QEMU)
+#   CUPS releases: 2.4.x (distro libcups2-dev), 2.5.x (OpenPrinting/cups
+#                  master), 3.x (OpenPrinting/libcups master)
 #
-#   * amd64    - native, ubuntu-latest
-#   * arm64    - native, ubuntu-24.04-arm
-#   * armhf    - emulated via QEMU (armv7)
-#   * riscv64  - emulated via QEMU
-#
-# The hermetic C unit tests exercised: testppd, test_ppd_localize,
-# test_ppd_cache, test_ppd_ipp, test_ppd_mark, test_ppd_custom,
-# test_ppd_attr, test_ppd_page, test_ppd_conflicts.
-#
-# apt package list derived from libppd's configure.ac:
-#   PKG_CHECK_MODULES([LIBCUPSFILTERS])     -> libcupsfilters-dev
-#   PKG_CHECK_MODULES([ZLIB])               -> zlib1g-dev
-#   AC_PATH_TOOL(CUPSCONFIG)                -> libcups2-dev
-#   AC_CHECK_PROG(gs / pdftops / mutool)    -> ghostscript, poppler-utils,
-#                                              mupdf-tools
-#   AM_GNU_GETTEXT([external])              -> gettext, autopoint
-#   AC_PROG_CC / CXX / LT_INIT / pkg-config -> build-essential, autoconf,
-#                                              automake, libtool,
-#                                              libtool-bin, pkg-config
-#   transitive (poppler / qpdf renderers)   -> libqpdf-dev, libpoppler-dev,
-#                                              libpoppler-cpp-dev
+# libppd depends on BOTH libcups and libcupsfilters.  For the source-CUPS legs
+# the distro libcupsfilters-dev is the wrong ABI, so ci/ci-setup.sh builds
+# libcupsfilters (and pdfio) from source against the active CUPS.  All the
+# per-combination work lives in that script so the legs differ only in which
+# CUPS is provided and whether they run under emulation.
 # =============================================================================
-
-name: Build and Test (libppd, multi-arch)
+name: Build and Test (libppd, Multi-Architecture, Multi-CUPS)
 
 on:
   push:
@@ -41,14 +23,22 @@ on:
       - '**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build & Test (${{ matrix.arch }})
+  build-matrix:
+    name: Build & Test (${{ matrix.arch }}, ${{ matrix.cups }})
     runs-on: ${{ matrix.runs-on }}
+    # Building CUPS / libcupsfilters from source under QEMU is slow; allow plenty.
+    timeout-minutes: 360
 
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64, armhf, riscv64]
+        cups: [system-2x, source-2.5.x, source-3.x]
         include:
           - arch: amd64
             runs-on: ubuntu-latest
@@ -66,156 +56,80 @@ jobs:
             qemu-arch: riscv64
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Save workspace directory
-        run: echo "REPO_DIR=$(pwd)" >> $GITHUB_ENV
-
-      # -----------------------------------------------------------------------
-      # NATIVE LEG  (amd64 on ubuntu-latest, arm64 on ubuntu-24.04-arm)
-      # -----------------------------------------------------------------------
-      - name: Install dependencies (native)
+      # ==========================================
+      # NATIVE EXECUTION (amd64 and arm64)
+      # ==========================================
+      - name: Build & Test (Native)
         if: matrix.use-qemu == false
+        env:
+          CUPS_KIND: ${{ matrix.cups }}
+          EMULATED: "0"
         run: |
           set -ex
-          sudo apt-get clean
-          sudo apt-get update --fix-missing -y -o Acquire::Retries=3
-          # Drop any pre-shipped libppd-dev so our local build wins
-          sudo apt-get remove -y libppd-dev || true
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            autoconf \
-            automake \
-            autopoint \
-            libtool \
-            libtool-bin \
-            pkg-config \
-            gettext \
-            git \
-            wget \
-            tar \
-            libcups2-dev \
-            libcupsfilters-dev \
-            libqpdf-dev \
-            libpoppler-dev \
-            libpoppler-cpp-dev \
-            zlib1g-dev \
-            ghostscript \
-            poppler-utils \
-            mupdf-tools \
-            file
-
-      - name: Build & test libppd (native)
-        if: matrix.use-qemu == false
-        run: |
-          set -ex
-          cd "$REPO_DIR"
-          ./autogen.sh
-          # --enable-ppdc-utils: the downstream libppd-2-dev autopkgtest needs
-          # the staged `ppdc` to compile its test.drv into a PPD.
-          ./configure --enable-ppdc-utils
-          make -j$(nproc) V=1
-          make check V=1 VERBOSE=1 || {
-            echo "==== test-suite.log ===="
-            test -f test-suite.log && cat test-suite.log
-            echo "==== per-test logs ===="
-            for f in $(find . -name '*.log' -not -name 'config.log'); do
-              echo "---- $f ----"; cat "$f"
-            done
-            exit 1
-          }
+          sh ci/ci-setup.sh deps
+          sh ci/ci-setup.sh cups "${{ matrix.cups }}"
+          sh ci/ci-setup.sh pdfio
+          sh ci/ci-setup.sh libcupsfilters "${{ matrix.cups }}"
+          sh ci/ci-setup.sh build-libppd
 
       - name: Autopkgtest (DESTDIR staging, native)
+        # Run the downstream autopkgtest suite (libppd-2-dev compile/link/run +
+        # libppd-2-ppd-handling) against every CUPS version under test.
         if: matrix.use-qemu == false
         run: |
           set -ex
-          cd "$REPO_DIR"
-          # Full downstream suite: libppd-2-dev (compile/link/run) +
-          # libppd-2-ppd-handling.  Both point at the staged tree via
-          # environment overrides, so no privilege or path redirection is
-          # needed.
           make test-autopkgtest V=1
 
-      # -----------------------------------------------------------------------
-      # EMULATED LEG  (armhf via QEMU armv7, riscv64 via QEMU)
-      # -----------------------------------------------------------------------
-      - name: Set up QEMU
-        if: matrix.use-qemu == true
-        uses: docker/setup-qemu-action@v3
+      - name: Upload test artifacts (Native)
+        if: matrix.use-qemu == false && always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
         with:
-          platforms: ${{ matrix.qemu-arch }}
+          name: libppd-logs-${{ matrix.arch }}-${{ matrix.cups }}
+          path: |
+            config.log
+            test-suite.log
+            ppd/*.log
+            ppd/*.trs
+          if-no-files-found: ignore
 
-      - name: Build & test libppd (emulated)
+      # ==========================================
+      # EMULATED EXECUTION (armhf and riscv64)
+      # ==========================================
+      - name: Build & Test (Emulated)
         if: matrix.use-qemu == true
         uses: uraimo/run-on-arch-action@v3
         with:
           arch: ${{ matrix.qemu-arch }}
           distro: ubuntu24.04
-          dockerRunArgs: |
-            --volume "${{ github.workspace }}:/workspace"
+          githubToken: ${{ github.token }}
           install: |
-            apt-get clean
-            apt-get update --fix-missing -y -o Acquire::Retries=3
-            DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-            apt-get remove -y libppd-dev 2>/dev/null || true
-            apt-get install -y --no-install-recommends \
-              build-essential \
-              gcc g++ \
-              autoconf \
-              automake \
-              autopoint \
-              libtool \
-              libtool-bin \
-              pkg-config \
-              gettext \
-              git \
-              wget \
-              tar \
-              libcups2-dev \
-              libcupsfilters-dev \
-              libqpdf-dev \
-              libpoppler-dev \
-              libpoppler-cpp-dev \
-              zlib1g-dev \
-              ghostscript \
-              poppler-utils \
-              mupdf-tools \
-              file
+            apt-get update --fix-missing -y
+            DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata ca-certificates git
           run: |
             set -ex
-            cd /workspace
-            ./autogen.sh
-            # --enable-ppdc-utils: needed by the libppd-2-dev autopkgtest.
-            ./configure --enable-ppdc-utils
-            make -j$(nproc) V=1
-            make check V=1 VERBOSE=1 || {
-              echo "==== test-suite.log ===="
-              test -f test-suite.log && cat test-suite.log
-              echo "==== per-test logs ===="
-              for f in $(find . -name '*.log' -not -name 'config.log'); do
-                echo "---- $f ----"; cat "$f"
-              done
-              exit 1
-            }
-
-            # Full downstream autopkgtest suite.  Both tests resolve the
-            # staged build tree through environment overrides (no absolute
-            # paths, no privilege, no bind mounts), so the same suite that
-            # runs on the native legs runs unchanged under QEMU emulation.
+            export CUPS_KIND="${{ matrix.cups }}"
+            export EMULATED=1
+            sh ci/ci-setup.sh deps
+            sh ci/ci-setup.sh cups "${{ matrix.cups }}"
+            sh ci/ci-setup.sh pdfio
+            sh ci/ci-setup.sh libcupsfilters "${{ matrix.cups }}"
+            sh ci/ci-setup.sh build-libppd
             make test-autopkgtest V=1
 
-      # -----------------------------------------------------------------------
-      # ARTIFACT UPLOAD (all four legs, only on failure)
-      # -----------------------------------------------------------------------
-      - name: Upload test logs on failure
-        if: failure()
+      - name: Upload test artifacts (Emulated)
+        if: matrix.use-qemu == true && always()
+        continue-on-error: true
+        timeout-minutes: 5
         uses: actions/upload-artifact@v4
         with:
-          name: libppd-test-logs-${{ matrix.arch }}
+          name: libppd-logs-${{ matrix.arch }}-${{ matrix.cups }}
           path: |
+            config.log
             test-suite.log
-            **/*.log
-            **/*.trs
-          if-no-files-found: warn
-          retention-days: 14
+            ppd/*.log
+            ppd/*.trs
+          if-no-files-found: ignore

@@ -1188,12 +1188,12 @@ main(int  argc,				// I - Number of command-line arguments
         if (argv[i][1] == 'o')
         {
           if (argv[i][2])
-            num_options = cupsParseOptions(argv[i] + 2, num_options, &options);
+            num_options = cupsParseOptions(argv[i] + 2, NULL, num_options, &options);
           else
           {
             i ++;
             if (i < argc)
-              num_options = cupsParseOptions(argv[i], num_options, &options);
+              num_options = cupsParseOptions(argv[i], NULL, num_options, &options);
             else
             {
               puts("Usage: testppd --raster [-o name=value ...] [filename.ppd ...]");

@@ -112,7 +112,7 @@ ppdFilterCUPSWrapper(
 
   options     = NULL;
   if (argc > 5)
-    num_options = cupsParseOptions(argv[5], 0, &options);
+    num_options = cupsParseOptions(argv[5], NULL, 0, &options);
 
   if ((filter_data.printer = getenv("PRINTER")) == NULL)
     filter_data.printer = argv[0];

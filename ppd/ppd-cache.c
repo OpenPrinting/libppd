@@ -3415,6 +3415,8 @@ ppdCacheDestroy(ppd_cache_t *pc)	// I - PPD cache and mapping data
 
   cupsArrayDelete(pc->strings);
 
+  cupsArrayDelete(pc->templates);
+
   for (i = PPD_PWG_PRINT_COLOR_MODE_MONOCHROME;
        i < PPD_PWG_PRINT_COLOR_MODE_MAX; i ++)
     for (j = PPD_PWG_PRINT_QUALITY_DRAFT; j < PPD_PWG_PRINT_QUALITY_MAX; j ++)

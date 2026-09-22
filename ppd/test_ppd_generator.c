@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (45 assertions across 12 groups):
+// Tests covered (48 assertions across 13 groups):
 //
 //   Group  1  (T01-T05)  NULL / argument guards and smoke test.
 //                        ppdCreatePPDFromIPP2 returns NULL with errno
@@ -26,6 +26,14 @@
 //                        back to "Unknown" / "Printer".  Single-token
 //                        make takes the "No separate model name" branch
 //                        at line 374 → model = "Printer".
+//
+//   Group  2b (T08b-T08d) PPD string-escape hardening.  Regression tests
+//                        for ppd_escape_string() applied to make/model
+//                        before emission at ppd/ppd-generator.c:480-485.
+//                        Verifies newline, double-quote, and backslash
+//                        in printer-make-and-model are neutralized so
+//                        no additional PPD directives can be minted in
+//                        the generated file.
 //
 //   Group  3  (T09-T10)  HP normalization.  "Hewlett Packard " and
 //                        "Hewlett-Packard " (both 16-char prefixes,
@@ -350,6 +358,94 @@ main(void)
   testEnd(ppd_text &&
           strstr(ppd_text, "*Manufacturer: \"Unknown\"") &&
           strstr(ppd_text, "*ModelName: \"Unknown Printer\""));
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+
+  // =========================================================================
+  // Group 2b: PPD string-escape hardening (T08b - T08d)
+  // =========================================================================
+  //
+  // Regression tests for ppd_escape_string() applied to make/model
+  // before emission at ppd/ppd-generator.c:480-485 (Manufacturer,
+  // ModelName, Product, NickName, ShortNickName).
+  //
+  // Motivation: IPP `printer-make-and-model` is a network-influenceable
+  // string (LAN mDNS-discovered printer + cups-browsed). Without escape,
+  // a make containing '\n', '"', or '\\' can close its own quoted PPD
+  // string and mint new PPD directives in the generated file.
+  //
+  // These tests do NOT assert that any specific downstream parser would
+  // then execute the injected directive; they lock in the emitter's
+  // escape discipline so future refactors do not silently reopen the
+  // gap regardless of parser semantics.
+
+  // T08b — printer-make-and-model with an embedded newline. The '\n'
+  //        must be squashed to a space (not preserved as a raw byte)
+  //        so that the *Manufacturer / *ModelName / *NickName lines
+  //        each stay as one PPD directive line, not two.
+  testBegin("printer-make-and-model with '\\n' emits single-line *Manufacturer");
+  resp = ippNew();
+  add_format(resp, "application/pdf");
+  ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+               "printer-make-and-model", NULL,
+               "Acme\n*FoomaticRIPCommandLine: \"pwn\"");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                NULL, "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          // The injected directive must NOT appear as a new PPD directive
+          // (start of a line with '*').
+          strstr(ppd_text,
+                 "\n*FoomaticRIPCommandLine: \"pwn\"") == NULL &&
+          // The escaped form (payload folded onto the Manufacturer line
+          // with the newline replaced by a space) must appear.
+          strstr(ppd_text,
+                 "*Manufacturer: \"Acme "
+                 "*FoomaticRIPCommandLine:") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+  // T08c — printer-make-and-model with an embedded double-quote.
+  //        The '"' must be backslash-escaped so the *Manufacturer value
+  //        is not prematurely terminated.
+  testBegin("printer-make-and-model with '\"' emits backslash-escaped value");
+  resp = ippNew();
+  add_format(resp, "application/pdf");
+  ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+               "printer-make-and-model", NULL,
+               "Acme\" *Product: \"pwn");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                NULL, "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          // The escaped form must be present (backslash-quote).
+          strstr(ppd_text,
+                 "*Manufacturer: \"Acme\\\"") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+  // T08d — printer-make-and-model with an embedded backslash.
+  //        A raw '\\' must be doubled so it does not consume the
+  //        following character in later PPD parsers.
+  testBegin("printer-make-and-model with '\\\\' emits doubled backslash");
+  resp = ippNew();
+  add_format(resp, "application/pdf");
+  ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+               "printer-make-and-model", NULL,
+               "Acme\\Model");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                NULL, "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          strstr(ppd_text,
+                 "*Manufacturer: \"Acme\\\\Model\"") != NULL);
   if (result == buffer) unlink(buffer);
   free(ppd_text);
   ippDelete(resp);

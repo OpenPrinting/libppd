@@ -179,8 +179,74 @@ ppdCreatePPDFromIPP(char         *buffer,          // I - Filename buffer
 //                            IPP record for printer clusters
 //
 
+//
+// 'ppd_escape_string()' - Escape a value for safe embedding inside a
+//                         PPD double-quoted string.
+//
+// PPD directives use the syntax `*Keyword: "value"`. A raw newline,
+// unescaped double-quote, or backslash inside `value` allows the value
+// to break out of its containing string and be re-interpreted as new
+// PPD directives by a downstream PPD parser. Every callsite that
+// embeds an attacker-influenceable IPP string attribute
+// (printer-make-and-model, printer-info, printer-location, printer-name)
+// into a quoted PPD directive must run through this function first.
+//
+// Transformations:
+//   backslash        -> backslash backslash
+//   double-quote     -> backslash double-quote
+//   newline / CR / other control chars < 0x20 (except TAB) -> single space
+//
+// The output buffer is always NUL-terminated. Truncation is silent
+// (mirrors strlcpy semantics used elsewhere in this file). Returns the
+// number of bytes written, excluding the NUL terminator.
+//
+
+static size_t                                       // O - Bytes written
+ppd_escape_string(char       *out,                  // I - Output buffer
+                  size_t      out_size,             // I - Size of output
+                                                    //     buffer
+                  const char *in)                   // I - Input string
+{
+  size_t oi = 0;
+  const unsigned char *p;
+
+  if (!out || out_size == 0)
+    return (0);
+  if (!in)
+  {
+    out[0] = '\0';
+    return (0);
+  }
+
+  for (p = (const unsigned char *)in; *p && oi + 2 < out_size; p++)
+  {
+    unsigned char c = *p;
+
+    if (c == '\\' || c == '"')
+    {
+      if (oi + 3 >= out_size)
+        break;
+      out[oi++] = '\\';
+      out[oi++] = c;
+    }
+    else if (c == '\n' || c == '\r' || (c < 0x20 && c != '\t'))
+    {
+      // Squash control chars that could break out of the PPD quoted
+      // string context.
+      out[oi++] = ' ';
+    }
+    else
+    {
+      out[oi++] = c;
+    }
+  }
+  out[oi] = '\0';
+  return (oi);
+}
+
+
 char *                                              // O - PPD filename or NULL
-						    //     on error
+					    //     on error
 ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 		     size_t       bufsize,          // I - Size of filename
 						    //     buffer
@@ -411,12 +477,28 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     }
   }
 
-  cupsFilePrintf(fp, "*Manufacturer: \"%s\"\n", make);
-  cupsFilePrintf(fp, "*ModelName: \"%s %s\"\n", make, model);
-  cupsFilePrintf(fp, "*Product: \"(%s %s)\"\n", make, model);
+  //
+  // Emit the make/model strings into quoted PPD directives.
+  //
+  // `make` and `model` originate from the IPP printer-make-and-model
+  // attribute of the discovered printer (or the DNS-SD fallback), i.e.
+  // attacker-influenceable input on an LAN with cups-browsed and
+  // avahi-daemon running. Route them through ppd_escape_string() first
+  // so that a payload containing '\n', '"', or '\\' cannot break out of
+  // the quoted PPD string context and mint additional PPD directives
+  // in the generated file. See regression tests
+  // ppd/test_ppd_generator.c :: T08b / T08c.
+  //
+  char make_esc[512], model_esc[512];
+  ppd_escape_string(make_esc, sizeof(make_esc), make);
+  ppd_escape_string(model_esc, sizeof(model_esc), model);
+
+  cupsFilePrintf(fp, "*Manufacturer: \"%s\"\n", make_esc);
+  cupsFilePrintf(fp, "*ModelName: \"%s %s\"\n", make_esc, model_esc);
+  cupsFilePrintf(fp, "*Product: \"(%s %s)\"\n", make_esc, model_esc);
   cupsFilePrintf(fp, "*NickName: \"%s %s, %sdriverless, %s\"\n",
-		 make, model, (is_fax ? "Fax, " : ""), VERSION);
-  cupsFilePrintf(fp, "*ShortNickName: \"%s %s\"\n", make, model);
+		 make_esc, model_esc, (is_fax ? "Fax, " : ""), VERSION);
+  cupsFilePrintf(fp, "*ShortNickName: \"%s %s\"\n", make_esc, model_esc);
 
   // Which is the default output bin?
   if ((attr = ippFindAttribute(supported, "output-bin-default",

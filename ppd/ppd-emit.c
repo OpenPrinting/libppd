@@ -669,7 +669,7 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
               ppd_section_t section,	// I - Section to write
 	      float         min_order)	// I - Lowest OrderDependency
 {
-  int		i, j,			// Looping vars
+  int		i,			// Looping vars
 		count;			// Number of choices
   ppd_choice_t	**choices;		// Choices
   ppd_size_t	*size;			// Custom page size
@@ -736,7 +736,7 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	    case PPD_CUSTOM_POINTS :
 	    case PPD_CUSTOM_REAL :
 	    case PPD_CUSTOM_INT :
-	        bufsize += 10;
+	        bufsize += 56;        // "%.12f" of ±FLT_MAX <= 53 chars + '\n' + slack
 	        break;
 
 	    case PPD_CUSTOM_PASSCODE :
@@ -760,7 +760,7 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
         DEBUG_puts("2ppdEmitString: Custom size set!");
 
         bufsize += 37;		      // %%BeginFeature: *CustomPageSize True\n
-        bufsize += 50;		      // Five 9-digit numbers + newline
+        bufsize += 5 * 56;	      // 5 * ("%.12f" of ±FLT_MAX <= 53 chars + '\n' + slack)
       }
       else if (!_ppd_strcasecmp(choices[i]->choice, "Custom") &&
                (coption = ppdFindCustomOption(ppd,
@@ -785,7 +785,7 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	    case PPD_CUSTOM_POINTS :
 	    case PPD_CUSTOM_REAL :
 	    case PPD_CUSTOM_INT :
-	        bufsize += 10;
+	        bufsize += 56;        // "%.12f" of ±FLT_MAX <= 53 chars + '\n' + slack
 	        break;
 
 	    case PPD_CUSTOM_PASSCODE :
@@ -1045,7 +1045,8 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
         for (pos = 0; pos < 5; pos ++)
 	{
 	  bufptr    = _ppdStrFormatd(bufptr, bufend, values[pos], loc);
-	  *bufptr++ = '\n';
+	  if (bufptr < bufend)
+	    *bufptr++ = '\n';
         }
 
 	if (!choices[i]->code)
@@ -1099,7 +1100,8 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 	    case PPD_CUSTOM_REAL :
 	        bufptr    = _ppdStrFormatd(bufptr, bufend,
 		                            cparam->current.custom_real, loc);
-                *bufptr++ = '\n';
+	        if (bufptr < bufend)
+	          *bufptr++ = '\n';
 	        break;
 
 	    case PPD_CUSTOM_INT :
@@ -1146,11 +1148,11 @@ ppdEmitString(ppd_file_t    *ppd,	// I - PPD file record
 
       if (choices[i]->code && choices[i]->code[0])
       {
-        j = (int)strlen(choices[i]->code);
-	memcpy(bufptr, choices[i]->code, (size_t)j);
-	bufptr += j;
+        size_t codelen = strlen(choices[i]->code);
+	strlcpy(bufptr, choices[i]->code, (size_t)(bufend - bufptr + 1));
+	bufptr += strlen(bufptr);
 
-	if (choices[i]->code[j - 1] != '\n')
+	if (choices[i]->code[codelen - 1] != '\n' && bufptr < bufend)
 	  *bufptr++ = '\n';
       }
 

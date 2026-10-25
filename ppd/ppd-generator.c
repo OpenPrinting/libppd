@@ -647,8 +647,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   // Password/PIN printing...
   //
 
-  if ((attr = ippFindAttribute(supported, "job-password-supported",
-			       IPP_TAG_INTEGER)) != NULL)
+  if ((attr = ippFindAttribute(supported, "job-password-supported", IPP_TAG_INTEGER)) != NULL && ippGetInteger(attr, 0) > 0)
   {
     char	pattern[33];		// Password pattern
     int		maxlen = ippGetInteger(attr, 0);

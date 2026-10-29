@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (56 assertions across 11 groups):
+// Tests covered (62 assertions across 12 groups):
 //
 //   Group 1  (T01-T07)  NULL-pc guard checks — every public function that
 //                       accepts a ppd_cache_t* must return NULL/no-crash when
@@ -36,6 +36,10 @@
 //                       inches, bare-"Custom" (no ppd_size → NULL), miss.
 //   Group 11 (T53-T56)  ppdConvertOptions() — ColorModel FastGray/Gray to
 //                       print-color-mode, with and without bi-level support.
+//   Group 12 (T57-T62)  ppdCacheAssignPresets() via ppdCacheCreateWithPPD() —
+//                       Resolution choices whose pixel count does not fit in
+//                       32 bits (65536x65536) are ranked against the default
+//                       resolution, as the default and as a choice.
 //
 // Design: entirely hermetic — the PPD is loaded from a static string via
 // tmpfile() + ppdOpen() so no external files are required at build or CI
@@ -195,6 +199,117 @@ color_mode_for(
   cupsFreeOptions(num_options, options);
 
   return (value);
+}
+
+
+//
+// Minimal PPD for the print-quality presets tests (Group 12); a Resolution
+// option is appended to it by test_resolution_presets().  No other option
+// sets print quality, so the presets come from the Resolution choices alone.
+//
+
+static const char presets_ppd_text[] =
+  "*PPD-Adobe: \"4.3\"\n"
+  "*FormatVersion: \"4.3\"\n"
+  "*FileVersion: \"1.0\"\n"
+  "*LanguageVersion: English\n"
+  "*LanguageEncoding: ISOLatin1\n"
+  "*PCFileName: \"PRESETS.PPD\"\n"
+  "*Product: \"(PresetsTest)\"\n"
+  "*ModelName: \"PPD Presets Test Printer\"\n"
+  "*ShortNickName: \"PresetsTest\"\n"
+  "*NickName: \"PPD Presets Test Printer\"\n"
+  "*PSVersion: \"(3010.000) 0\"\n"
+  "*LanguageLevel: \"3\"\n"
+  "*ColorDevice: False\n"
+  "*DefaultColorSpace: Gray\n"
+  "*FileSystem: False\n"
+  "*Throughput: \"1\"\n"
+  "*LandscapeOrientation: Plus90\n"
+  "*TTRasterizer: Type42\n"
+  "*OpenUI *PageSize/Media Size: PickOne\n"
+  "*OrderDependency: 10 AnySetup *PageSize\n"
+  "*DefaultPageSize: Letter\n"
+  "*PageSize Letter/US Letter: \"<</PageSize[612 792]>>setpagedevice\"\n"
+  "*CloseUI: *PageSize\n"
+  "*OpenUI *PageRegion: PickOne\n"
+  "*OrderDependency: 10 AnySetup *PageRegion\n"
+  "*DefaultPageRegion: Letter\n"
+  "*PageRegion Letter: \"<</PageSize[612 792]>>setpagedevice\"\n"
+  "*CloseUI: *PageRegion\n"
+  "*DefaultImageableArea: Letter\n"
+  "*ImageableArea Letter: \"18 18 594 774\"\n"
+  "*DefaultPaperDimension: Letter\n"
+  "*PaperDimension Letter: \"612 792\"\n";
+
+
+//
+// 'test_resolution_presets()' - Build the cache for presets_ppd_text plus
+//                               the given Resolution option and check
+//                               which choice the Mono/Draft and Mono/High
+//                               presets select.
+//
+
+static void
+test_resolution_presets(
+    const char *title,			// I - Short description of the case
+    const char *resolution_ui,		// I - Resolution option PPD text
+    const char *draft,			// I - Expected Mono/Draft choice
+    const char *high)			// I - Expected Mono/High choice
+{
+  ppd_file_t	*ppd;			// PPD file handle
+  ppd_cache_t	*pc;			// PPD cache
+  FILE		*f;			// Temporary FILE for the PPD
+  const char	*val;			// Resolution of a preset
+
+
+  testBegin("ppdCacheCreateWithPPD(%s)", title);
+  f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return;
+  }
+  fputs(presets_ppd_text, f);
+  fputs(resolution_ui, f);
+  rewind(f);
+  ppd = ppdOpen(f);
+  fclose(f);
+  if (!ppd)
+  {
+    testEndMessage(false, "ppdOpen failed");
+    return;
+  }
+  if ((pc = ppdCacheCreateWithPPD(ppd)) == NULL)
+  {
+    testEndMessage(false, "no cache");
+    ppdClose(ppd);
+    return;
+  }
+  testEnd(true);
+
+  testBegin("ppdCacheCreateWithPPD(%s) Mono/Draft Resolution=%s", title,
+            draft);
+  val = cupsGetOption("Resolution",
+		      pc->num_presets[PPD_PWG_PRINT_COLOR_MODE_MONOCHROME]
+				     [PPD_PWG_PRINT_QUALITY_DRAFT],
+		      pc->presets[PPD_PWG_PRINT_COLOR_MODE_MONOCHROME]
+				 [PPD_PWG_PRINT_QUALITY_DRAFT]);
+  testEndMessage(val != NULL && !strcmp(val, draft), "got \"%s\"",
+                 val ? val : "(null)");
+
+  testBegin("ppdCacheCreateWithPPD(%s) Mono/High Resolution=%s", title,
+            high);
+  val = cupsGetOption("Resolution",
+		      pc->num_presets[PPD_PWG_PRINT_COLOR_MODE_MONOCHROME]
+				     [PPD_PWG_PRINT_QUALITY_HIGH],
+		      pc->presets[PPD_PWG_PRINT_COLOR_MODE_MONOCHROME]
+				 [PPD_PWG_PRINT_QUALITY_HIGH]);
+  testEndMessage(val != NULL && !strcmp(val, high), "got \"%s\"",
+                 val ? val : "(null)");
+
+  ppdCacheDestroy(pc);
+  ppdClose(ppd);
 }
 
 
@@ -722,6 +837,39 @@ main(void)
   testEndMessage(!strcmp(val, "bi-level"), "got \"%s\"", val);
 
   ippDelete(attrs);
+
+
+  // =========================================================================
+  // Group 12: ppdCacheAssignPresets() with resolutions of 2^32 pixels or more
+  //           (T57–T62)
+  //
+  // A choice is ranked by its pixel count (res_x * res_y) against the
+  // default's.  65536x65536 is 2^32 pixels: the presets must still rank it
+  // as the highest resolution, not divide by a count wrapped to 0.
+  // =========================================================================
+
+  // T57–T59 — 65536dpi as a choice: 300dpi is draft, 65536dpi high quality.
+  test_resolution_presets("65536dpi choice",
+    "*OpenUI *Resolution/Resolution: PickOne\n"
+    "*OrderDependency: 20 AnySetup *Resolution\n"
+    "*DefaultResolution: 600dpi\n"
+    "*Resolution 300dpi/300 DPI: \"<</HWResolution[300 300]>>setpagedevice\"\n"
+    "*Resolution 600dpi/600 DPI: \"<</HWResolution[600 600]>>setpagedevice\"\n"
+    "*Resolution 65536dpi/65536 DPI: "
+    "\"<</HWResolution[65536 65536]>>setpagedevice\"\n"
+    "*CloseUI: *Resolution\n",
+    "300dpi", "65536dpi");
+
+  // T60–T62 — 65536dpi as the default: 600dpi is draft, the default high.
+  test_resolution_presets("65536dpi default",
+    "*OpenUI *Resolution/Resolution: PickOne\n"
+    "*OrderDependency: 20 AnySetup *Resolution\n"
+    "*DefaultResolution: 65536dpi\n"
+    "*Resolution 600dpi/600 DPI: \"<</HWResolution[600 600]>>setpagedevice\"\n"
+    "*Resolution 65536dpi/65536 DPI: "
+    "\"<</HWResolution[65536 65536]>>setpagedevice\"\n"
+    "*CloseUI: *Resolution\n",
+    "600dpi", "65536dpi");
 
 
   // =========================================================================

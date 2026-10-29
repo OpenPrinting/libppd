@@ -1765,6 +1765,34 @@ do_ps_tests(void)
       puts("PASS");
   }
 
+  fputs("ppdRasterExecPS(\"copy across stack growth\"): ", stdout);
+  fflush(stdout);
+
+  memset(&header, 0, sizeof(header));
+
+  if (ppdRasterExecPS(&header, &preferred_bits,
+                        "[ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n"
+			"20 copy\n"
+			"<</cupsInteger0 10 index"
+			"/cupsInteger1 4 index"
+			"/cupsInteger2 45 index>>setpagedevice\n"
+			"cleartomark\n"))
+  {
+    puts("FAIL (error from function)");
+    puts(_ppdRasterErrorString());
+    errors ++;
+  }
+  else if (header.cupsInteger[0] != 12 || header.cupsInteger[1] != 20 ||
+           header.cupsInteger[2] != 1)
+  {
+    printf("FAIL (cupsInteger [%u %u %u], expected [12 20 1])\n",
+           header.cupsInteger[0], header.cupsInteger[1],
+	   header.cupsInteger[2]);
+    errors ++;
+  }
+  else
+    puts("PASS");
+
   fputs("ppdRasterExecPS(\"%%Begin/EndFeature code\"): ", stdout);
   fflush(stdout);
 

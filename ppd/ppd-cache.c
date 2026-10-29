@@ -2388,7 +2388,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
     long total_image_data;
   } choice_properties_t;
   int                    i, j, k, l;
-  unsigned int           m;
+  unsigned long long     m;
   int                    pass;
   ppd_group_t            *group;
   ppd_option_t	         *option;
@@ -2896,9 +2896,10 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
 	  if (properties->res_x != 0 && properties->res_y != 0)
 	  {
 	    // Choice suggests to set the resolution
-	    // Raising resolution compared to default?
-	    m = (properties->res_x * properties->res_y) /
-	        (base_res_x * base_res_y);
+	    // Raising resolution compared to default?  The pixel counts are
+	    // 64-bit, as a 32-bit product of two resolutions can wrap to 0.
+	    m = ((unsigned long long)properties->res_x * properties->res_y) /
+	        ((unsigned long long)base_res_x * base_res_y);
 	    // No or small change -> Normal quality
 	    if (m == 1)
 	      properties->sets_normal += res_factor * 4;
@@ -2914,8 +2915,8 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
 	    else if (m < 1)
 	    {
 	      // Reducing resolution compared to default?
-	      m = (base_res_x * base_res_y) /
-		  (properties->res_x * properties->res_y);
+	      m = ((unsigned long long)base_res_x * base_res_y) /
+		  ((unsigned long long)properties->res_x * properties->res_y);
 	      // No or small change -> Normal quality
 	      if (m == 1)
 		properties->sets_normal += res_factor * 1;

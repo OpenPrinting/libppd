@@ -69,7 +69,8 @@ check_PROGRAMS = \
 	test_ppd_generator \
 	test_ppd_load_profile \
 	test_ppd_thread \
-	test_ppd_raster
+	test_ppd_raster \
+	test_ppd_rastertops
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -85,7 +86,8 @@ TESTS = \
 	test_ppd_generator \
 	test_ppd_load_profile \
 	test_ppd_thread \
-	test_ppd_raster
+	test_ppd_raster \
+	test_ppd_rastertops
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -287,6 +289,18 @@ test_ppd_raster_LDADD = \
 test_ppd_raster_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS)
+
+test_ppd_rastertops_SOURCES = ppd/test_ppd_rastertops.c
+test_ppd_rastertops_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS) \
+	$(LIBCUPSFILTERS_LIBS) \
+	$(ZLIB_LIBS)
+test_ppd_rastertops_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	$(CUPS_CFLAGS) \
+	$(LIBCUPSFILTERS_CFLAGS) \
+	$(ZLIB_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

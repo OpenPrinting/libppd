@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (24 assertions across 4 groups):
+// Tests covered (33 assertions across 5 groups):
 //
 //   Group 1  (T01-T04)  NULL/argument guards — every public function in
 //                       ppd-custom.c starts with an `if (!ppd)` or
@@ -52,8 +52,19 @@
 //                       below never interleave a Find between First and
 //                       Next.
 //
-// Design: the PPD is built entirely in memory from a single static string
-// and loaded via tmpfile() + ppdOpen().  It declares exactly the custom
+//   Group 5  (T25-T33)  Custom page size parameter types — ppdPageSize()
+//                       stores a custom size in the Width/Height POINTS
+//                       values, and ppdOpen() rejects (PPD_BAD_CUSTOM_PARAM)
+//                       PPDs declaring Width, Height, WidthOffset or
+//                       HeightOffset as anything but points, or Orientation
+//                       as anything but int, whatever the case of the
+//                       option and parameter names, so their values are
+//                       never used through the wrong union member.  The
+//                       same parameter names of another custom option keep
+//                       any type.
+//
+// Design: the PPDs are built entirely in memory from static strings and
+// loaded via tmpfile() + ppdOpen().  The main PPD declares exactly the custom
 // machinery needed to exercise every branch:
 //
 //   • A standard CustomPageSize block (*VariablePaperSize: True with five
@@ -63,6 +74,9 @@
 //     STRING parameter with a human-readable translation string — proves
 //     ppdFindCustomOption() finds more than one record and exercises the
 //     STRING type plus the param->text field.
+//
+// Group 5 adds one PPD per case: a common head with a custom page size and
+// the case's *ParamCustom* lines, each followed by *CustomPageSize True.
 //
 // No external files are required at build or CI time, making the binary
 // fully hermetic.
@@ -167,6 +181,76 @@ static const char test_ppd_text[] =
 
 
 //
+// Head of the PPDs for Group 5: a valid PPD with a variable page size whose
+// custom parameters each test case appends, followed by custom_page_size.
+//
+
+static const char custom_ppd_head[] =
+  "*PPD-Adobe: \"4.3\"\n"
+  "*FormatVersion: \"4.3\"\n"
+  "*FileVersion: \"1.0\"\n"
+  "*LanguageVersion: English\n"
+  "*LanguageEncoding: ISOLatin1\n"
+  "*PCFileName: \"CUSTTEST.PPD\"\n"
+  "*Product: \"(CustomTest)\"\n"
+  "*ModelName: \"PPD Custom Test Printer\"\n"
+  "*ShortNickName: \"CustomTest\"\n"
+  "*NickName: \"PPD Custom Test Printer\"\n"
+  "*PSVersion: \"(3010.000) 0\"\n"
+  "*OpenUI *PageSize/Media Size: PickOne\n"
+  "*OrderDependency: 10 AnySetup *PageSize\n"
+  "*DefaultPageSize: Letter\n"
+  "*PageSize Letter/US Letter: \"<</PageSize[612 792]>>setpagedevice\"\n"
+  "*CloseUI: *PageSize\n"
+  "*DefaultImageableArea: Letter\n"
+  "*ImageableArea Letter: \"18 18 594 774\"\n"
+  "*DefaultPaperDimension: Letter\n"
+  "*PaperDimension Letter: \"612 792\"\n"
+  "*VariablePaperSize: True\n"
+  "*HWMargins: 18 18 18 18\n";
+
+static const char custom_page_size[] =
+  "*CustomPageSize True: \"pop pop pop pop pop\"\n";
+
+
+//
+// Custom parameters for Group 5.  ppdOpen() must reject (PPD_BAD_CUSTOM_PARAM)
+// custom page size parameters declared with a type other than the one
+// ppdPageSize(), ppdMarkOption() and ppdEmit*() use them as, and accept the
+// others.
+//
+
+static const struct
+{
+  const char	*title;			// Test title
+  bool		opens;			// Does ppdOpen() accept it?
+  const char	*params;		// *ParamCustom* lines
+} param_cases[] =
+{
+  { "page size parameters with their types", true,
+    "*ParamCustomPageSize Width: 1 points 36 1000\n"
+    "*ParamCustomPageSize Height: 2 points 36 1000\n"
+    "*ParamCustomPageSize WidthOffset: 3 points 0 0\n"
+    "*ParamCustomPageSize HeightOffset: 4 points 0 0\n"
+    "*ParamCustomPageSize Orientation: 5 int 0 3\n" },
+  { "Watermark Width declared as string", true,
+    "*ParamCustomWatermark Width: 1 string 0 80\n" },
+  { "page size Width declared as string", false,
+    "*ParamCustomPageSize Width: 1 string 0 80\n" },
+  { "page size Height declared as string", false,
+    "*ParamCustomPageSize Height: 2 string 0 80\n" },
+  { "page size height (lowercase) declared as string", false,
+    "*ParamCustomPageSize height: 2 string 0 80\n" },
+  { "pagesize (lowercase) Width declared as string", false,
+    "*ParamCustompagesize Width: 1 string 0 80\n" },
+  { "page size WidthOffset declared as int", false,
+    "*ParamCustomPageSize WidthOffset: 3 int 0 0\n" },
+  { "page size Orientation declared as points", false,
+    "*ParamCustomPageSize Orientation: 5 points 0 3\n" }
+};
+
+
+//
 // 'main()' - Run all ppd-custom.c unit tests.
 //
 
@@ -178,9 +262,12 @@ main(void)
   ppd_coption_t *copt2;			// Second lookup for pointer-identity test
   ppd_coption_t *wmark;			// The "Watermark" custom option
   ppd_cparam_t *param;			// Returned by ppdFind/First/NextCustomParam()
+  ppd_cparam_t *param2;			// Second parameter for T25
+  ppd_file_t   *cppd;			// PPD of a Group 5 case
   FILE         *f;			// Temporary FILE for in-memory PPD
   ppd_status_t  err;			// PPD parse error code
   int           line;			// Line number of any parse error
+  int           i;			// Looping var
   int           count;			// Iteration counter
   bool          saw_orientation;	// Iteration sentinel
 
@@ -402,6 +489,56 @@ main(void)
   testBegin("ppdFirstCustomParam(Watermark) has exactly one parameter");
   param = ppdFirstCustomParam(wmark);
   testEnd(param != NULL && ppdNextCustomParam(wmark) == NULL);
+
+
+  // =========================================================================
+  // Group 5: custom page size parameter types (T25–T33)
+  //
+  // ppdPageSize() stores a custom size in the Width and Height parameters'
+  // current.custom_points, and ppdClose() frees current.custom_string of
+  // STRING, PASSCODE and PASSWORD parameters.  So ppdOpen() only accepts
+  // the custom page size parameters with the types they are used as: points
+  // for Width, Height, WidthOffset and HeightOffset, int for Orientation,
+  // whatever the case of the option and parameter names.  Parameters of the
+  // same names in other custom options keep any type.
+  // =========================================================================
+
+  // T25 — A custom size sets the POINTS Width and Height current values.
+  testBegin("ppdPageSize(\"Custom.100x200\") sets Width/Height current points");
+  ppdPageSize(ppd, "Custom.100x200");
+  param  = ppdFindCustomParam(copt, "Width");
+  param2 = ppdFindCustomParam(copt, "Height");
+  testEndMessage(param != NULL && param2 != NULL &&
+                 param->current.custom_points == 100.0f &&
+                 param2->current.custom_points == 200.0f,
+                 "width=%g height=%g",
+                 param ? param->current.custom_points : -1.0,
+                 param2 ? param2->current.custom_points : -1.0);
+
+  // T26–T33 — ppdOpen() accepts the page size parameters with their types
+  //           and a non-PageSize custom option's parameter of the same name
+  //           with another type, and fails with PPD_BAD_CUSTOM_PARAM for
+  //           each wrong page size parameter type.
+  for (i = 0; i < (int)(sizeof(param_cases) / sizeof(param_cases[0])); i ++)
+  {
+    testBegin("ppdOpen(%s) %s", param_cases[i].title,
+              param_cases[i].opens ? "succeeds" : "fails");
+    f = tmpfile();
+    fputs(custom_ppd_head, f);
+    fputs(param_cases[i].params, f);
+    fputs(custom_page_size, f);
+    rewind(f);
+    cppd = ppdOpen(f);
+    fclose(f);
+    err = ppdLastError(&line);
+    if (param_cases[i].opens)
+      testEndMessage(cppd != NULL, "%s on line %d", ppdErrorString(err), line);
+    else
+      testEndMessage(cppd == NULL && err == PPD_BAD_CUSTOM_PARAM,
+                     "%s on line %d", cppd ? "opened" : ppdErrorString(err),
+                     line);
+    ppdClose(cppd);
+  }
 
 
   // =========================================================================

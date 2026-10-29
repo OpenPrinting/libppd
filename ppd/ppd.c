@@ -1105,6 +1105,28 @@ ppdOpenWithLocalization(
       }
 
       //
+      // Custom page sizes use Width, Height, WidthOffset, and HeightOffset
+      // as points and Orientation as an integer, so reject any other type
+      // before the values are used through the wrong union member.  Compare
+      // case-insensitively, as ppdFindCustomOption() and ppdFindCustomParam()
+      // do...
+      //
+
+      if (!_ppd_strcasecmp(coption->keyword, "PageSize") &&
+          (((!_ppd_strcasecmp(name, "Width") ||
+             !_ppd_strcasecmp(name, "Height") ||
+             !_ppd_strcasecmp(name, "WidthOffset") ||
+             !_ppd_strcasecmp(name, "HeightOffset")) &&
+            cparam->type != PPD_CUSTOM_POINTS) ||
+           (!_ppd_strcasecmp(name, "Orientation") &&
+            cparam->type != PPD_CUSTOM_INT)))
+      {
+        pg->ppd_status = PPD_BAD_CUSTOM_PARAM;
+
+	goto error;
+      }
+
+      //
       // Now special-case for CustomPageSize...
       //
 

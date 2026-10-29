@@ -1119,25 +1119,32 @@ static _ppd_ps_obj_t	*		// O - New object
 ppd_push_stack(_ppd_ps_stack_t *st,	// I - Stack
            _ppd_ps_obj_t   *obj)	// I - Object
 {
-  _ppd_ps_obj_t	*temp;		// New object
+  _ppd_ps_obj_t	*temp,		// New object
+		value;		// Copy of the object, which may be on the stack
 
+
+  //
+  // Copy the object first: obj may point into st->objs (copy, index), which
+  // the realloc below can move...
+  //
+
+  memcpy(&value, obj, sizeof(value));
 
   if (st->num_objs >= st->alloc_objs)
   {
-    st->alloc_objs += 32;
-
-    if ((temp = realloc(st->objs, (size_t)st->alloc_objs *
+    if ((temp = realloc(st->objs, (size_t)(st->alloc_objs + 32) *
                                   sizeof(_ppd_ps_obj_t))) == NULL)
       return (NULL);
 
-    st->objs = temp;
+    st->objs       = temp;
+    st->alloc_objs += 32;
     memset(temp + st->num_objs, 0, 32 * sizeof(_ppd_ps_obj_t));
   }
 
   temp = st->objs + st->num_objs;
   st->num_objs ++;
 
-  memcpy(temp, obj, sizeof(_ppd_ps_obj_t));
+  memcpy(temp, &value, sizeof(_ppd_ps_obj_t));
 
   return (temp);
 }

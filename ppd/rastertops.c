@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <ppd/debug-internal.h>
+#include <ppd/raster-private.h>
 #include <ppd/libcups2-private.h>
 #include <zlib.h>
 
@@ -239,32 +240,23 @@ write_flate(cups_raster_t *ras,	        // I - Image data
 						   // data
                  curr_line=1,                      // Maitining the working
 						   // line of pixels
-                 alloc,
-                 flag = 0;
-  unsigned       have;                             // Bytes available in
+                 flag = 0;                         // Convert 1-bit RGB to
+						   // 8 bits per color?
+  size_t         linesize,                         // Bytes of image data
+						   // per line
+                 have;                             // Bytes available in
 						   // output buffer
   z_stream       strm;                             // Structure required
 						   // by deflate
-  unsigned char  *pixdata,
-                 *convertedpix;
-  size_t         line_bytes;
+  unsigned char  *pixdata,                         // Line of raster data
+                 *convertedpix = NULL,             // Converted line of
+						   // raster data
+                 *out;                             // Output data buffer
 
   if (header.cupsBytesPerLine == 0 ||
-      header.cupsBytesPerLine > (16 * 1024 * 1024) || header.cupsHeight == 0)
+      header.cupsBytesPerLine > PPD_MAX_BYTES_PER_LINE ||
+      header.cupsHeight == 0)
     return (Z_DATA_ERROR);
-
-  line_bytes = (size_t)header.cupsBytesPerLine;
-
-  unsigned char  in[line_bytes * 6],  // Input data buffer
-                 out[line_bytes * 6]; // Output data buffer
-		
-  // allocate deflate state
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  ret = deflateInit(&strm, -1);
-  if (ret != Z_OK)
-    return (ret);
 
   if (header.cupsBitsPerColor == 1 &&
       (header.cupsColorSpace == CUPS_CSPACE_RGB ||
@@ -272,58 +264,65 @@ write_flate(cups_raster_t *ras,	        // I - Image data
        header.cupsColorSpace == CUPS_CSPACE_SRGB))
     flag = 1;
 
+  // convert_pixels() makes 6 bytes of each byte of 1-bit RGB data
+  if (flag)
+    linesize = (size_t)header.cupsBytesPerLine * 6;
+  else
+    linesize = header.cupsBytesPerLine;
+
+  // allocate the line buffers once for the whole page
+  pixdata = malloc(header.cupsBytesPerLine);
+  if (flag)
+    convertedpix = malloc(linesize);
+  out = malloc(linesize);
+  if (pixdata == NULL || (flag && convertedpix == NULL) || out == NULL)
+  {
+    free(pixdata);
+    free(convertedpix);
+    free(out);
+    return (Z_MEM_ERROR);
+  }
+  // allocate deflate state
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+  ret = deflateInit(&strm, -1);
+  if (ret != Z_OK)
+  {
+    free(pixdata);
+    free(convertedpix);
+    free(out);
+    return (ret);
+  }
+
   // compress until end of file
   do
   {
-    if ((pixdata = malloc(header.cupsBytesPerLine)) == NULL)
-    {
-      (void)deflateEnd(&strm);
-      return (Z_MEM_ERROR);
-    }
     if (cupsRasterReadPixels(ras, pixdata, header.cupsBytesPerLine) !=
         header.cupsBytesPerLine)
     {
-      free(pixdata);
       (void)deflateEnd(&strm);
+      free(pixdata);
+      free(convertedpix);
+      free(out);
       return (Z_DATA_ERROR);
     }
     if (flag)
-    {
-      if ((convertedpix = malloc(header.cupsBytesPerLine * 6)) == NULL)
-      {
-        free(pixdata);
-        (void)deflateEnd(&strm);
-        return (Z_MEM_ERROR);
-      }
-      convert_pixels(pixdata,convertedpix, header.cupsBytesPerLine);
-      alloc = header.cupsBytesPerLine * 6;
-    }
-    else
-    {
-      if ((convertedpix = malloc(header.cupsBytesPerLine)) == NULL)
-      {
-        free(pixdata);
-        (void)deflateEnd(&strm);
-        return (Z_MEM_ERROR);
-      }
-      memcpy(convertedpix, pixdata, header.cupsBytesPerLine);
-      alloc = header.cupsBytesPerLine;
-    }
+      convert_pixels(pixdata, convertedpix, header.cupsBytesPerLine);
 
     if(curr_line == header.cupsHeight)
       flush = Z_FINISH;
     else
       flush = Z_NO_FLUSH;
     curr_line++;
-    memcpy(in, convertedpix, alloc);
-    strm.avail_in = alloc;
-    strm.next_in = in;
+    strm.avail_in = (uInt)linesize;
+    strm.next_in = (flag ? convertedpix : pixdata);
 
     // run deflate() on input until output buffer not full, finish
     // compression if all of source has been read in
     do
     {
-      strm.avail_out = alloc;
+      strm.avail_out = (uInt)linesize;
       strm.next_out = out;
 
       // Run the deflate algorithm on the data
@@ -331,13 +330,13 @@ write_flate(cups_raster_t *ras,	        // I - Image data
 
       // check whether state is not clobbered
       DEBUG_assert(ret != Z_STREAM_ERROR);
-      have = alloc - strm.avail_out;
+      have = linesize - strm.avail_out;
       if (fwrite(out, 1, have, doc->outputfp) != have)
       {
 	(void)deflateEnd(&strm);
 	free(pixdata);
-	if (convertedpix != NULL)
-	  free(convertedpix);
+	free(convertedpix);
+	free(out);
 	return (Z_ERRNO);
       }
     }
@@ -347,8 +346,6 @@ write_flate(cups_raster_t *ras,	        // I - Image data
     DEBUG_assert(strm.avail_in == 0);
 
     // done when last data in file processed
-    free(pixdata);
-    free(convertedpix);
   }
   while (flush != Z_FINISH);
 
@@ -357,6 +354,9 @@ write_flate(cups_raster_t *ras,	        // I - Image data
 
   // clean up and return
   (void)deflateEnd(&strm);
+  free(pixdata);
+  free(convertedpix);
+  free(out);
   return (Z_OK);
 }
 
@@ -510,6 +510,20 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
     }
 
     //
+    // Check the line length before writing anything for the page
+    //
+
+    if (header.cupsBytesPerLine == 0 ||
+        header.cupsBytesPerLine > PPD_MAX_BYTES_PER_LINE)
+    {
+      if (log) log(ld, CF_LOGLEVEL_ERROR,
+		   "ppdFilterRasterToPS: Bad raster line length %u.",
+		   header.cupsBytesPerLine);
+      status = 1;
+      break;
+    }
+
+    //
     // Write the prolog for PS only once
     //
 
@@ -557,7 +571,7 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
 
   if (empty)
   {
-    if (log) log(ld, CF_LOGLEVEL_DEBUG,
+    if (!status && log) log(ld, CF_LOGLEVEL_DEBUG,
 		 "ppdFilterRasterToPS: Input is empty, outputting empty file.");
 
     cupsRasterClose(ras);
@@ -565,7 +579,7 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
     fclose(outputfp);
     close(outputfd);
 
-    return (0);
+    return (status);
   }
 
   write_trailer(Page, &doc);

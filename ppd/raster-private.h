@@ -26,6 +26,13 @@
 #    include <fcntl.h>
 #  endif // _WIN32
 
+
+//
+// Longest raster line, the same limit libcups applies to raster streams...
+//
+
+#  define PPD_MAX_BYTES_PER_LINE	(16 * 1024 * 1024)
+
 #  ifdef __cplusplus
 extern "C" {
 #  endif // __cplusplus

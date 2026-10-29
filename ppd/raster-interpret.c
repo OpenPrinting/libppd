@@ -17,6 +17,7 @@
 #include <ppd/debug-internal.h>
 #include <ppd/libcups2-private.h>
 #include <math.h>
+#include <limits.h>
 
 
 //
@@ -87,6 +88,7 @@ static _ppd_ps_obj_t	*ppd_scan_ps(_ppd_ps_stack_t *st, char **ptr);
 static int		ppd_setpagedevice(_ppd_ps_stack_t *st,
 			                cups_page_header_t *h,
 			                int *preferred_bits);
+static unsigned		ppd_unsigned(double v);
 #ifdef DEBUG
 static void		ppd_DEBUG_object(const char *prefix, _ppd_ps_obj_t *obj);
 static void		ppd_DEBUG_stack(const char *prefix, _ppd_ps_stack_t *st);
@@ -140,8 +142,11 @@ ppdRasterInterpretPPD(
 		bottom,			// Bottom position
 		right,			// Right position
 		top,			// Top position
+		width,			// Width of bitmap in pixels
+		height,			// Height of bitmap in pixels
 		temp1, temp2;		// Temporary variables for swapping
   int		preferred_bits;		// Preferred bits per color
+  unsigned long long bpl;		// Bytes per line
 
 
   //
@@ -340,22 +345,22 @@ ppdRasterInterpretPPD(
     top    = temp1;
   }
 
-  h->PageSize[0]           = (unsigned)(h->cupsPageSize[0] *
-                                        h->cupsBorderlessScalingFactor);
-  h->PageSize[1]           = (unsigned)(h->cupsPageSize[1] *
-                                        h->cupsBorderlessScalingFactor);
-  h->Margins[0]            = (unsigned)(left *
-                                        h->cupsBorderlessScalingFactor);
-  h->Margins[1]            = (unsigned)(bottom *
-                                        h->cupsBorderlessScalingFactor);
-  h->ImagingBoundingBox[0] = (unsigned)(left *
-                                        h->cupsBorderlessScalingFactor);
-  h->ImagingBoundingBox[1] = (unsigned)(bottom *
-                                        h->cupsBorderlessScalingFactor);
-  h->ImagingBoundingBox[2] = (unsigned)(right *
-                                        h->cupsBorderlessScalingFactor);
-  h->ImagingBoundingBox[3] = (unsigned)(top *
-                                        h->cupsBorderlessScalingFactor);
+  h->PageSize[0]           = ppd_unsigned((double)h->cupsPageSize[0] *
+                                          h->cupsBorderlessScalingFactor);
+  h->PageSize[1]           = ppd_unsigned((double)h->cupsPageSize[1] *
+                                          h->cupsBorderlessScalingFactor);
+  h->Margins[0]            = ppd_unsigned((double)left *
+                                          h->cupsBorderlessScalingFactor);
+  h->Margins[1]            = ppd_unsigned((double)bottom *
+                                          h->cupsBorderlessScalingFactor);
+  h->ImagingBoundingBox[0] = ppd_unsigned((double)left *
+                                          h->cupsBorderlessScalingFactor);
+  h->ImagingBoundingBox[1] = ppd_unsigned((double)bottom *
+                                          h->cupsBorderlessScalingFactor);
+  h->ImagingBoundingBox[2] = ppd_unsigned((double)right *
+                                          h->cupsBorderlessScalingFactor);
+  h->ImagingBoundingBox[3] = ppd_unsigned((double)top *
+                                          h->cupsBorderlessScalingFactor);
   h->cupsImagingBBox[0]    = left;
   h->cupsImagingBBox[1]    = bottom;
   h->cupsImagingBBox[2]    = right;
@@ -391,10 +396,17 @@ ppdRasterInterpretPPD(
   // Compute the bitmap parameters...
   //
 
-  h->cupsWidth  = (unsigned)((right - left) * h->cupsBorderlessScalingFactor *
-			     h->HWResolution[0] / 72.0f + 0.5f);
-  h->cupsHeight = (unsigned)((top - bottom) * h->cupsBorderlessScalingFactor *
-			     h->HWResolution[1] / 72.0f + 0.5f);
+  width  = (right - left) * h->cupsBorderlessScalingFactor *
+	   h->HWResolution[0] / 72.0f + 0.5f;
+  height = (top - bottom) * h->cupsBorderlessScalingFactor *
+	   h->HWResolution[1] / 72.0f + 0.5f;
+
+  if (!(width >= 0.0f && width < 4294967296.0f) ||
+      !(height >= 0.0f && height < 4294967296.0f))
+  {
+    _ppdRasterAddError("Page header uses unsupported values.\n");
+    return (-1);
+  }
 
   switch (h->cupsColorSpace)
   {
@@ -490,10 +502,20 @@ ppdRasterInterpretPPD(
 	break;
   }
 
-  h->cupsBytesPerLine = (h->cupsBitsPerPixel * h->cupsWidth + 7) / 8;
+  bpl = ((unsigned long long)h->cupsBitsPerPixel * (unsigned)width + 7) / 8;
 
   if (h->cupsColorOrder == CUPS_ORDER_BANDED)
-    h->cupsBytesPerLine *= h->cupsNumColors;
+    bpl *= h->cupsNumColors;
+
+  if (bpl > PPD_MAX_BYTES_PER_LINE)
+  {
+    _ppdRasterAddError("Page header uses unsupported values.\n");
+    return (-1);
+  }
+
+  h->cupsWidth        = (unsigned)width;
+  h->cupsHeight       = (unsigned)height;
+  h->cupsBytesPerLine = (unsigned)bpl;
 
   return (status);
 }
@@ -1663,8 +1685,8 @@ ppd_setpagedevice(
       if (obj[1].type == PPD_PS_NUMBER && obj[2].type == PPD_PS_NUMBER &&
           obj[3].type == PPD_PS_END_ARRAY)
       {
-        h->HWResolution[0] = (unsigned)obj[1].value.number;
-	h->HWResolution[1] = (unsigned)obj[2].value.number;
+        h->HWResolution[0] = ppd_unsigned(obj[1].value.number);
+	h->HWResolution[1] = ppd_unsigned(obj[2].value.number);
 	obj += 3;
       }
       else
@@ -1711,8 +1733,8 @@ ppd_setpagedevice(
         h->cupsPageSize[0] = (float)obj[1].value.number;
 	h->cupsPageSize[1] = (float)obj[2].value.number;
 
-        h->PageSize[0] = (unsigned)obj[1].value.number;
-	h->PageSize[1] = (unsigned)obj[2].value.number;
+        h->PageSize[0] = ppd_unsigned(obj[1].value.number);
+	h->PageSize[1] = ppd_unsigned(obj[2].value.number);
 
 	obj += 3;
       }
@@ -1792,6 +1814,21 @@ ppd_setpagedevice(
   }
 
   return (0);
+}
+
+
+//
+// 'ppd_unsigned()' - Convert a number to an unsigned integer, 0 when out of
+//                    range.
+//
+
+static unsigned				// O - Unsigned value or 0
+ppd_unsigned(double v)			// I - Number to convert
+{
+  if (v >= 0.0 && v <= (double)UINT_MAX)
+    return ((unsigned)v);
+  else
+    return (0);
 }
 
 

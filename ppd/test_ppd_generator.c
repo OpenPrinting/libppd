@@ -380,17 +380,25 @@ main(void)
   // then execute the injected directive; they lock in the emitter's
   // escape discipline so future refactors do not silently reopen the
   // gap regardless of parser semantics.
+  //
+  // Before escaping, ppdCreatePPDFromIPP2() cuts the make and model at
+  // the first control character or double quote, so the newline and
+  // quote payloads below are dropped and only the backslash reaches
+  // ppd_escape_string().  Each input has a make AND a model before the
+  // payload: a make-only value ends with model = "Printer", which the
+  // generator rejects in favour of the next source and finally
+  // "Unknown", and the checks would never see the Acme lines.
 
-  // T08b — printer-make-and-model with an embedded newline. The '\n'
-  //        must be squashed to a space (not preserved as a raw byte)
-  //        so that the *Manufacturer / *ModelName / *NickName lines
-  //        each stay as one PPD directive line, not two.
+  // T08b — printer-make-and-model with an embedded newline.  The value
+  //        must end at the '\n', so that the *Manufacturer / *ModelName
+  //        / *NickName lines each stay as one PPD directive line, and
+  //        the payload after it does not become a directive of its own.
   testBegin("printer-make-and-model with '\\n' emits single-line *Manufacturer");
   resp = ippNew();
   add_format(resp, "application/pdf");
   ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
                "printer-make-and-model", NULL,
-               "Acme\n*FoomaticRIPCommandLine: \"pwn\"");
+               "Acme Laser\n*FoomaticRIPCommandLine: \"pwn\"");
   result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
                                 NULL, "application/pdf",
                                 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
@@ -400,32 +408,31 @@ main(void)
           // (start of a line with '*').
           strstr(ppd_text,
                  "\n*FoomaticRIPCommandLine: \"pwn\"") == NULL &&
-          // The escaped form (payload folded onto the Manufacturer line
-          // with the newline replaced by a space) must appear.
-          strstr(ppd_text,
-                 "*Manufacturer: \"Acme "
-                 "*FoomaticRIPCommandLine:") != NULL);
+          // The make and model end where the newline was.
+          strstr(ppd_text, "*Manufacturer: \"Acme\"\n") != NULL &&
+          strstr(ppd_text, "*ModelName: \"Acme Laser\"\n") != NULL);
   if (result == buffer) unlink(buffer);
   free(ppd_text);
   ippDelete(resp);
 
   // T08c — printer-make-and-model with an embedded double-quote.
-  //        The '"' must be backslash-escaped so the *Manufacturer value
-  //        is not prematurely terminated.
-  testBegin("printer-make-and-model with '\"' emits backslash-escaped value");
+  //        The '"' must not terminate the *Product value early and
+  //        start a new directive: the value ends before the quote.
+  testBegin("printer-make-and-model with '\"' cannot end a quoted value early");
   resp = ippNew();
   add_format(resp, "application/pdf");
   ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
                "printer-make-and-model", NULL,
-               "Acme\" *Product: \"pwn");
+               "Acme Laser\" *Product: \"pwn");
   result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
                                 NULL, "application/pdf",
                                 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
   ppd_text = result ? slurp_file(buffer) : NULL;
   testEnd(ppd_text &&
-          // The escaped form must be present (backslash-quote).
-          strstr(ppd_text,
-                 "*Manufacturer: \"Acme\\\"") != NULL);
+          // Nothing of the payload after the quote is written.
+          strstr(ppd_text, "pwn") == NULL &&
+          strstr(ppd_text, "*Manufacturer: \"Acme\"\n") != NULL &&
+          strstr(ppd_text, "*Product: \"(Acme Laser)\"\n") != NULL);
   if (result == buffer) unlink(buffer);
   free(ppd_text);
   ippDelete(resp);
@@ -438,14 +445,16 @@ main(void)
   add_format(resp, "application/pdf");
   ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_TEXT,
                "printer-make-and-model", NULL,
-               "Acme\\Model");
+               "Acme\\Model Laser");
   result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
                                 NULL, "application/pdf",
                                 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
   ppd_text = result ? slurp_file(buffer) : NULL;
   testEnd(ppd_text &&
           strstr(ppd_text,
-                 "*Manufacturer: \"Acme\\\\Model\"") != NULL);
+                 "*Manufacturer: \"Acme\\\\Model\"") != NULL &&
+          strstr(ppd_text,
+                 "*ModelName: \"Acme\\\\Model Laser\"") != NULL);
   if (result == buffer) unlink(buffer);
   free(ppd_text);
   ippDelete(resp);

@@ -37,6 +37,10 @@
 //              loop, each with its own code, and must read back exactly the
 //              message the same code gives when run alone.
 //
+//   Group 4  PPD cache status message: several threads call
+//            ppdCacheCreateWithFile() on a file that does not exist in a
+//            loop, each failure replacing the last status message.
+//
 // The per-thread checks of groups 1 and 3 fail deterministically when the
 // state is shared by all threads.  The concurrent checks may crash or pass
 // by luck then; build with -fsanitize=thread to see every data race they run
@@ -107,6 +111,7 @@ static const char test_ppd_text[] =
 static int		join_threads(pthread_t *threads, int started,
 			             thread_data_t *data, int *loops);
 static ppd_file_t	*open_ppd(const char *text);
+static void		*run_cache_status(void *arg);
 static void		*run_open_ppd(void *arg);
 static void		*run_raster_concurrent(void *arg);
 static void		*run_raster_new_thread(void *arg);
@@ -115,6 +120,7 @@ static void		set_code(thread_data_t *data, int num);
 static int		set_expected(thread_data_t *data);
 static int		start_threads(pthread_t *threads, thread_data_t *data,
 			              void *(*func)(void *));
+static void		test_cache_status(void);
 static void		test_ppd_status(void);
 static void		test_raster_error(void);
 static void		test_string_pool(void);
@@ -130,6 +136,7 @@ main(void)
   test_ppd_status();
   test_string_pool();
   test_raster_error();
+  test_cache_status();
 
   return (testsPassed ? 0 : 1);
 }
@@ -182,6 +189,32 @@ open_ppd(const char *text)		// I - PPD text
   fclose(fp);
 
   return (ppd);
+}
+
+
+//
+// 'run_cache_status()' - Fail to load a PPD cache file in a loop.
+//
+
+static void *				// O - Thread exit value
+run_cache_status(void *arg)		// I - Thread data
+{
+  thread_data_t	*data = (thread_data_t *)arg;
+					// Thread data
+  ppd_cache_t	*pc;			// PPD cache
+
+
+  for (data->loops = 0; data->loops < NUM_LOOPS; data->loops ++)
+  {
+    if ((pc = ppdCacheCreateWithFile("/nonexistent/libppd-test.cache",
+                                     NULL)) != NULL)
+    {
+      ppdCacheDestroy(pc);
+      data->mismatches ++;
+    }
+  }
+
+  return (NULL);
 }
 
 
@@ -410,6 +443,35 @@ start_threads(pthread_t     *threads,	// I - Threads
       break;
 
   return (started);
+}
+
+
+//
+// 'test_cache_status()' - Test the PPD cache status message (group 4).
+//
+
+static void
+test_cache_status(void)
+{
+  pthread_t	threads[NUM_THREADS];	// Threads
+  thread_data_t	data[NUM_THREADS];	// Per-thread test data
+  int		i,			// Looping var
+		started,		// Threads started
+		loops,			// Iterations done
+		mismatches;		// Mismatches seen
+
+
+  memset(data, 0, sizeof(data));
+  for (i = 0; i < NUM_THREADS; i ++)
+    data[i].num = i;
+
+  testBegin("ppdCacheCreateWithFile(missing file) in %d threads x %d loops",
+            NUM_THREADS, NUM_LOOPS);
+  started    = start_threads(threads, data, run_cache_status);
+  mismatches = join_threads(threads, started, data, &loops);
+  testEndMessage(started == NUM_THREADS && mismatches == 0,
+                 "%d threads, %d of %d calls did not fail", started,
+                 mismatches, loops);
 }
 
 

@@ -13,6 +13,7 @@
 //
 
 #include <ppd/string-private.h>
+#include <ppd/thread-private.h>
 #include <ppd/array-private.h>
 #include <ppd/ipp-private.h>
 #include <ppd/ppd.h>
@@ -76,6 +77,8 @@ static int	ppd_pwg_compare_finishings(ppd_pwg_finishings_t *a,
 static void	ppd_pwg_free_finishings(ppd_pwg_finishings_t *f);
 
 char            *ppd_cache_status_message = NULL; // Last PPD cache error
+static _ppd_mutex_t	ppd_cache_status_mutex = _PPD_MUTEX_INITIALIZER;
+					// Mutex to control access to it
 
 
 //
@@ -86,17 +89,14 @@ static void
 set_error(const char   *message,	// I - status-message value
 	  int          localize)	// I - Localize the message?
 {
+  char	*new_message = NULL,		// New status-message
+	*old_message;			// Previous status-message
+
+
   if (!message && errno)
   {
     message  = strerror(errno);
     localize = 0;
-  }
-
-  if (ppd_cache_status_message)
-  {
-    _ppdStrFree(ppd_cache_status_message);
-
-    ppd_cache_status_message = NULL;
   }
 
   if (message)
@@ -107,16 +107,26 @@ set_error(const char   *message,	// I - status-message value
      // Get the message catalog...
      //
 
-      ppd_cache_status_message =
-	_ppdStrAlloc(cupsLangGetString(cupsLangDefault(),
-				      message));
+      new_message = _ppdStrAlloc(cupsLangGetString(cupsLangDefault(),
+						   message));
     }
     else
-      ppd_cache_status_message = _ppdStrAlloc(message);
+      new_message = _ppdStrAlloc(message);
   }
 
-  DEBUG_printf(("4set_error: last_status_message=\"%s\"",
-                ppd_cache_status_message));
+  DEBUG_printf(("4set_error: last_status_message=\"%s\"", new_message));
+
+  //
+  // Swap in the new message and free the previous one, so that threads
+  // setting errors at the same time never free the same string twice...
+  //
+
+  _ppdMutexLock(&ppd_cache_status_mutex);
+  old_message              = ppd_cache_status_message;
+  ppd_cache_status_message = new_message;
+  _ppdMutexUnlock(&ppd_cache_status_mutex);
+
+  _ppdStrFree(old_message);
 }
 
 //

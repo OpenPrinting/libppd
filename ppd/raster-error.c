@@ -13,6 +13,7 @@
 //
 
 #include "raster-private.h"
+#include "thread-private.h"
 #include "debug-internal.h"
 
 typedef struct _ppd_raster_error_s	// **** Error buffer structure ****
@@ -22,7 +23,32 @@ typedef struct _ppd_raster_error_s	// **** Error buffer structure ****
 	*end;				// End of buffer
 } _ppd_raster_error_t;
 
-static _ppd_raster_error_t	*buf = NULL;
+
+//
+// Local globals...
+//
+
+#ifdef HAVE_PTHREAD_H
+static _ppd_threadkey_t	ppd_raster_error_key = _PPD_THREADKEY_INITIALIZER;
+					// Thread local storage key
+static pthread_once_t	ppd_raster_error_key_once = PTHREAD_ONCE_INIT;
+					// One-time initialization object
+#else
+static _ppd_raster_error_t ppd_raster_error_buf = { NULL, NULL, NULL };
+					// Error buffer
+#endif // HAVE_PTHREAD_H
+
+
+//
+// Local functions...
+//
+
+static _ppd_raster_error_t	*ppd_raster_error_buffer(void);
+#ifdef HAVE_PTHREAD_H
+static void			ppd_raster_error_free(void *data);
+static void			ppd_raster_error_init(void);
+#endif // HAVE_PTHREAD_H
+
 
 //
 // '_ppdRasterAddError()' - Add an error message to the error buffer.
@@ -32,12 +58,17 @@ void
 _ppdRasterAddError(const char *f,	// I - Printf-style error message
                     ...)		// I - Additional arguments as needed
 {
+  _ppd_raster_error_t	*buf = ppd_raster_error_buffer();
+					// Error buffer for this thread
   va_list	ap;			// Pointer to additional arguments
   char		s[2048];		// Message string
   ssize_t	bytes;			// Bytes in message string
 
 
   DEBUG_printf(("_ppdRasterAddError(f=\"%s\", ...)", f));
+
+  if (!buf)
+    return;
 
   va_start(ap, f);
   bytes = vsnprintf(s, sizeof(s), f, ap);
@@ -98,13 +129,12 @@ _ppdRasterAddError(const char *f,	// I - Printf-style error message
 void
 _ppdRasterClearError(void)
 {
-  if (buf == NULL)
-  {
-    buf = malloc(sizeof(_ppd_raster_error_t));
-    buf->start = NULL;
-    buf->end = NULL;
-    buf->current = NULL;
-  }
+  _ppd_raster_error_t	*buf = ppd_raster_error_buffer();
+					// Error buffer for this thread
+
+
+  if (!buf)
+    return;
 
   buf->current = buf->start;
 
@@ -124,8 +154,77 @@ _ppdRasterClearError(void)
 const char *				// O - Last error
 _ppdRasterErrorString(void)
 {
-  if (buf->current == buf->start)
+  _ppd_raster_error_t	*buf = ppd_raster_error_buffer();
+					// Error buffer for this thread
+
+
+  if (!buf || buf->current == buf->start)
     return (NULL);
   else
     return (buf->start);
 }
+
+
+//
+// 'ppd_raster_error_buffer()' - Return the error buffer of the current thread.
+//
+
+static _ppd_raster_error_t *		// O - Error buffer or NULL
+ppd_raster_error_buffer(void)
+{
+#ifdef HAVE_PTHREAD_H
+  _ppd_raster_error_t	*buf;		// Error buffer
+
+
+  //
+  // Initialize the thread key exactly once...
+  //
+
+  pthread_once(&ppd_raster_error_key_once, ppd_raster_error_init);
+
+  //
+  // Allocate the buffer of this thread on first use...
+  //
+
+  if ((buf = (_ppd_raster_error_t *)
+	     _ppdThreadGetData(ppd_raster_error_key)) == NULL)
+  {
+    if ((buf = calloc(1, sizeof(_ppd_raster_error_t))) != NULL)
+      _ppdThreadSetData(ppd_raster_error_key, buf);
+  }
+
+  return (buf);
+
+#else
+  return (&ppd_raster_error_buf);
+#endif // HAVE_PTHREAD_H
+}
+
+
+#ifdef HAVE_PTHREAD_H
+//
+// 'ppd_raster_error_free()' - Free the error buffer of a thread that exits.
+//
+
+static void
+ppd_raster_error_free(void *data)	// I - Error buffer
+{
+  _ppd_raster_error_t	*buf = (_ppd_raster_error_t *)data;
+					// Error buffer
+
+
+  free(buf->start);
+  free(buf);
+}
+
+
+//
+// 'ppd_raster_error_init()' - Create the thread key for the error buffers.
+//
+
+static void
+ppd_raster_error_init(void)
+{
+  pthread_key_create(&ppd_raster_error_key, ppd_raster_error_free);
+}
+#endif // HAVE_PTHREAD_H

@@ -67,7 +67,8 @@ check_PROGRAMS = \
 	test_ppd_emit \
 	test_ppd_filter \
 	test_ppd_generator \
-	test_ppd_load_profile
+	test_ppd_load_profile \
+	test_ppd_thread
 TESTS = \
 	testppd \
 	test_ppd_localize \
@@ -81,7 +82,8 @@ TESTS = \
 	test_ppd_emit \
 	test_ppd_filter \
 	test_ppd_generator \
-	test_ppd_load_profile
+	test_ppd_load_profile \
+	test_ppd_thread
 
 libppd_la_SOURCES = \
 	ppd/ppd-attr.c \
@@ -266,6 +268,15 @@ test_ppd_load_profile_CFLAGS = \
 	-I$(srcdir)/ppd/ \
 	$(CUPS_CFLAGS) \
 	$(LIBCUPSFILTERS_CFLAGS)
+
+test_ppd_thread_SOURCES = ppd/test_ppd_thread.c
+test_ppd_thread_LDADD = \
+	libppd.la \
+	$(CUPS_LIBS)
+test_ppd_thread_CFLAGS = \
+	-I$(srcdir)/ppd/ \
+	-pthread \
+	$(CUPS_CFLAGS)
 
 EXTRA_DIST += \
 	$(pkgppdinclude_DATA) \

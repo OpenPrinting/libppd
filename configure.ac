@@ -257,6 +257,11 @@ AC_CHECK_HEADERS([dirent.h])
 AC_CHECK_HEADER(string.h,AC_DEFINE(HAVE_STRING_H))
 AC_CHECK_HEADER(strings.h,AC_DEFINE(HAVE_STRINGS_H))
 
+# ===================================================================
+# Check for POSIX threads (mutexes and per-thread data of the library)
+# ===================================================================
+AC_CHECK_HEADERS([pthread.h], [AC_SEARCH_LIBS([pthread_key_create], [pthread])])
+
 # ===================================
 # Check for large files and long long
 # ===================================

@@ -148,22 +148,29 @@ parse_pdftopdf_comment(char *filename,		// I - Input file
     {
       char *p;
 
-      p = strchr(buf + 19, ':') + 1;
+      if ((p = strchr(buf + 19, ':')) == NULL)
+	continue;
+      p ++;
       while (*p == ' ' || *p == '\t')
 	p ++;
-      strncpy(deviceCopies, p, 31);
-      deviceCopies[31] = '\0';
-      p = deviceCopies + strlen(deviceCopies) - 1;
-      while (*p == ' ' || *p == '\t'  || *p == '\r'  || *p == '\n')
-	p --;
-      *(p + 1) = '\0';
+      if (*p && *p != '\r' && *p != '\n')
+      {
+	strncpy(deviceCopies, p, 31);
+	deviceCopies[31] = '\0';
+	p = deviceCopies + strlen(deviceCopies) - 1;
+	while (*p == ' ' || *p == '\t'  || *p == '\r'  || *p == '\n')
+	  p --;
+	*(p + 1) = '\0';
+      }
       *pdftopdfapplied = 1;
     }
     else if (strncmp(buf, "%%PDFTOPDFCollate", 17) == 0)
     {
       char *p;
 
-      p = strchr(buf + 17, ':') + 1;
+      if ((p = strchr(buf + 17, ':')) == NULL)
+	continue;
+      p ++;
       while (*p == ' ' || *p == '\t')
 	p ++;
       if (strncasecmp(p, "true", 4) == 0)

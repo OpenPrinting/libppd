@@ -1222,7 +1222,7 @@ ppdFilterEmitJCL(int inputfd,         // I - File descriptor input stream
   if (orig_filter == cfFilterPDFToPDF &&
       (val = cupsGetOption("filter-streaming-mode",
 			   data->num_options, data->options)) != NULL &&
-      (strcasecmp(val, "false") && strcasecmp(val, "off") &
+      (strcasecmp(val, "false") && strcasecmp(val, "off") &&
        strcasecmp(val, "no")))
   {
     streaming = 1;

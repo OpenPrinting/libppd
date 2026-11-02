@@ -447,7 +447,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
 	  !strncasecmp(make, "Hewlett-Packard ", 16))
       {
 	model = make + 16;
-	strncpy(make, "HP", sizeof(make));
+	memcpy(make, "HP", 3); // Not strncpy(), that would pad over the model
       }
       else if ((model = strchr(make, ' ')) != NULL)
         *model++ = '\0';
@@ -456,7 +456,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
       snprintf(make_model, sizeof(make_model), "%s %s", make, model);
     }
   }
-  else if (ppd)
+  else if (ppd && ppd->manufacturer && ppd->product && ppd->product[0])
   {
     snprintf(make_model, sizeof(make_model), "%s %s", ppd->manufacturer,
 	     ppd->product + 1);

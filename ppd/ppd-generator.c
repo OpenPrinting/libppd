@@ -949,10 +949,8 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
             cfFreeResolution(current_def, NULL);
           }
           current_def = NULL;
-	  // Checking if there is printer-default-resolution and this
-	  // resolution is in the list, use it. If not, use the
-	  // middpi, rounding down if the number of available
-	  // resolutions is even.
+	  // Use the middpi as the default, rounding down if the number
+	  // of available resolutions is even.
           if ((attr = ippFindAttribute(supported,
 				       "printer-resolution-supported",
 				       IPP_TAG_RESOLUTION)) != NULL)
@@ -961,19 +959,9 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 					    "printer-resolution-default",
 					    IPP_TAG_RESOLUTION)) != NULL)
             {
-              current_def = cfIPPResToResolution(defattr, 0);
-              for (int j = 0; j < resStore; j ++)
-              {
-                if (current_def == cfNewResolution(resArray[i], resArray[i]))
-                {
-                  current_def = cfIPPResToResolution(defattr, 0);
-                  break;
-                }
-                else
-                {
-                  current_def = cfNewResolution(middpi, middpi);
-                }
-              }
+              // printer-resolution-default describes the print engine, not
+              // the raster data we send, so it isn't used as the default here
+              current_def = cfNewResolution(middpi, middpi);
             }
           }
           if (cupsArrayGetCount(current_res) > 0 &&

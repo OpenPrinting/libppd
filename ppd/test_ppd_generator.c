@@ -902,6 +902,33 @@ main(void)
   free(ppd_text);
   ippDelete(resp);
 
+  // T32b — URF printer: printer-resolution-default is about the print engine,
+  //        so the default for the raster data stays the middle resolution.
+#ifdef CUPS_RASTER_HAVE_APPLERASTER
+  {
+    static const char * const urf[] = { "V1.4", "W8", "RS300-600-1200" };
+    static const int          dpi[] = { 300, 600, 1200 };
+
+    testBegin("URF printer-resolution-default 1200dpi → *DefaultResolution: 600dpi");
+    resp = ippNew();
+    add_format(resp, "image/urf");
+    ippAddStrings(resp, IPP_TAG_PRINTER, IPP_TAG_KEYWORD, "urf-supported",
+                  3, NULL, urf);
+    ippAddResolutions(resp, IPP_TAG_PRINTER, "printer-resolution-supported",
+                      3, IPP_RES_PER_INCH, dpi, dpi);
+    ippAddResolution(resp, IPP_TAG_PRINTER, "printer-resolution-default",
+                     IPP_RES_PER_INCH, 1200, 1200);
+    result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                  "Test", "image/urf",
+                                  0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+    ppd_text = result ? slurp_file(buffer) : NULL;
+    testEnd(ppd_text && strstr(ppd_text, "*DefaultResolution: 600dpi"));
+    if (result == buffer) unlink(buffer);
+    free(ppd_text);
+    ippDelete(resp);
+  }
+#endif // CUPS_RASTER_HAVE_APPLERASTER
+
   // T33 — Asymmetric resolution 600x1200 → "*DefaultResolution: 600x1200dpi"
   //       form at line 2413 (else branch).
   testBegin("printer-resolution-default 600x1200 → \"600x1200dpi\"");

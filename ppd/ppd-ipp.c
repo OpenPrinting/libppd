@@ -525,7 +525,8 @@ ppdLoadAttributes(
 	continue;
 
       // Is the PPD file using the "texttotext" filter?
-      if (strcmp(buf + strlen(buf) - 10, "texttotext") == 0)
+      if (strlen(buf) >= 10 &&
+	  strcmp(buf + strlen(buf) - 10, "texttotext") == 0)
 	is_texttotext = 1;
 
       // Separate the first word

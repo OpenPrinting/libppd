@@ -2012,7 +2012,7 @@ ppdcSource::get_token(ppdcFile *fp,	// I - File to read
 	var = find_variable(name);
 	if (var)
 	{
-	  strncpy(bufptr, var->value->value, (size_t)(bufend - bufptr + 1));
+	  snprintf(bufptr, (size_t)(bufend - bufptr + 1), "%s", var->value->value);
 	  bufptr += strlen(bufptr);
 	}
 	else

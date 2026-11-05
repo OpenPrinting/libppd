@@ -4584,27 +4584,27 @@ ppdPwgInputSlotForSource(
   if (!media_source || !name || namesize < PPD_MAX_NAME)
     return (NULL);
 
-  if (_ppd_strcasecmp(media_source, "main"))
+  if (!_ppd_strcasecmp(media_source, "main"))
     strlcpy(name, "Cassette", namesize);
-  else if (_ppd_strcasecmp(media_source, "alternate"))
+  else if (!_ppd_strcasecmp(media_source, "alternate"))
     strlcpy(name, "Multipurpose", namesize);
-  else if (_ppd_strcasecmp(media_source, "large-capacity"))
+  else if (!_ppd_strcasecmp(media_source, "large-capacity"))
     strlcpy(name, "LargeCapacity", namesize);
-  else if (_ppd_strcasecmp(media_source, "bottom"))
+  else if (!_ppd_strcasecmp(media_source, "bottom"))
     strlcpy(name, "Lower", namesize);
-  else if (_ppd_strcasecmp(media_source, "middle"))
+  else if (!_ppd_strcasecmp(media_source, "middle"))
     strlcpy(name, "Middle", namesize);
-  else if (_ppd_strcasecmp(media_source, "top"))
+  else if (!_ppd_strcasecmp(media_source, "top"))
     strlcpy(name, "Upper", namesize);
-  else if (_ppd_strcasecmp(media_source, "rear"))
+  else if (!_ppd_strcasecmp(media_source, "rear"))
     strlcpy(name, "Rear", namesize);
-  else if (_ppd_strcasecmp(media_source, "side"))
+  else if (!_ppd_strcasecmp(media_source, "side"))
     strlcpy(name, "Side", namesize);
-  else if (_ppd_strcasecmp(media_source, "envelope"))
+  else if (!_ppd_strcasecmp(media_source, "envelope"))
     strlcpy(name, "Envelope", namesize);
-  else if (_ppd_strcasecmp(media_source, "main-roll"))
+  else if (!_ppd_strcasecmp(media_source, "main-roll"))
     strlcpy(name, "Roll", namesize);
-  else if (_ppd_strcasecmp(media_source, "alternate-roll"))
+  else if (!_ppd_strcasecmp(media_source, "alternate-roll"))
     strlcpy(name, "Roll2", namesize);
   else
     ppdPwgPpdizeName(media_source, name, namesize);
@@ -4631,29 +4631,29 @@ ppdPwgMediaTypeForType(
   if (!media_type || !name || namesize < PPD_MAX_NAME)
     return (NULL);
 
-  if (_ppd_strcasecmp(media_type, "auto"))
+  if (!_ppd_strcasecmp(media_type, "auto"))
     strlcpy(name, "Auto", namesize);
-  else if (_ppd_strcasecmp(media_type, "cardstock"))
+  else if (!_ppd_strcasecmp(media_type, "cardstock"))
     strlcpy(name, "Cardstock", namesize);
-  else if (_ppd_strcasecmp(media_type, "envelope"))
+  else if (!_ppd_strcasecmp(media_type, "envelope"))
     strlcpy(name, "Envelope", namesize);
-  else if (_ppd_strcasecmp(media_type, "photographic-glossy"))
+  else if (!_ppd_strcasecmp(media_type, "photographic-glossy"))
     strlcpy(name, "Glossy", namesize);
-  else if (_ppd_strcasecmp(media_type, "photographic-high-gloss"))
+  else if (!_ppd_strcasecmp(media_type, "photographic-high-gloss"))
     strlcpy(name, "HighGloss", namesize);
-  else if (_ppd_strcasecmp(media_type, "photographic-matte"))
+  else if (!_ppd_strcasecmp(media_type, "photographic-matte"))
     strlcpy(name, "Matte", namesize);
-  else if (_ppd_strcasecmp(media_type, "stationery"))
+  else if (!_ppd_strcasecmp(media_type, "stationery"))
     strlcpy(name, "Plain", namesize);
-  else if (_ppd_strcasecmp(media_type, "stationery-coated"))
+  else if (!_ppd_strcasecmp(media_type, "stationery-coated"))
     strlcpy(name, "Coated", namesize);
-  else if (_ppd_strcasecmp(media_type, "stationery-inkjet"))
+  else if (!_ppd_strcasecmp(media_type, "stationery-inkjet"))
     strlcpy(name, "Inkjet", namesize);
-  else if (_ppd_strcasecmp(media_type, "stationery-letterhead"))
+  else if (!_ppd_strcasecmp(media_type, "stationery-letterhead"))
     strlcpy(name, "Letterhead", namesize);
-  else if (_ppd_strcasecmp(media_type, "stationery-preprinted"))
+  else if (!_ppd_strcasecmp(media_type, "stationery-preprinted"))
     strlcpy(name, "Preprinted", namesize);
-  else if (_ppd_strcasecmp(media_type, "transparency"))
+  else if (!_ppd_strcasecmp(media_type, "transparency"))
     strlcpy(name, "Transparency", namesize);
   else
     ppdPwgPpdizeName(media_type, name, namesize);

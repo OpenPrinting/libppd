@@ -1178,7 +1178,6 @@ ppdFilterImageToPS(int inputfd,			// I - File descriptor input
     if (log) log(ld, CF_LOGLEVEL_ERROR,
 		 "ppdFilterImageToPS: The print file could not be opened - %s",
 		 strerror(errno));
-    cfImageClose(img);
     fclose(doc.outputfp);
     close(outputfd);
     return (1);

@@ -1159,6 +1159,42 @@ main(void)
                  "status=\"%s\"", status_msg);
   ippDelete(resp);
 
+  // T46 — Unknown job-presets-supported text is copied with
+  //       ippAttributeString, which keeps embedded newlines. A newline
+  //       starts a new PPD statement. A known member (sides) and a
+  //       keyword member (print-color-mode) must still be written.
+  testBegin("preset text newline is not a new PPD directive");
+  resp = make_pdf_ipp();
+  {
+    ipp_t *preset = ippNew();
+
+    ippAddString(preset, IPP_TAG_ZERO, IPP_TAG_NAME, "preset-name",
+                 NULL, "Office");
+    ippAddString(preset, IPP_TAG_ZERO, IPP_TAG_KEYWORD, "sides",
+                 NULL, "one-sided");
+    ippAddString(preset, IPP_TAG_ZERO, IPP_TAG_KEYWORD, "print-color-mode",
+                 NULL, "monochrome");
+    ippAddString(preset, IPP_TAG_ZERO, IPP_TAG_TEXT, "evil-option", NULL,
+                 "ok\n*INJECTED-DIRECTIVE evil");
+    ippAddCollection(resp, IPP_TAG_PRINTER, "job-presets-supported", preset);
+    ippDelete(preset);
+  }
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                "Test", "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEndMessage(ppd_text &&
+                 strstr(ppd_text, "*Duplex None\n") &&
+                 strstr(ppd_text, "*print-color-mode monochrome\n") &&
+                 strstr(ppd_text, "INJECTED-DIRECTIVE") == NULL,
+                 "duplex=%d color=%d injected=%d",
+                 ppd_text && strstr(ppd_text, "*Duplex None\n") != NULL,
+                 ppd_text && strstr(ppd_text, "*print-color-mode monochrome\n") != NULL,
+                 ppd_text && strstr(ppd_text, "INJECTED-DIRECTIVE") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
 
   return (testsPassed ? 0 : 1);
 }

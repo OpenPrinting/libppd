@@ -2847,12 +2847,15 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	  else if (keyword && !strcmp(keyword, "two-sided-short-edge"))
 	    cupsFilePuts(fp, "*Duplex DuplexTumble\n");
         }
-	else
+	else if ((ippGetValueTag(member) == IPP_TAG_BOOLEAN ||
+		  ippGetValueTag(member) == IPP_TAG_INTEGER ||
+		  ippGetValueTag(member) == IPP_TAG_KEYWORD) &&
+		 ippValidateAttribute(member))
 	{
-	  //
-          // Add attribute name and value as-is...
-	  //
-
+	  // Text and name values may contain newlines. A newline here
+	  // starts a new PPD statement. Boolean, integer, and keyword
+	  // values are single tokens, and ippValidateAttribute rejects
+	  // a member name that is not a keyword.
           ippAttributeString(member, member_value, sizeof(member_value));
           cupsFilePrintf(fp, "*%s %s\n", member_name, member_value);
 	}

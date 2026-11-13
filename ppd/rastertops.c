@@ -247,8 +247,13 @@ write_flate(cups_raster_t *ras,	        // I - Image data
 						   // by deflate
   unsigned char  *pixdata,
                  *convertedpix;
-  unsigned char  in[header.cupsBytesPerLine * 6],  // Input data buffer
-                 out[header.cupsBytesPerLine * 6]; // Output data buffer
+  size_t         line_bytes = header.cupsBytesPerLine ?
+                              (size_t)header.cupsBytesPerLine : 1;
+  unsigned char  in[line_bytes * 6],  // Input data buffer
+                 out[line_bytes * 6]; // Output data buffer
+
+  if (header.cupsBytesPerLine == 0 || header.cupsHeight == 0)
+    return (Z_DATA_ERROR);
 		
   // allocate deflate state
   strm.zalloc = Z_NULL;
@@ -267,17 +272,37 @@ write_flate(cups_raster_t *ras,	        // I - Image data
   // compress until end of file
   do
   {
-    pixdata = malloc(header.cupsBytesPerLine);
-    cupsRasterReadPixels(ras, pixdata, header.cupsBytesPerLine);
+    if ((pixdata = malloc(header.cupsBytesPerLine)) == NULL)
+    {
+      (void)deflateEnd(&strm);
+      return (Z_MEM_ERROR);
+    }
+    if (cupsRasterReadPixels(ras, pixdata, header.cupsBytesPerLine) !=
+        header.cupsBytesPerLine)
+    {
+      free(pixdata);
+      (void)deflateEnd(&strm);
+      return (Z_DATA_ERROR);
+    }
     if (flag)
     {
-      convertedpix = malloc(header.cupsBytesPerLine * 6);
+      if ((convertedpix = malloc(header.cupsBytesPerLine * 6)) == NULL)
+      {
+        free(pixdata);
+        (void)deflateEnd(&strm);
+        return (Z_MEM_ERROR);
+      }
       convert_pixels(pixdata,convertedpix, header.cupsBytesPerLine);
       alloc = header.cupsBytesPerLine * 6;
     }
     else
     {
-      convertedpix = malloc(header.cupsBytesPerLine);
+      if ((convertedpix = malloc(header.cupsBytesPerLine)) == NULL)
+      {
+        free(pixdata);
+        (void)deflateEnd(&strm);
+        return (Z_MEM_ERROR);
+      }
       memcpy(convertedpix, pixdata, header.cupsBytesPerLine);
       alloc = header.cupsBytesPerLine;
     }
@@ -307,6 +332,7 @@ write_flate(cups_raster_t *ras,	        // I - Image data
       if (fwrite(out, 1, have, doc->outputfp) != have)
       {
 	(void)deflateEnd(&strm);
+	free(pixdata);
 	if (convertedpix != NULL)
 	  free(convertedpix);
 	return (Z_ERRNO);
@@ -410,7 +436,8 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
   cups_page_header_t  header;      // Page header from file
   int                  empty,       // Is the input empty?
                        Page = 0,    // variable for counting the pages
-                       ret;         // Return value of deflate compression
+                       ret,         // Return value of deflate compression
+                       status = 0;  // Filter return status
   cf_logfunc_t         log = data->logfunc;
   void                 *ld = data->logdata;
   cf_filter_iscanceledfunc_t iscanceled = data->iscanceledfunc;
@@ -516,7 +543,12 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
     // Write the compressed image data
     ret = write_flate(ras, header, &doc);
     if (ret != Z_OK)
+    {
       z_error(ret, &doc);
+      write_end_page(&doc);
+      status = 1;
+      break;
+    }
     write_end_page(&doc);
   }
 
@@ -542,5 +574,5 @@ ppdFilterRasterToPS(int inputfd,         // I - File descriptor input stream
   fclose(outputfp);
   close(outputfd);
 
-  return (0);
+  return (status);
 }

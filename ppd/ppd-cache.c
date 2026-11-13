@@ -386,6 +386,10 @@ ppdConvertOptions(
   // prefer it to don't break color/grayscale support for PPDs, either classic
   // or the ones generated from IPP Get-Printer-Attributes response.
   //
+  // FastGray is the 1-bit mode which ppdCreatePPDFromIPP2() generates for
+  // "bi-level", so map it back to "bi-level" if the printer supports it
+  // instead of turning it into "monochrome".
+  //
 
   if ((keyword = cupsGetOption("ColorModel", num_options, options)) == NULL)
   {
@@ -399,9 +403,12 @@ ppdConvertOptions(
       // ColorModel is taken from PPD as its default option.
       //
 
-      if (!strcmp(choice->choice, "Gray") ||
-	  !strcmp(choice->choice, "FastGray") ||
-	  !strcmp(choice->choice, "DeviceGray"))
+      if (!strcmp(choice->choice, "FastGray") &&
+	  ippContainsString(print_color_mode_sup, "bi-level"))
+        keyword = "bi-level";
+      else if (!strcmp(choice->choice, "Gray") ||
+	       !strcmp(choice->choice, "FastGray") ||
+	       !strcmp(choice->choice, "DeviceGray"))
         keyword = "monochrome";
       else
         keyword = "color";
@@ -420,8 +427,11 @@ ppdConvertOptions(
     // ColorModel found in options...
     //
 
-    if (!strcmp(keyword, "Gray") || !strcmp(keyword, "FastGray") ||
-	!strcmp(keyword, "DeviceGray"))
+    if (!strcmp(keyword, "FastGray") &&
+	ippContainsString(print_color_mode_sup, "bi-level"))
+      keyword = "bi-level";
+    else if (!strcmp(keyword, "Gray") || !strcmp(keyword, "FastGray") ||
+	     !strcmp(keyword, "DeviceGray"))
       keyword = "monochrome";
     else
       keyword = "color";

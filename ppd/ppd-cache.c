@@ -2453,6 +2453,9 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
       char *o, *c, *p;
       int score;
 
+      if (option->num_choices <= 0 || !option->choices)
+	continue;
+
       o = option->keyword;
 
       // Skip options which do not change color mode and quality or
@@ -2491,6 +2494,7 @@ ppdCacheAssignPresets(ppd_file_t *ppd,
 
       if (ppd->nickname &&
           strstr(ppd->nickname, "Foomatic") &&
+	  option->num_choices > 0 && option->choices &&
 	  !strncmp(option->choices[0].choice, "From", 4) &&
 	  ppdFindOption(ppd, option->choices[0].choice + 4))
       {

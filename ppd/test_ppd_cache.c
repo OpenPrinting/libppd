@@ -557,6 +557,53 @@ main(void)
   testEnd(sz == NULL);
 
 
+  // T53 — Foomatic PPD with an empty *OpenUI option must not dereference
+  //       option->choices[0] in ppdCacheAssignPresets() (Issue #81).
+  testBegin("ppdCacheCreateWithPPD on Foomatic PPD with empty OpenUI option");
+  {
+    static const char foomatic_empty_opt_ppd[] =
+      "*PPD-Adobe: \"4.3\"\n"
+      "*FormatVersion: \"4.3\"\n"
+      "*FileVersion: \"1.0\"\n"
+      "*LanguageVersion: English\n"
+      "*LanguageEncoding: ISOLatin1\n"
+      "*PCFileName: \"FOOEMPTY.PPD\"\n"
+      "*Manufacturer: \"Generic\"\n"
+      "*Product: \"(Foomatic Printer)\"\n"
+      "*ModelName: \"Generic Foomatic Printer\"\n"
+      "*ShortNickName: \"FoomaticPrinter\"\n"
+      "*NickName: \"Generic Foomatic Printer Foomatic/foo (recommended)\"\n"
+      "*PSVersion: \"(3010.000) 0\"\n"
+      "*OpenUI *PageSize/Page Size: PickOne\n"
+      "*OrderDependency: 10 AnySetup *PageSize\n"
+      "*DefaultPageSize: Letter\n"
+      "*PageSize Letter/US Letter: \"<</PageSize[612 792]>>setpagedevice\"\n"
+      "*CloseUI: *PageSize\n"
+      "*OpenUI *PageRegion/Page Region: PickOne\n"
+      "*OrderDependency: 10 AnySetup *PageRegion\n"
+      "*DefaultPageRegion: Letter\n"
+      "*PageRegion Letter/US Letter: \"<</PageSize[612 792]>>setpagedevice\"\n"
+      "*CloseUI: *PageRegion\n"
+      "*DefaultImageableArea: Letter\n"
+      "*ImageableArea Letter/US Letter: \"18 18 594 774\"\n"
+      "*DefaultPaperDimension: Letter\n"
+      "*PaperDimension Letter/US Letter: \"612 792\"\n"
+      "*OpenUI *AuditEmpty/Empty Option: PickOne\n"
+      "*OrderDependency: 20 AnySetup *AuditEmpty\n"
+      "*DefaultAuditEmpty: None\n"
+      "*CloseUI: *AuditEmpty\n";
+    FILE *fp_foo = tmpfile();
+    fputs(foomatic_empty_opt_ppd, fp_foo);
+    rewind(fp_foo);
+    ppd_file_t *ppd_foo = ppdOpen(fp_foo);
+    fclose(fp_foo);
+    ppd_cache_t *pc_foo = ppdCacheCreateWithPPD(ppd_foo);
+    testEnd(ppd_foo != NULL && pc_foo != NULL);
+    ppdCacheDestroy(pc_foo);
+    ppdClose(ppd_foo);
+  }
+
+
   // =========================================================================
   // Cleanup
   // =========================================================================

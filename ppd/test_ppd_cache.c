@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (52 assertions across 10 groups):
+// Tests covered (56 assertions across 11 groups):
 //
 //   Group 1  (T01-T07)  NULL-pc guard checks — every public function that
 //                       accepts a ppd_cache_t* must return NULL/no-crash when
@@ -34,6 +34,8 @@
 //   Group 10 (T47-T52)  ppdCacheGetSize()/ppdCacheGetSize2() — PPD name,
 //                       PWG name, custom-size in points, custom-size in
 //                       inches, bare-"Custom" (no ppd_size → NULL), miss.
+//   Group 11 (T53-T56)  ppdConvertOptions() — ColorModel FastGray/Gray to
+//                       print-color-mode, with and without bi-level support.
 //
 // Design: entirely hermetic — the PPD is loaded from a static string via
 // tmpfile() + ppdOpen() so no external files are required at build or CI
@@ -142,7 +144,55 @@ static const char test_ppd_text[] =
   "*DefaultOutputBin: StandardBin\n"
   "*OutputBin StandardBin/Standard Bin: \"\"\n"
   "*OutputBin FaceUp/Face Up: \"\"\n"
-  "*CloseUI: *OutputBin\n";
+  "*CloseUI: *OutputBin\n"
+  // Color models — FastGray is what ppdCreatePPDFromIPP2() emits for
+  // "bi-level", used by the ppdConvertOptions() checks in Group 11
+  "*OpenUI *ColorModel/Color Mode: PickOne\n"
+  "*OrderDependency: 50 AnySetup *ColorModel\n"
+  "*DefaultColorModel: FastGray\n"
+  "*ColorModel Gray/Grayscale: \"\"\n"
+  "*ColorModel FastGray/Text: \"\"\n"
+  "*CloseUI: *ColorModel\n";
+
+
+//
+// 'color_mode_for()' - Run ppdConvertOptions() and return the
+//                      print-color-mode value it sends.
+//
+
+static const char *			// O - print-color-mode or "(none)"
+color_mode_for(
+    ppd_file_t      *ppd,		// I - PPD file
+    ppd_cache_t     *pc,		// I - PPD cache
+    ipp_attribute_t *supported,		// I - print-color-mode-supported
+    const char      *color_model)	// I - ColorModel option or NULL
+{
+  static char	value[64];		// Returned value
+  ipp_t		*request;		// Print-Job request
+  ipp_attribute_t *attr;		// print-color-mode attribute
+  int		num_options = 0;	// Number of options
+  cups_option_t	*options = NULL;	// Options
+
+
+  if (color_model)
+    num_options = cupsAddOption("ColorModel", color_model, num_options,
+				&options);
+
+  request = ippNewRequest(IPP_OP_PRINT_JOB);
+  ppdConvertOptions(request, ppd, pc, NULL, NULL, supported, "user",
+		    "image/pwg-raster", 1, num_options, options);
+
+  if ((attr = ippFindAttribute(request, "print-color-mode",
+			       IPP_TAG_KEYWORD)) != NULL)
+    snprintf(value, sizeof(value), "%s", ippGetString(attr, 0, NULL));
+  else
+    snprintf(value, sizeof(value), "(none)");
+
+  ippDelete(request);
+  cupsFreeOptions(num_options, options);
+
+  return (value);
+}
 
 
 //
@@ -161,6 +211,17 @@ main(void)
   const char   *val;		// Return value from lookup functions
   pwg_size_t   *sz;		// Return value from size-record lookups
   int           exact;		// Exact-match flag for ppdCacheGetPageSize
+  ipp_t        *attrs;		// Printer attributes for Group 11
+  ipp_attribute_t *sup_bilevel,	// print-color-mode-supported with bi-level
+		*sup_mono;	// print-color-mode-supported without it
+  static const char * const bilevel_modes[] =
+  {				// Modes of a printer with 1-bit support
+    "bi-level", "monochrome", "color"
+  };
+  static const char * const mono_modes[] =
+  {				// Modes of a printer without 1-bit support
+    "monochrome"
+  };
 
 
   // =========================================================================
@@ -555,6 +616,49 @@ main(void)
   testBegin("ppdCacheGetSize(\"NotARealSize\") returns NULL");
   sz = ppdCacheGetSize(pc, "NotARealSize");
   testEnd(sz == NULL);
+
+
+  // =========================================================================
+  // Group 11: ppdConvertOptions() ColorModel → print-color-mode (T53–T56)
+  //
+  // FastGray is the 1-bit mode, so it has to become "bi-level" when the
+  // printer supports it and "monochrome" otherwise (issue #91).  Gray
+  // stays "monochrome".  T56 uses the marked PPD default instead of an
+  // option.
+  // =========================================================================
+
+  attrs = ippNew();
+  sup_bilevel = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
+			      "print-color-mode-supported",
+			      3, NULL, bilevel_modes);
+  sup_mono    = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
+			      "print-color-mode-supported",
+			      1, NULL, mono_modes);
+
+  // T53 — FastGray with bi-level supported.
+  testBegin("ppdConvertOptions(ColorModel=FastGray) sends \"bi-level\"");
+  val = color_mode_for(ppd, pc, sup_bilevel, "FastGray");
+  testEndMessage(!strcmp(val, "bi-level"), "got \"%s\"", val);
+
+  // T54 — FastGray without bi-level support falls back to monochrome.
+  testBegin("ppdConvertOptions(ColorModel=FastGray, no bi-level) sends "
+	    "\"monochrome\"");
+  val = color_mode_for(ppd, pc, sup_mono, "FastGray");
+  testEndMessage(!strcmp(val, "monochrome"), "got \"%s\"", val);
+
+  // T55 — Gray is unchanged.
+  testBegin("ppdConvertOptions(ColorModel=Gray) sends \"monochrome\"");
+  val = color_mode_for(ppd, pc, sup_bilevel, "Gray");
+  testEndMessage(!strcmp(val, "monochrome"), "got \"%s\"", val);
+
+  // T56 — No ColorModel option, PPD default FastGray is marked.
+  testBegin("ppdConvertOptions(default ColorModel FastGray) sends "
+	    "\"bi-level\"");
+  ppdMarkDefaults(ppd);
+  val = color_mode_for(ppd, pc, sup_bilevel, NULL);
+  testEndMessage(!strcmp(val, "bi-level"), "got \"%s\"", val);
+
+  ippDelete(attrs);
 
 
   // =========================================================================

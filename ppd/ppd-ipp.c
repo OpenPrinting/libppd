@@ -612,8 +612,11 @@ ppdLoadAttributes(
     {
       // Convert PPD-style names into IPP-style names
       ppdPwgUnppdizeName(ppd_attr->name + 4, item_buf, sizeof(item_buf), NULL);
+      if (!ppd_attr->value)
+	continue;
       // Make array from comma-separated list
       strncpy(buf, ppd_attr->value, sizeof(buf) - 1);
+      buf[sizeof(buf) - 1] = '\0';
       num_items = 0;
       char *p = buf;
       do
@@ -633,7 +636,7 @@ ppdLoadAttributes(
 	    items[num_items - 1][0] == 'R' && items[num_items - 1][1] == 'S')
 	  xres = yres = atoi(items[num_items - 1] + 2);
       }
-      while (p);
+      while (p && num_items < (int)(sizeof(items) / sizeof(items[0])));
       if (strlen(items[0]) > 3 &&
 	  strncasecmp(items[0] + strlen(items[0]) - 3, "dpi", 3) == 0 &&
 	  isdigit(*(items[0] + strlen(items[0]) - 4)))

@@ -1013,6 +1013,47 @@ main(void)
                  marked ? marked->choice : "(none)");
 
 
+  // T47 — Duplicate *JCLBegin / *JCLEnd / *JCLToPSInterpreter / *NickName /
+  //       *LanguageEncoding keywords in a PPD must not leak prior strdup()
+  //       allocations (OpenPrinting/fuzzing#46).
+  testBegin("ppdOpen with duplicate JCLBegin/JCLEnd/JCLToPSInterpreter does not leak");
+  {
+    static const char dup_jcl_ppd_text[] =
+      "*PPD-Adobe: \"4.3\"\n"
+      "*FormatVersion: \"4.3\"\n"
+      "*FileVersion: \"1.0\"\n"
+      "*LanguageVersion: English\n"
+      "*LanguageEncoding: ISOLatin1\n"
+      "*LanguageEncoding: ISOLatin1\n"
+      "*PCFileName: \"DUPJCL.PPD\"\n"
+      "*Manufacturer: \"Test\"\n"
+      "*Product: \"(Test Printer)\"\n"
+      "*ModelName: \"Test Duplicate JCL\"\n"
+      "*ShortNickName: \"TestDup\"\n"
+      "*NickName: \"First NickName\"\n"
+      "*NickName: \"Second NickName\"\n"
+      "*PSVersion: \"(3010.000) 0\"\n"
+      "*JCLBegin: \"first_begin<0A>\"\n"
+      "*JCLBegin: \"second_begin<0A>\"\n"
+      "*JCLToPSInterpreter: \"first_ps<0A>\"\n"
+      "*JCLToPSInterpreter: \"second_ps<0A>\"\n"
+      "*JCLEnd: \"first_end<0A>\"\n"
+      "*JCLEnd: \"second_end<0A>\"\n"
+      "*OpenUI *PageSize: PickOne\n"
+      "*DefaultPageSize: Letter\n"
+      "*PageSize Letter: \"\"\n"
+      "*CloseUI: *PageSize\n";
+    ppd_file_t *ppd_dup = open_embedded_ppd(dup_jcl_ppd_text);
+    bool ok = ppd_dup != NULL &&
+              ppd_dup->jcl_begin && !strcmp(ppd_dup->jcl_begin, "second_begin\n") &&
+              ppd_dup->jcl_ps && !strcmp(ppd_dup->jcl_ps, "second_ps\n") &&
+              ppd_dup->jcl_end && !strcmp(ppd_dup->jcl_end, "second_end\n") &&
+              ppd_dup->nickname && !strcmp(ppd_dup->nickname, "Second NickName");
+    testEnd(ok);
+    ppdClose(ppd_dup);
+  }
+
+
   // -------------------------------------------------------------------------
   // Tear down and return success/failure based on the framework flag.
   // -------------------------------------------------------------------------

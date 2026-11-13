@@ -1002,6 +1002,29 @@ main(void)
   ippDelete(job_attrs);
 
 
+  // T70 — 21-item comma-separated raster attribute must not overflow items[20]
+  //       in ppdLoadAttributes() (Issue #85).
+  testBegin("ppdLoadAttributes(21-item cupsPwgRaster attribute) caps at 20 items");
+  {
+    FILE *f21 = tmpfile();
+    fputs(test_ppd_text, f21);
+    fputs("*cupsFilter: \"image/pwg-raster 0 rastertopwg\"\n"
+          "*cupsPwgRasterAuditSupported: \"v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,"
+          "v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21\"\n", f21);
+    rewind(f21);
+    ppd_file_t *ppd21 = ppdOpen(f21);
+    fclose(f21);
+    ipp_t *attrs21 = ppdLoadAttributes(ppd21);
+    ipp_attribute_t *audit_attr = ippFindAttribute(attrs21,
+                                                   "pwg-raster-audit-supported",
+                                                   IPP_TAG_KEYWORD);
+    int count = audit_attr ? ippGetCount(audit_attr) : -1;
+    testEndMessage(attrs21 != NULL && count == 20, "count=%d", count);
+    ippDelete(attrs21);
+    ppdClose(ppd21);
+  }
+
+
   // =========================================================================
   // Cleanup
   // =========================================================================

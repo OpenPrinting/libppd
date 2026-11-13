@@ -885,7 +885,10 @@ ppd_copy_stack(_ppd_ps_stack_t *st,	// I - Stack
 
   while (c > 0)
   {
-    if (!ppd_push_stack(st, st->objs + n))
+    _ppd_ps_obj_t	temp;		// Temporary copy of object
+
+    temp = st->objs[n];
+    if (!ppd_push_stack(st, &temp))
       return (-1);
 
     n ++;
@@ -1032,10 +1035,14 @@ static _ppd_ps_obj_t	*		// O - New object
 ppd_index_stack(_ppd_ps_stack_t *st,	// I - Stack
             int              n)		// I - Object index
 {
+  _ppd_ps_obj_t	temp;		// Temporary copy of object
+
+
   if (n < 0 || (n = st->num_objs - n - 1) < 0)
     return (NULL);
 
-  return (ppd_push_stack(st, st->objs + n));
+  temp = st->objs[n];
+  return (ppd_push_stack(st, &temp));
 }
 
 

@@ -844,6 +844,7 @@ ppdOpenWithLocalization(
       // Say all PPD files are UTF-8, since we convert to UTF-8...
       //
 
+      free(ppd->lang_encoding);
       ppd->lang_encoding = strdup("UTF-8");
       encoding           = ppdGetEncoding(string);
     }
@@ -859,6 +860,7 @@ ppdOpenWithLocalization(
       ppd->pcfilename = string;
     else if (!strcmp(keyword, "NickName"))
     {
+      free(ppd->nickname);
       if (encoding != CUPS_ENCODING_UTF_8)
       {
         cups_utf8_t	utf8[256];	// UTF-8 version of NickName
@@ -878,22 +880,26 @@ ppdOpenWithLocalization(
       ppd->ttrasterizer = string;
     else if (!strcmp(keyword, "JCLBegin"))
     {
+      free(ppd->jcl_begin);
       ppd->jcl_begin = strdup(string);
       ppdDecode(ppd->jcl_begin);	// Decode quoted string
     }
     else if (!strcmp(keyword, "JCLEnd"))
     {
+      free(ppd->jcl_end);
       ppd->jcl_end = strdup(string);
       ppdDecode(ppd->jcl_end);		// Decode quoted string
     }
     else if (!strcmp(keyword, "JCLToPSInterpreter"))
     {
+      free(ppd->jcl_ps);
       ppd->jcl_ps = strdup(string);
       ppdDecode(ppd->jcl_ps);		// Decode quoted string
     }
 #if HAVE_CUPS_3_X
     else if (!strcmp(keyword, "JCLToPDFInterpreter"))
     {
+      free(ppd->jcl_pdf);
       ppd->jcl_pdf = strdup(string);
       ppdDecode(ppd->jcl_pdf);		// Decode quoted string
     }

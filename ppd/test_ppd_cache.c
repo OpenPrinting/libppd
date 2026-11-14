@@ -75,6 +75,10 @@
 //     "StandardBin" → "standard-bin"   (CamelCase, two words)
 //     "FaceUp"      → "face-up"        (CamelCase, two words)
 //
+// ColorModel Gray / FastGray (default FastGray):
+//   FastGray is the choice ppdCreatePPDFromIPP2() emits for "bi-level";
+//   used by the ppdConvertOptions() checks in Group 11.
+//
 
 static const char test_ppd_text[] =
   "*PPD-Adobe: \"4.3\"\n"
@@ -145,8 +149,7 @@ static const char test_ppd_text[] =
   "*OutputBin StandardBin/Standard Bin: \"\"\n"
   "*OutputBin FaceUp/Face Up: \"\"\n"
   "*CloseUI: *OutputBin\n"
-  // Color models — FastGray is what ppdCreatePPDFromIPP2() emits for
-  // "bi-level", used by the ppdConvertOptions() checks in Group 11
+  // Color models — exercises the ColorModel mapping in ppdConvertOptions()
   "*OpenUI *ColorModel/Color Mode: PickOne\n"
   "*OrderDependency: 50 AnySetup *ColorModel\n"
   "*DefaultColorModel: FastGray\n"
@@ -630,10 +633,13 @@ main(void)
   attrs = ippNew();
   sup_bilevel = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
 			      "print-color-mode-supported",
-			      3, NULL, bilevel_modes);
+			      (int)(sizeof(bilevel_modes) /
+				    sizeof(bilevel_modes[0])),
+			      NULL, bilevel_modes);
   sup_mono    = ippAddStrings(attrs, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
 			      "print-color-mode-supported",
-			      1, NULL, mono_modes);
+			      (int)(sizeof(mono_modes) / sizeof(mono_modes[0])),
+			      NULL, mono_modes);
 
   // T53 — FastGray with bi-level supported.
   testBegin("ppdConvertOptions(ColorModel=FastGray) sends \"bi-level\"");

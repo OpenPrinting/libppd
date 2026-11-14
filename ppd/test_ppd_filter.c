@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (50 assertions across 12 groups):
+// Tests covered (51 assertions across 13 groups):
 //
 //   Group  1  (T01-T08)  NULL / argument guards.  ppdFilterLoadPPDFile
 //                        rejects NULL / empty / non-existent paths with
@@ -135,6 +135,7 @@
 #include <ppd/ppd-filter.h>
 #include <cupsfilters/filter.h>
 #include <cups/cups.h>
+#include <ppd/libcups2-private.h>
 #include "test-internal.h"
 
 #include <stdio.h>
@@ -413,6 +414,31 @@ stub_filter(int inputfd, int outputfd,
   g_stub_inputfd = inputfd;
   g_stub_outputfd = outputfd;
   return (77);
+}
+
+
+//
+// 'find_bytes()' - Locate a byte sequence inside a buffer that may contain NULs.
+//
+
+static const char *
+find_bytes(const char *haystack,
+           size_t     hay_len,
+           const char *needle,
+           size_t     needle_len)
+{
+  size_t i;
+
+  if (needle_len == 0)
+    return (haystack);
+  if (hay_len < needle_len)
+    return (NULL);
+
+  for (i = 0; i <= hay_len - needle_len; i ++)
+    if (memcmp(haystack + i, needle, needle_len) == 0)
+      return (haystack + i);
+
+  return (NULL);
 }
 
 
@@ -1266,6 +1292,93 @@ main(void)
   uni_params.actual_output_type = NULL;
   testEnd(ppdFilterUniversal(0, 1, 0, &data, &uni_params) == 1);
   free_filter_data(&data);
+
+
+  // =========================================================================
+  // Group 13: ppdFilterRasterToPS truncated row safety (T51)
+  // =========================================================================
+
+  // T51 — A two-page CUPS Raster document where page 1 contains marker bytes
+  //       and page 2 is truncated immediately after its header must fail cleanly
+  //       (rc != 0) without compressing uninitialized heap data into page 2.
+  testBegin("ppdFilterRasterToPS(truncated row) fails without leaking heap");
+  {
+    char ras_path[] = "/tmp/test_ppd_raster_XXXXXX";
+    char ps_path[]  = "/tmp/test_ppd_ps_XXXXXX";
+    int wfd = mkstemp(ras_path);
+    int pfd = mkstemp(ps_path);
+    int rfd = -1;
+    cups_raster_t *ras = NULL;
+    cups_page_header_t hdr;
+    unsigned char row[64];
+    FILE *fp = NULL;
+    char ps_buf[8192];
+    size_t ps_len = 0;
+    const char *img1 = NULL, *img2 = NULL, *g2 = NULL;
+    size_t rem1 = 0, rem2 = 0;
+    bool leaked = true;
+
+    memset(ps_buf, 0, sizeof(ps_buf));
+    if (wfd >= 0 && pfd >= 0 &&
+        (ras = cupsRasterOpen(wfd, CUPS_RASTER_WRITE)) != NULL)
+    {
+      memset(&hdr, 0, sizeof(hdr));
+      hdr.PageSize[0] = 612;
+      hdr.PageSize[1] = 792;
+      hdr.cupsWidth = 64;
+      hdr.cupsHeight = 1;
+      hdr.cupsBitsPerColor = 8;
+      hdr.cupsBitsPerPixel = 8;
+      hdr.cupsBytesPerLine = 64;
+      hdr.cupsColorSpace = CUPS_CSPACE_K;
+      hdr.HWResolution[0] = 300;
+      hdr.HWResolution[1] = 300;
+
+      memset(row, 'A', sizeof(row));
+      memcpy(row, "LEAK-MARKER-0123456789abcdef", 28);
+      cupsRasterWriteHeader(ras, &hdr);
+      cupsRasterWritePixels(ras, row, sizeof(row));
+
+      // Page 2 header with 0 pixel rows (truncated)
+      cupsRasterWriteHeader(ras, &hdr);
+      cupsRasterClose(ras);
+      close(wfd);
+
+      init_filter_data(&data);
+      rfd = open(ras_path, O_RDONLY);
+      rc = (rfd >= 0) ? ppdFilterRasterToPS(rfd, pfd, 1, &data, NULL) : -1;
+      if (rfd < 0)
+        close(pfd);
+      free_filter_data(&data);
+
+      fp = fopen(ps_path, "rb");
+      if (fp)
+      {
+        ps_len = fread(ps_buf, 1, sizeof(ps_buf), fp);
+        fclose(fp);
+      }
+
+      img1 = find_bytes(ps_buf, ps_len, ">> image\n", 9);
+      rem1 = img1 ? ps_len - (size_t)((img1 + 9) - ps_buf) : 0;
+      img2 = img1 ? find_bytes(img1 + 9, rem1, ">> image\n", 9) : NULL;
+      rem2 = img2 ? ps_len - (size_t)((img2 + 9) - ps_buf) : 0;
+      g2   = img2 ? find_bytes(img2 + 9, rem2, "\ngrestore", 9) : NULL;
+      if (img2 && g2 && g2 == img2 + 9)
+        leaked = false;
+
+      testEndMessage(rc != 0 && !leaked, "rc=%d page2_stream_bytes=%ld",
+                     rc, (img2 && g2) ? (long)(g2 - (img2 + 9)) : -1L);
+    }
+    else
+    {
+      if (wfd >= 0) close(wfd);
+      if (pfd >= 0) close(pfd);
+      testEndMessage(false, "mkstemp failed");
+    }
+
+    unlink(ras_path);
+    unlink(ps_path);
+  }
 
 
   // =========================================================================

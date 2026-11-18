@@ -1020,7 +1020,7 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
   if ((val = cupsGetOption("pdftops-max-image-resolution",
 			   num_options, options)) != NULL)
   {
-    if ((numvalues = sscanf(val, "%d", &mres)) > 0)
+    if ((numvalues = sscanf(val, "%d", &mres)) > 0 && mres >= 0)
       maxres = mres;
     else
       if (log) log(ld, CF_LOGLEVEL_WARN,

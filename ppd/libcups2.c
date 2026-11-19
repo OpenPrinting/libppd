@@ -115,6 +115,10 @@ ppd_unquote(char       *d,		// O - Unquoted string
     if (*s == '\\')
     {
       s ++;
+
+      if (!*s)
+        break;
+
       if (isdigit(*s))
       {
 	*d = 0;

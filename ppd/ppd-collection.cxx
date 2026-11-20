@@ -788,6 +788,7 @@ ppdCollectionGetPPD(
 		     "libppd: [PPD Collections] Unable to copy PPD to temp "
 		     "file: %s",
 		     strerror(errno));
+	ClosePipeCommand(fp, cpid, epid, log, ld);
 	return (NULL);
       }
       while ((bytes = cupsFileRead(fp, buffer, sizeof(buffer))) > 0)
@@ -1119,6 +1120,7 @@ cat_tar(const char *filename,		// I - Archive name
 		     "libppd: [PPD Collections] Unable to copy PPD to temp "
 		     "file: %s",
 		     strerror(errno));
+	cupsFileClose(fp);
 	return (NULL);
       }
       for (total = 0; total < curinfo.st_size; total += bytes)

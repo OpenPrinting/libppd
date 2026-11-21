@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
-// Tests covered (48 assertions across 13 groups):
+// Tests covered (54 assertions across 13 groups):
 //
 //   Group  1  (T01-T05)  NULL / argument guards and smoke test.
 //                        ppdCreatePPDFromIPP2 returns NULL with errno
@@ -42,9 +42,9 @@
 //                        remainder is also stripped (line 363).
 //
 //   Group  4  (T11-T13)  Output order + colour + landscape.  A default
-//                        output bin whose name contains "face-up"
-//                        flips faceupdown and yields *DefaultOutputOrder
-//                        Reverse (line 467).  IPP color-supported=True
+//                        output bin whose name contains "face-up" (no
+//                        printer-output-tray) yields *DefaultOutputOrder
+//                        Reverse.  IPP color-supported=True
 //                        emits *ColorDevice True (line 477); without it
 //                        AND a 0 color arg → *ColorDevice False (line
 //                        479).  IPP landscape-orientation-requested-
@@ -127,6 +127,14 @@
 //                        *cupsFilter2 lines (lines 967-969 add jpeg/png
 //                        unconditionally after the if-chain).  NULL
 //                        status_msg with size 0 must not crash.
+//
+//   Group 13  (T47-T50)  Output order from printer-output-tray.
+//                        "stackingorder" (prtOutputStackingOrder, RFC
+//                        3805) decides *DefaultOutputOrder and
+//                        *PageStackOrder; "pagedelivery" and the bin
+//                        name only when it is missing.  A face-up bin
+//                        with "stackingorder=lastToFirst" (as reported
+//                        by e.g. an Epson ET-4950) needs Reverse.
 //
 // Design notes:
 //
@@ -217,6 +225,20 @@ add_format(ipp_t *resp, const char *mime)
 {
   ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_MIMETYPE,
                "document-format-supported", NULL, mime);
+}
+
+// Add a single (default) output bin, optionally with its
+// "printer-output-tray" value.
+static void
+add_output_bin(ipp_t *resp, const char *keyword, const char *tray)
+{
+  ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
+               "output-bin-default", NULL, keyword);
+  ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
+               "output-bin-supported", NULL, keyword);
+  if (tray)
+    ippAddOctetString(resp, IPP_TAG_PRINTER, "printer-output-tray",
+                      tray, (int)strlen(tray));
 }
 
 // Build an "absolute minimum" valid IPP attribute set (just enough to
@@ -512,9 +534,8 @@ main(void)
   // Group 4: Output order, colour, landscape (T11-T13)
   // =========================================================================
 
-  // T11 — Default output bin "face-up" sets faceupdown=-1 at line 463
-  //       → firsttolast*faceupdown<0 at line 467 → "*DefaultOutputOrder:
-  //       Reverse".
+  // T11 — Default output bin "face-up" without printer-output-tray:
+  //       the bin name decides → "*DefaultOutputOrder: Reverse".
   testBegin("output-bin-default \"face-up\" → *DefaultOutputOrder Reverse");
   resp = make_pdf_ipp();
   ippAddString(resp, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
@@ -1191,6 +1212,72 @@ main(void)
                  ppd_text && strstr(ppd_text, "*Duplex None\n") != NULL,
                  ppd_text && strstr(ppd_text, "*print-color-mode monochrome\n") != NULL,
                  ppd_text && strstr(ppd_text, "INJECTED-DIRECTIVE") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+
+  // =========================================================================
+  // Group 13: Output order from printer-output-tray (T47-T50)
+  // =========================================================================
+
+  // T47 — Face-up bin reporting "stackingorder=lastToFirst" (Epson ET-4950).
+  //       Both values describe the same stack, they must not cancel out.
+  testBegin("face-up bin, stackingorder=lastToFirst → Reverse");
+  resp = make_pdf_ipp();
+  add_output_bin(resp, "face-up", "type=unRemovableBin;stackingorder=lastToFirst;pagedelivery=faceUp;");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                "Test", "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          strstr(ppd_text, "*DefaultOutputOrder: Reverse\n") != NULL &&
+          strstr(ppd_text, "*PageStackOrder FaceUp: Reverse\n") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+  // T48 — Usual face-down bin.
+  testBegin("face-down bin, stackingorder=firstToLast → Normal");
+  resp = make_pdf_ipp();
+  add_output_bin(resp, "face-down", "type=unRemovableBin;stackingorder=firstToLast;pagedelivery=faceDown;");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                "Test", "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          strstr(ppd_text, "*DefaultOutputOrder: Normal\n") != NULL &&
+          strstr(ppd_text, "*PageStackOrder FaceDown: Normal\n") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+  // T49 — "stackingorder" decides, not "pagedelivery" or the bin name.
+  testBegin("stackingorder=firstToLast wins over a face-up bin → Normal");
+  resp = make_pdf_ipp();
+  add_output_bin(resp, "face-up", "type=unRemovableBin;stackingorder=firstToLast;pagedelivery=faceUp;");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                "Test", "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          strstr(ppd_text, "*DefaultOutputOrder: Normal\n") != NULL &&
+          strstr(ppd_text, "*PageStackOrder FaceUp: Normal\n") != NULL);
+  if (result == buffer) unlink(buffer);
+  free(ppd_text);
+  ippDelete(resp);
+
+  // T50 — Without "stackingorder", "pagedelivery" decides.
+  testBegin("pagedelivery=faceUp without stackingorder → Reverse");
+  resp = make_pdf_ipp();
+  add_output_bin(resp, "face-up", "type=unRemovableBin;pagedelivery=faceUp;");
+  result = ppdCreatePPDFromIPP2(buffer, sizeof(buffer), resp,
+                                "Test", "application/pdf",
+                                0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+  ppd_text = result ? slurp_file(buffer) : NULL;
+  testEnd(ppd_text &&
+          strstr(ppd_text, "*DefaultOutputOrder: Reverse\n") != NULL &&
+          strstr(ppd_text, "*PageStackOrder FaceUp: Reverse\n") != NULL);
   if (result == buffer) unlink(buffer);
   free(ppd_text);
   ippDelete(resp);

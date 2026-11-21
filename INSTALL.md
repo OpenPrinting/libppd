@@ -15,6 +15,7 @@ This guide provides instructions for compiling and installing OpenPrinting libpp
 #### Dependencies
 - libcups of CUPS 2.2.2 or newer
 - libcupsfilters 2.0.0 or newer
+- zlib development headers and library
 
 ### Compiling the GIT Repository Code
 - libppd GIT repository does not include a pre-built configure script.
@@ -62,6 +63,10 @@ This guide provides instructions for compiling and installing OpenPrinting libpp
   sudo apt-get install build-essential autoconf
   ```
 - Install libcups and libcupsfilters
+- Install the zlib development package:
+  ```
+  sudo apt-get install zlib1g-dev
+  ```
 
 ### For Red Hat/Fedora-based Systems
 - Install C and C++ compilers, make, autoconf:
@@ -69,5 +74,9 @@ This guide provides instructions for compiling and installing OpenPrinting libpp
   sudo dnf install gcc gcc-c++ make autoconf
   ```
 - Install libcups and libcupsfilters:
+- Install the zlib development package:
+  ```
+  sudo dnf install zlib-devel
+  ```
 
 Note: The above commands are for common Linux distributions. For other operating systems or distributions, refer to respective package management instructions.

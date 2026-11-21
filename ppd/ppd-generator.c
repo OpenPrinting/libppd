@@ -72,6 +72,7 @@ typedef struct _ppd_size_s                // **** Media Size (cups_size_t of lib
 
 static int	http_connect(http_t **http, const char *url, char *resource,
 			     size_t ressize);
+static int	ppd_output_bin_reverse(const char *properties, const char *keyword);
 static void	ppd_put_string(cups_file_t *fp, cups_lang_t *lang, const char *ppd_option, const char *ppd_choice, const char *pwg_msgid);
 
 
@@ -335,9 +336,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
   char			outbin_properties[1024];
   cups_len_t		octet_str_len;
   void			*outbin_properties_octet;
-  int			outputorderinfofound = 0,
-			faceupdown = 1,
-			firsttolast = 1;
+  int			reverse;		// Reverse output order for bin?
   int			manual_copies = -1,
 			is_fax = 0;
 
@@ -527,6 +526,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	break;
     }
   }
+  outbin_properties[0] = '\0';
   if ((attr = ippFindAttribute(supported, "printer-output-tray",
 			       IPP_TAG_STRING)) != NULL &&
       i < ippGetCount(attr))
@@ -536,23 +536,12 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
     memcpy(outbin_properties, outbin_properties_octet,
 	   ((size_t)octet_str_len < sizeof(outbin_properties) - 1 ?
 	    (size_t)octet_str_len : sizeof(outbin_properties) - 1));
-    if (strcasestr(outbin_properties, "pagedelivery=faceUp"))
-    {
-      outputorderinfofound = 1;
-      faceupdown = -1;
-    }
-    if (strcasestr(outbin_properties, "stackingorder=lastToFirst"))
-      firsttolast = -1;
   }
-  if (outputorderinfofound == 0 && defaultoutbin &&
-      strcasestr(defaultoutbin, "face-up"))
-    faceupdown = -1;
-  if (defaultoutbin)
-    free (defaultoutbin);
-  if (firsttolast * faceupdown < 0)
+  if (ppd_output_bin_reverse(outbin_properties, defaultoutbin) == 1)
     cupsFilePuts(fp, "*DefaultOutputOrder: Reverse\n");
   else
     cupsFilePuts(fp, "*DefaultOutputOrder: Normal\n");
+  free(defaultoutbin);
 
   // Do we have a color printer?
   if (((attr = ippFindAttribute(supported,
@@ -1917,9 +1906,7 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 					     printer_opt_strings_catalog);
       cupsFilePrintf(fp, "*OutputBin %s: \"\"\n", ppdname);
       ppd_put_string(fp, lang, "OutputBin", ppdname, human_readable);
-      outputorderinfofound = 0;
-      faceupdown = 1;
-      firsttolast = 1;
+      outbin_properties[0] = '\0';
       if (attr2 && i < ippGetCount(attr2))
       {
 	outbin_properties_octet = ippGetOctetString(attr2, i, &octet_str_len);
@@ -1927,43 +1914,10 @@ ppdCreatePPDFromIPP2(char         *buffer,          // I - Filename buffer
 	memcpy(outbin_properties, outbin_properties_octet,
 	       ((size_t)octet_str_len < sizeof(outbin_properties) - 1 ?
 		(size_t)octet_str_len : sizeof(outbin_properties) - 1));
-	if (strcasestr(outbin_properties, "pagedelivery=faceUp"))
-	{
-	  outputorderinfofound = 1;
-	  faceupdown = -1;
-	}
-	else if (strcasestr(outbin_properties, "pagedelivery=faceDown"))
-	{
-	  outputorderinfofound = 1;
-	  faceupdown = 1;
-	}
-	if (strcasestr(outbin_properties, "stackingorder=lastToFirst"))
-	{
-	  outputorderinfofound = 1;
-	  firsttolast = -1;
-	}
-	else if (strcasestr(outbin_properties, "stackingorder=firstToLast"))
-	{
-	  outputorderinfofound = 1;
-	  firsttolast = 1;
-	}
       }
-      if (outputorderinfofound == 0) {
-	if (strcasestr(keyword, "face-up"))
-	{
-	  outputorderinfofound = 1;
-	  faceupdown = -1;
-	}
-	if (strcasestr(keyword, "face-down"))
-	{
-	  outputorderinfofound = 1;
-	  faceupdown = 1;
-	}
-      }
-      if (outputorderinfofound)
+      if ((reverse = ppd_output_bin_reverse(outbin_properties, keyword)) >= 0)
 	cupsFilePrintf(fp, "*PageStackOrder %s: %s\n",
-		       ppdname,
-		       (firsttolast * faceupdown < 0 ? "Reverse" : "Normal"));
+		       ppdname, (reverse ? "Reverse" : "Normal"));
     }
     cupsFilePuts(fp, "*CloseUI: *OutputBin\n");
   }
@@ -2965,6 +2919,47 @@ http_connect(http_t     **http,		// IO - Current HTTP connection
   }
 
   return (*http != NULL);
+}
+
+
+//
+// 'ppd_output_bin_reverse()' - Check whether an output bin needs the pages
+//                              in reverse order.
+//
+// "stackingorder" in "printer-output-tray" is prtOutputStackingOrder of
+// the Printer MIB (RFC 3805): with "lastToFirst" the back of each page is
+// placed against the front of the previous page, so the pages have to be
+// sent in reverse order, whether they are delivered face-up or face-down.
+// Only without it "pagedelivery" or the bin name are used, as in
+// cfIPPReverseOutput() of libcupsfilters.
+//
+
+static int				// O - 1 = reverse, 0 = normal, -1 = unknown
+ppd_output_bin_reverse(
+    const char *properties,		// I - "printer-output-tray" value or ""
+    const char *keyword)		// I - "output-bin" keyword or NULL
+{
+  if (properties)
+  {
+    if (strcasestr(properties, "stackingorder=lastToFirst"))
+      return (1);
+    if (strcasestr(properties, "stackingorder=firstToLast"))
+      return (0);
+    if (strcasestr(properties, "pagedelivery=faceUp"))
+      return (1);
+    if (strcasestr(properties, "pagedelivery=faceDown"))
+      return (0);
+  }
+
+  if (keyword)
+  {
+    if (strcasestr(keyword, "face-up"))
+      return (1);
+    if (strcasestr(keyword, "face-down"))
+      return (0);
+  }
+
+  return (-1);
 }
 
 

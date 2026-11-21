@@ -276,13 +276,14 @@ main(void)
   // Group 1: NULL/argument guards (T01–T04)
   //
   // Each public function in ppd-custom.c opens with a NULL guard
-  // (`if (!ppd)` for ppdFindCustomOption, `if (!opt)` for the other three)
-  // and must return NULL without dereferencing the pointer.  These run
-  // before any PPD is opened so there is no dependency on PPD content.
+  // (`if (!ppd || !keyword)` for ppdFindCustomOption, `if (!opt)` for the
+  // other three) and must return NULL without dereferencing the pointer.
+  // These run before any PPD is opened so there is no dependency on PPD
+  // content.
   // =========================================================================
 
-  // T01 — ppdFindCustomOption: `if (!ppd) return (NULL);` — NULL PPD must
-  //       short-circuit before strlcpy()/cupsArrayFind().
+  // T01 — ppdFindCustomOption: `if (!ppd || !keyword) return (NULL);` — NULL
+  //       PPD must short-circuit before strlcpy()/cupsArrayFind().
   testBegin("ppdFindCustomOption(NULL ppd, \"PageSize\") returns NULL");
   testEnd(ppdFindCustomOption(NULL, "PageSize") == NULL);
 
@@ -331,6 +332,12 @@ main(void)
   testBegin("ppdFindCustomOption(\"PageSize\") returns non-NULL");
   copt = ppdFindCustomOption(ppd, "PageSize");
   testEnd(copt != NULL);
+
+  // T06b — Same guard as T01, but with a real, open PPD this time: a NULL
+  //        keyword must still short-circuit before strlcpy() calls
+  //        strlen() on it, rather than crashing.
+  testBegin("ppdFindCustomOption(ppd, NULL keyword) returns NULL");
+  testEnd(ppdFindCustomOption(ppd, NULL) == NULL);
 
   // T07 — The stored keyword preserves the PPD's casing (the comparator is
   //       case-insensitive but strlcpy() copied the keyword verbatim).

@@ -33,7 +33,7 @@ ppdFindCustomOption(ppd_file_t *ppd,	// I - PPD file
   ppd_coption_t	key;			// Custom option search key
 
 
-  if (!ppd)
+  if (!ppd || !keyword)
     return (NULL);
 
   strlcpy(key.keyword, keyword, sizeof(key.keyword));

@@ -618,6 +618,19 @@ ppdFilterPDFToPS(int inputfd,		// I - File descriptor input stream
 				       num_pstops_options, &pstops_options);
   }
 
+  if (pdftopdfapplied)
+  {
+    //
+    // pdftopdf has already put the pages into the requested or the printer's
+    // default output order, so tell pstops not to reverse them again from
+    // the PPD's default output order.
+    //
+
+    num_pstops_options = cupsAddOption("OutputOrder",
+				       "Normal",
+				       num_pstops_options, &pstops_options);
+  }
+
   //
   // Create data record to call the pstops filter function
   //

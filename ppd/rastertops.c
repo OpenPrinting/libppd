@@ -247,13 +247,16 @@ write_flate(cups_raster_t *ras,	        // I - Image data
 						   // by deflate
   unsigned char  *pixdata,
                  *convertedpix;
-  size_t         line_bytes = header.cupsBytesPerLine ?
-                              (size_t)header.cupsBytesPerLine : 1;
+  size_t         line_bytes;
+
+  if (header.cupsBytesPerLine == 0 ||
+      header.cupsBytesPerLine > (16 * 1024 * 1024) || header.cupsHeight == 0)
+    return (Z_DATA_ERROR);
+
+  line_bytes = (size_t)header.cupsBytesPerLine;
+
   unsigned char  in[line_bytes * 6],  // Input data buffer
                  out[line_bytes * 6]; // Output data buffer
-
-  if (header.cupsBytesPerLine == 0 || header.cupsHeight == 0)
-    return (Z_DATA_ERROR);
 		
   // allocate deflate state
   strm.zalloc = Z_NULL;

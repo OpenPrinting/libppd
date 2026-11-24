@@ -217,6 +217,11 @@ static const char test_ppd_text[] =
   "*cupsInkChannels EightChan.Plain.600dpi: \"8\"\n";
 
 
+// Non-NULL PPD for the argument-check tests: the functions must return
+// before they look at it.
+static ppd_file_t dummy_ppd;
+
+
 //
 // 'main()' - Run all ppd-load-profile.c unit tests.
 //
@@ -257,18 +262,18 @@ main(void)
   //       pointer; the !name short-circuit fires before any dereference.
   //       Cast a dummy pointer (never dereferenced) to satisfy the type.
   testBegin("ppdFindColorAttr(ppd, NULL name, ...) returns NULL");
-  testEnd(ppdFindColorAttr((ppd_file_t *)1, NULL, "RGB", "Plain", "600dpi",
+  testEnd(ppdFindColorAttr(&dummy_ppd, NULL, "RGB", "Plain", "600dpi",
                            spec, sizeof(spec), NULL, NULL) == NULL);
 
   // T03 — NULL colormodel trips the !colormodel guard.
   testBegin("ppdFindColorAttr(.., NULL colormodel, ..) returns NULL");
-  testEnd(ppdFindColorAttr((ppd_file_t *)1, "cupsTestL1", NULL, "Plain",
+  testEnd(ppdFindColorAttr(&dummy_ppd, "cupsTestL1", NULL, "Plain",
                            "600dpi", spec, sizeof(spec), NULL, NULL)
           == NULL);
 
   // T04 — NULL spec output buffer trips the !spec guard.
   testBegin("ppdFindColorAttr(.., NULL spec out-buffer, ..) returns NULL");
-  testEnd(ppdFindColorAttr((ppd_file_t *)1, "cupsTestL1", "RGB", "Plain",
+  testEnd(ppdFindColorAttr(&dummy_ppd, "cupsTestL1", "RGB", "Plain",
                            "600dpi", NULL, sizeof(spec), NULL, NULL)
           == NULL);
 
@@ -276,7 +281,7 @@ main(void)
   //       buffer is far smaller than IPP_MAX_NAME (256 on every supported
   //       cups build), so the guard always fires.
   testBegin("ppdFindColorAttr(.., specsize < IPP_MAX_NAME) returns NULL");
-  testEnd(ppdFindColorAttr((ppd_file_t *)1, "cupsTestL1", "RGB", "Plain",
+  testEnd(ppdFindColorAttr(&dummy_ppd, "cupsTestL1", "RGB", "Plain",
                            "600dpi", smallbuf, (int)sizeof(smallbuf),
                            NULL, NULL) == NULL);
 
@@ -292,6 +297,11 @@ main(void)
 
   testBegin("ppdOpen(embedded profile test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);

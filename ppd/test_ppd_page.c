@@ -280,6 +280,11 @@ main(void)
 
   testBegin("ppdOpen(embedded variable-size test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);
@@ -509,6 +514,11 @@ main(void)
 
   testBegin("ppdOpen(embedded no-variable-size test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_novar, f);
   rewind(f);
   ppd2 = ppdOpen(f);

@@ -27,9 +27,12 @@ jobs:
           # The PPD-compiler sources (ppdc*.{h,cxx}) plus encode.c, ppd-cache.c,
           # raster-interpret.c and ppdc-import.cxx are inherited verbatim from CUPS
           # (github.com/OpenPrinting/cups); their findings are suppressed here to
-          # keep that code identical to upstream instead of diverging it. The rest
-          # are cppcheck false positives (short-circuited NULL checks and a deflate
-          # output buffer) in libppd's own code.
+          # keep that code identical to upstream instead of diverging it. This
+          # includes dangerousTypeCast (new in cppcheck 2.19), which flags the
+          # C-style casts that all of the C++ code from CUPS (the PPD compiler,
+          # its tools and ppd-collection.cxx) uses. The rest are cppcheck false
+          # positives (short-circuited NULL checks and a deflate output buffer)
+          # in libppd's own code.
           cppcheck \
             --enable=warning,performance,portability \
             --error-exitcode=1 \
@@ -38,6 +41,7 @@ jobs:
             --suppress=unknownMacro \
             --suppress=noCopyConstructor \
             --suppress=noOperatorEq \
+            --suppress=dangerousTypeCast \
             --suppress=uninitvar:ppd/encode.c \
             --suppress=invalidScanfArgType_int:ppd/ppd-cache.c \
             --suppress=shiftNegativeLHS:ppd/raster-interpret.c \
@@ -48,5 +52,5 @@ jobs:
             --suppress=uninitvar:ppd/rastertops.c \
             --suppress=nullPointerRedundantCheck:ppd/test_ppd_attr.c \
             --suppress=nullPointerRedundantCheck:ppd/test_ppd_custom.c \
-            -DVERSION="$(grep -oP 'AC_INIT\(\[[^\]]*\],\s*\[\K[^\]]*' configure.ac)" \
+            -DVERSION="\"$(grep -oP 'AC_INIT\(\[[^\]]*\],\s*\[\K[^\]]*' configure.ac)\"" \
             .

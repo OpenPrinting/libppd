@@ -312,6 +312,11 @@ main(void)
 
   testBegin("ppdOpen(embedded custom test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);
@@ -531,6 +536,11 @@ main(void)
     testBegin("ppdOpen(%s) %s", param_cases[i].title,
               param_cases[i].opens ? "succeeds" : "fails");
     f = tmpfile();
+    if (!f)
+    {
+      testEndMessage(false, "tmpfile() failed");
+      return (1);
+    }
     fputs(custom_ppd_head, f);
     fputs(param_cases[i].params, f);
     fputs(custom_page_size, f);

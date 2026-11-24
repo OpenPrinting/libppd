@@ -402,7 +402,8 @@ ppdFindMarkedChoice(ppd_file_t *ppd,	// I - PPD file
 
   DEBUG_printf(("2ppdFindMarkedChoice(ppd=%p, option=\"%s\")", ppd, option));
 
-  if ((key.option = ppdFindOption(ppd, option)) == NULL)
+  key.option = ppdFindOption(ppd, option);
+  if (key.option == NULL)
   {
     DEBUG_puts("3ppdFindMarkedChoice: Option not found, returning NULL");
     return (NULL);
@@ -484,7 +485,8 @@ ppdIsMarked(ppd_file_t *ppd,		// I - PPD file data
   if (!ppd)
     return (0);
 
-  if ((key.option = ppdFindOption(ppd, option)) == NULL)
+  key.option = ppdFindOption(ppd, option);
+  if (key.option == NULL)
     return (0);
 
   if ((c = (ppd_choice_t *)cupsArrayFind(ppd->marked, &key)) == NULL)

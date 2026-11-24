@@ -224,6 +224,11 @@ main(void)
 
   testBegin("ppdOpen(embedded attribute test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);

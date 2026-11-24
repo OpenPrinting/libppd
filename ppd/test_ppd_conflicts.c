@@ -265,6 +265,11 @@ static const char test_ppd_installable_text[] =
   "*UIConstraints: \"*Duplex DuplexNoTumble *OptionDuplexer False\"\n";
 
 
+// Non-NULL PPD for the argument-check tests: the functions must return
+// before they look at it.
+static ppd_file_t dummy_ppd;
+
+
 //
 // 'main()' - Run all ppd-conflicts.c unit tests.
 //
@@ -310,12 +315,12 @@ main(void)
   // T03 — ppdGetConflicts(ppd, NULL option, ...) — `!option` clause.
   testBegin("ppdGetConflicts(ppd, NULL option, ...) returns 0");
   options = NULL;
-  testEnd(ppdGetConflicts((ppd_file_t *)1, NULL, "x", &options) == 0);
+  testEnd(ppdGetConflicts(&dummy_ppd, NULL, "x", &options) == 0);
 
   // T04 — ppdGetConflicts(ppd, opt, NULL choice, ...) — `!choice` clause.
   testBegin("ppdGetConflicts(ppd, opt, NULL choice, ...) returns 0");
   options = NULL;
-  testEnd(ppdGetConflicts((ppd_file_t *)1, "Duplex", NULL, &options) == 0);
+  testEnd(ppdGetConflicts(&dummy_ppd, "Duplex", NULL, &options) == 0);
 
   // T05 — ppdGetConflicts(ppd, opt, choice, NULL **options) — `!options`
   //       clause.  Note: because *options would be dereferenced earlier
@@ -323,7 +328,7 @@ main(void)
   //       null-check (line 84) — so passing NULL for the slot is safe and
   //       still returns 0.
   testBegin("ppdGetConflicts(ppd, opt, choice, NULL slot) returns 0");
-  testEnd(ppdGetConflicts((ppd_file_t *)1, "Duplex", "DuplexNoTumble", NULL)
+  testEnd(ppdGetConflicts(&dummy_ppd, "Duplex", "DuplexNoTumble", NULL)
           == 0);
 
   // T06 — ppdInstallableConflict(NULL, ...) — `!ppd` (line 656-657).
@@ -332,7 +337,7 @@ main(void)
 
   // T07 — ppdInstallableConflict(ppd, NULL option, ...) — `!option`.
   testBegin("ppdInstallableConflict(ppd, NULL, ...) returns 0");
-  testEnd(ppdInstallableConflict((ppd_file_t *)1, NULL, "x") == 0);
+  testEnd(ppdInstallableConflict(&dummy_ppd, NULL, "x") == 0);
 
   // T08 — ppdResolveConflicts(NULL, ...) — `!ppd` (line 202-203).  The
   //       same line also enforces the symmetry rule `(option == NULL) !=
@@ -360,6 +365,11 @@ main(void)
 
   testBegin("ppdOpen(embedded conflicts test PPD #1)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);
@@ -587,6 +597,11 @@ main(void)
 
   testBegin("ppdOpen(embedded conflicts test PPD #2 — installable group)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_installable_text, f);
   rewind(f);
   ppd2 = ppdOpen(f);

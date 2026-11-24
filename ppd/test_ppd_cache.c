@@ -343,6 +343,11 @@ main(void)
 
   testBegin("ppdOpen(embedded cache test PPD)");
   f = tmpfile();
+  if (!f)
+  {
+    testEndMessage(false, "tmpfile() failed");
+    return (1);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);
@@ -657,6 +662,11 @@ main(void)
       "*DefaultAuditEmpty: None\n"
       "*CloseUI: *AuditEmpty\n";
     FILE *fp_foo = tmpfile();
+    if (!fp_foo)
+    {
+      testEndMessage(false, "tmpfile() failed");
+      return (1);
+    }
     fputs(foomatic_empty_opt_ppd, fp_foo);
     rewind(fp_foo);
     ppd_file_t *ppd_foo = ppdOpen(fp_foo);

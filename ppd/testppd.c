@@ -1248,9 +1248,19 @@ main(int  argc,				// I - Number of command-line arguments
 	 s = (char *)cupsArrayGetNext(dirlist), i ++)
     {
       col = (ppd_collection_t *)calloc(1, sizeof(ppd_collection_t));
+      if (!col)
+      {
+        puts("Out of memory");
+        return (1);
+      }
       col->path = s;
       printf("Searching directory %d, %s ...\n", i, col->path); 
       col->name = (char *)calloc(20, sizeof(char));
+      if (!col->name)
+      {
+        puts("Out of memory");
+        return (1);
+      }
       snprintf(col->name, 19, "%d", i);
       cupsArrayAdd(ppd_collections, col);
     }
@@ -1359,6 +1369,11 @@ main(int  argc,				// I - Number of command-line arguments
 
     name = argv[1];
     filename = strdup(name);
+    if (!filename)
+    {
+      puts("Out of memory");
+      return (1);
+    }
     if ((s = strchr(filename, ':')) != NULL)
       *s = '\0';
 

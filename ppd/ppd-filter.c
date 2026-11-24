@@ -114,7 +114,8 @@ ppdFilterCUPSWrapper(
   if (argc > 5)
     num_options = cupsParseOptions(argv[5], NULL, 0, &options);
 
-  if ((filter_data.printer = getenv("PRINTER")) == NULL)
+  filter_data.printer = getenv("PRINTER");
+  if (filter_data.printer == NULL)
     filter_data.printer = argv[0];
   filter_data.job_id = argc > 1 ? atoi(argv[1]) : 0;
   filter_data.job_user = argc > 2 ? argv[2] : NULL;
@@ -228,6 +229,13 @@ ppdFilterLoadPPDFile(cf_filter_data_t *data, // I/O - Job and printer data
 
   filter_data_ext =
     (ppd_filter_data_ext_t *)calloc(1, sizeof(ppd_filter_data_ext_t));
+  if (!filter_data_ext)
+  {
+    if (log) log(ld, CF_LOGLEVEL_ERROR,
+		 "ppdFilterLoadPPDFile: Out of memory");
+    ppdClose(ppd);
+    return (-1);
+  }
 
   filter_data_ext->ppdfile = strdup(ppdfile); // PPD file name
   filter_data_ext->ppd = ppd;                 // PPD data

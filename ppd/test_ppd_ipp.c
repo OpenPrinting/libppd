@@ -194,6 +194,11 @@ load_test_ppd(void)
   int           line;			// Error line number
 
   f = tmpfile();
+  if (!f)
+  {
+    testError("tmpfile() failed");
+    return (NULL);
+  }
   fputs(test_ppd_text, f);
   rewind(f);
   ppd = ppdOpen(f);
@@ -1007,6 +1012,11 @@ main(void)
   testBegin("ppdLoadAttributes(21-item cupsPwgRaster attribute) caps at 20 items");
   {
     FILE *f21 = tmpfile();
+    if (!f21)
+    {
+      testEndMessage(false, "tmpfile() failed");
+      return (1);
+    }
     fputs(test_ppd_text, f21);
     fputs("*cupsFilter: \"image/pwg-raster 0 rastertopwg\"\n"
           "*cupsPwgRasterAuditSupported: \"v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,"

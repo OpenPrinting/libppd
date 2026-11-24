@@ -379,12 +379,20 @@ open_embedded_ppd(const char *text)
   FILE       *f = tmpfile();
   ppd_file_t *ppd;
 
+  if (!f)
+    return (NULL);
+
   fputs(text, f);
   rewind(f);
   ppd = ppdOpen(f);
   fclose(f);
   return (ppd);
 }
+
+
+// Non-NULL PPD for the argument-check tests: the functions must return
+// before they look at it.
+static ppd_file_t dummy_ppd;
 
 
 int					// O - Exit status (0 = all pass)
@@ -418,7 +426,7 @@ main(void)
 
   // T02 — !fp half of the same guard.
   testBegin("ppdEmit(ppd, NULL fp, ...) returns -1");
-  testEnd(ppdEmit((ppd_file_t *)1, NULL, PPD_ORDER_JCL) == -1);
+  testEnd(ppdEmit(&dummy_ppd, NULL, PPD_ORDER_JCL) == -1);
 
   // T03 — ppdEmitString: `if (!ppd) return (NULL);` (line 692).
   testBegin("ppdEmitString(NULL, ...) returns NULL");
@@ -430,7 +438,7 @@ main(void)
 
   // T05 — fd < 0 half of the same guard.
   testBegin("ppdEmitFd(ppd, fd=-1, ...) returns -1");
-  testEnd(ppdEmitFd((ppd_file_t *)1, -1, PPD_ORDER_JCL) == -1);
+  testEnd(ppdEmitFd(&dummy_ppd, -1, PPD_ORDER_JCL) == -1);
 
   // T06 — ppdCollect(NULL, …, &choices) returns 0 AND nulls the slot.
   testBegin("ppdCollect(NULL ppd, …, &choices) returns 0, nulls slot");
